@@ -4,8 +4,6 @@
   "version": "0.1.0",
   "identifier": "com.u-keunsong.tickly",
   "build": {
-    "beforeDevCommand": "yarn dev",
-    "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "yarn build",
     "frontendDist": "../build"
   },
