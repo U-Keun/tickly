@@ -43,3 +43,6 @@ vite.config.ts.timestamp-*
 
 # OS
 Thumbs.db
+
+# Personal notes
+TODO.md
