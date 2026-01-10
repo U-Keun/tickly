@@ -1,15 +1,123 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
-  import type { TodoItem } from '../types';
+  import type { TodoItem, Category } from '../types';
   import TodoItemComponent from '../components/TodoItem.svelte';
   import AddItemInput from '../components/AddItemInput.svelte';
 
   let items = $state<TodoItem[]>([]);
+  let categories = $state<Category[]>([]);
+  let selectedCategoryId = $state<number | null>(null);
+  let editingCategoryId = $state<number | null>(null);
+  let editingCategoryName = $state('');
+  let isAddingCategory = $state(false);
+  let newCategoryName = $state('');
+  let showResetConfirm = $state(false);
+
+  async function loadCategories() {
+    try {
+      categories = await invoke<Category[]>('get_categories');
+      if (categories.length > 0 && selectedCategoryId === null) {
+        selectedCategoryId = categories[0].id;
+      }
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    }
+  }
+
+  function startAddCategory() {
+    isAddingCategory = true;
+    newCategoryName = '';
+  }
+
+  async function saveNewCategory() {
+    if (newCategoryName.trim()) {
+      try {
+        const newCategory = await invoke<Category>('add_category', { name: newCategoryName.trim() });
+        categories = [...categories, newCategory];
+        selectedCategoryId = newCategory.id;
+        isAddingCategory = false;
+        newCategoryName = '';
+        await loadItems();
+      } catch (error) {
+        console.error('Failed to add category:', error);
+      }
+    }
+  }
+
+  function cancelAddCategory() {
+    isAddingCategory = false;
+    newCategoryName = '';
+  }
+
+  function startEditCategory(category: Category) {
+    editingCategoryId = category.id;
+    editingCategoryName = category.name;
+  }
+
+  async function saveEditCategory() {
+    if (editingCategoryId !== null && editingCategoryName.trim()) {
+      try {
+        await invoke('edit_category', { id: editingCategoryId, name: editingCategoryName.trim() });
+        categories = categories.map(cat =>
+          cat.id === editingCategoryId ? { ...cat, name: editingCategoryName.trim() } : cat
+        );
+        editingCategoryId = null;
+        editingCategoryName = '';
+      } catch (error) {
+        console.error('Failed to edit category:', error);
+        alert('카테고리 수정 실패: ' + error);
+      }
+    }
+  }
+
+  function cancelEditCategory() {
+    editingCategoryId = null;
+    editingCategoryName = '';
+  }
+
+  async function deleteCategory(id: number) {
+    if (categories.length <= 1) {
+      alert('최소 1개의 카테고리는 유지해야 합니다.');
+      return;
+    }
+
+    if (confirm('이 카테고리를 삭제하시겠습니까? 카테고리 내 항목들은 유지됩니다.')) {
+      try {
+        await invoke('delete_category', { id });
+        categories = categories.filter(cat => cat.id !== id);
+        if (selectedCategoryId === id) {
+          selectedCategoryId = categories[0].id;
+          await loadItems();
+        }
+      } catch (error) {
+        console.error('Failed to delete category:', error);
+        alert('카테고리 삭제 실패: ' + error);
+      }
+    }
+  }
+
+  function showResetDialog() {
+    showResetConfirm = true;
+  }
+
+  async function confirmReset() {
+    try {
+      await invoke('reset_all_items', { categoryId: selectedCategoryId });
+      items = items.map(item => ({ ...item, done: false }));
+      showResetConfirm = false;
+    } catch (error) {
+      console.error('Failed to reset items:', error);
+    }
+  }
+
+  function cancelReset() {
+    showResetConfirm = false;
+  }
 
   async function loadItems() {
     try {
-      items = await invoke<TodoItem[]>('get_items');
+      items = await invoke<TodoItem[]>('get_items', { categoryId: selectedCategoryId });
     } catch (error) {
       console.error('Failed to load items:', error);
     }
@@ -17,11 +125,16 @@
 
   async function addItem(text: string) {
     try {
-      const newItem = await invoke<TodoItem>('add_item', { text });
+      const newItem = await invoke<TodoItem>('add_item', { text, categoryId: selectedCategoryId });
       items = [...items, newItem];
     } catch (error) {
       console.error('Failed to add item:', error);
     }
+  }
+
+  function selectCategory(categoryId: number) {
+    selectedCategoryId = categoryId;
+    loadItems();
   }
 
   async function toggleItem(id: number) {
@@ -44,8 +157,30 @@
     }
   }
 
-  onMount(() => {
-    loadItems();
+  async function editItem(id: number, text: string) {
+    try {
+      await invoke('edit_item', { id, text });
+      items = items.map(item =>
+        item.id === id ? { ...item, text } : item
+      );
+    } catch (error) {
+      console.error('Failed to edit item:', error);
+    }
+  }
+
+  onMount(async () => {
+    // Check and auto-reset if new day
+    try {
+      const wasReset = await invoke<boolean>('check_and_auto_reset');
+      if (wasReset) {
+        console.log('Auto-reset performed for new day');
+      }
+    } catch (error) {
+      console.error('Failed to check auto-reset:', error);
+    }
+
+    await loadCategories();
+    await loadItems();
   });
 </script>
 
@@ -57,6 +192,81 @@
       <p class="text-sm text-gray-500 mt-1">외출 전 체크리스트</p>
     </div>
   </header>
+
+  <!-- Category Tabs -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="max-w-2xl mx-auto px-4">
+      <div class="flex overflow-x-auto gap-2 py-3">
+        {#each categories as category (category.id)}
+          {#if editingCategoryId === category.id}
+            <!-- Editing Mode -->
+            <div class="flex items-center gap-1 px-3 py-2 bg-blue-100 rounded-full">
+              <input
+                bind:value={editingCategoryName}
+                onkeydown={(e) => {
+                  if (e.key === 'Enter') saveEditCategory();
+                  if (e.key === 'Escape') cancelEditCategory();
+                }}
+                onblur={saveEditCategory}
+                class="w-24 px-2 py-1 text-sm border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                type="text"
+                autofocus
+              />
+              <button
+                onclick={() => deleteCategory(category.id)}
+                class="text-red-500 hover:text-red-700"
+                title="삭제"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          {:else}
+            <!-- Normal Mode -->
+            <button
+              onclick={() => selectCategory(category.id)}
+              ondblclick={() => startEditCategory(category)}
+              class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors {
+                selectedCategoryId === category.id
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }"
+              title="더블클릭하여 수정"
+            >
+              {category.name}
+            </button>
+          {/if}
+        {/each}
+
+        <!-- Add Category Button or Input -->
+        {#if isAddingCategory}
+          <div class="flex items-center gap-1 px-3 py-2 bg-green-100 rounded-full">
+            <input
+              bind:value={newCategoryName}
+              onkeydown={(e) => {
+                if (e.key === 'Enter') saveNewCategory();
+                if (e.key === 'Escape') cancelAddCategory();
+              }}
+              onblur={saveNewCategory}
+              class="w-24 px-2 py-1 text-sm border border-green-500 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
+              type="text"
+              placeholder="카테고리명"
+              autofocus
+            />
+          </div>
+        {:else}
+          <button
+            onclick={startAddCategory}
+            class="px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 whitespace-nowrap"
+            title="카테고리 추가"
+          >
+            + 추가
+          </button>
+        {/if}
+      </div>
+    </div>
+  </div>
 
   <!-- Main Content -->
   <main class="flex-1 max-w-2xl w-full mx-auto bg-white shadow-lg">
@@ -75,9 +285,45 @@
             {item}
             onToggle={toggleItem}
             onDelete={deleteItem}
+            onEdit={editItem}
           />
         {/each}
       {/if}
     </div>
   </main>
+
+  <!-- Floating Reset Button -->
+  <button
+    onclick={showResetDialog}
+    class="fixed bottom-6 right-6 w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+    title="체크 초기화"
+  >
+    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+  </button>
+
+  <!-- Reset Confirmation Modal -->
+  {#if showResetConfirm}
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick={cancelReset}>
+      <div class="bg-white rounded-lg p-6 max-w-sm mx-4" onclick={(e) => e.stopPropagation()}>
+        <h3 class="text-lg font-semibold mb-2">체크 초기화</h3>
+        <p class="text-gray-600 mb-6">모든 체크를 초기화하시겠습니까?</p>
+        <div class="flex gap-3 justify-end">
+          <button
+            onclick={cancelReset}
+            class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
+          >
+            취소
+          </button>
+          <button
+            onclick={confirmReset}
+            class="px-4 py-2 text-white bg-orange-500 hover:bg-orange-600 rounded-lg"
+          >
+            초기화
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
