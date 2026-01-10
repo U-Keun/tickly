@@ -17,6 +17,14 @@ struct TodoItem {
     category_id: Option<i64>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct Template {
+    id: i64,
+    text: String,
+    category_id: Option<i64>,
+    display_order: i32,
+}
+
 struct AppState {
     db: Mutex<Connection>,
 }
@@ -57,6 +65,18 @@ fn init_database(app: &AppHandle) -> Result<Connection, rusqlite::Error> {
         "CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL
+        )",
+        [],
+    )?;
+
+    // Create templates table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            text TEXT NOT NULL,
+            category_id INTEGER,
+            display_order INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
         )",
         [],
     )?;
@@ -322,6 +342,116 @@ fn check_and_auto_reset(state: State<AppState>) -> Result<bool, String> {
     }
 }
 
+#[tauri::command]
+fn get_templates(state: State<AppState>) -> Result<Vec<Template>, String> {
+    let db = state.db.lock().unwrap();
+
+    let mut stmt = db
+        .prepare("SELECT id, text, category_id, display_order FROM templates ORDER BY display_order, id")
+        .map_err(|e| e.to_string())?;
+
+    let templates = stmt
+        .query_map([], |row| {
+            Ok(Template {
+                id: row.get(0)?,
+                text: row.get(1)?,
+                category_id: row.get(2)?,
+                display_order: row.get(3)?,
+            })
+        })
+        .map_err(|e| e.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+
+    Ok(templates)
+}
+
+#[tauri::command]
+fn add_template(text: String, state: State<AppState>) -> Result<Template, String> {
+    let db = state.db.lock().unwrap();
+
+    db.execute(
+        "INSERT INTO templates (text, category_id, display_order) VALUES (?1, NULL, 0)",
+        params![text],
+    )
+    .map_err(|e| e.to_string())?;
+
+    let id = db.last_insert_rowid();
+
+    Ok(Template {
+        id,
+        text,
+        category_id: None,
+        display_order: 0,
+    })
+}
+
+#[tauri::command]
+fn edit_template(id: i64, text: String, state: State<AppState>) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+
+    db.execute(
+        "UPDATE templates SET text = ?1 WHERE id = ?2",
+        params![text, id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+fn delete_template(id: i64, state: State<AppState>) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+
+    db.execute("DELETE FROM templates WHERE id = ?1", params![id])
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+fn add_item_from_template(template_id: i64, category_id: i64, state: State<AppState>) -> Result<TodoItem, String> {
+    let db = state.db.lock().unwrap();
+
+    // Get template text
+    let text: String = db
+        .query_row(
+            "SELECT text FROM templates WHERE id = ?1",
+            params![template_id],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+
+    // Check if item already exists in this category
+    let exists: i64 = db
+        .query_row(
+            "SELECT COUNT(*) FROM todos WHERE text = ?1 AND category_id = ?2",
+            params![text, category_id],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+
+    if exists > 0 {
+        return Err("이 항목이 이미 존재합니다.".to_string());
+    }
+
+    // Add new todo item
+    db.execute(
+        "INSERT INTO todos (text, done, category_id) VALUES (?1, 0, ?2)",
+        params![text, category_id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    let id = db.last_insert_rowid();
+
+    Ok(TodoItem {
+        id,
+        text,
+        done: false,
+        category_id: Some(category_id),
+    })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -344,7 +474,12 @@ pub fn run() {
             edit_category,
             delete_category,
             reset_all_items,
-            check_and_auto_reset
+            check_and_auto_reset,
+            get_templates,
+            add_template,
+            edit_template,
+            delete_template,
+            add_item_from_template
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
