@@ -27,10 +27,7 @@ vite.config.ts.timestamp-*
 /src-tauri/target
 
 # Tauri
-/src-tauri/gen/apple/build
-/src-tauri/gen/apple/DerivedData
-/src-tauri/gen/apple/*.xcworkspace
-/src-tauri/gen/apple/Pods
+/src-tauri/gen
 
 # IDE
 .vscode/*

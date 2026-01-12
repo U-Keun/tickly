@@ -246,7 +246,6 @@
   <header class="bg-white shadow-sm">
     <div class="max-w-2xl mx-auto px-4 py-6">
       <h1 class="text-2xl font-bold text-gray-900">Tickly</h1>
-      <p class="text-sm text-gray-500 mt-1">외출 전 체크리스트</p>
     </div>
   </header>
 

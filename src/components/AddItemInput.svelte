@@ -21,7 +21,7 @@
     <input
       type="text"
       bind:value={inputText}
-      placeholder="외출할 때 챙길 물건을 입력하세요..."
+      placeholder="항목을 입력하세요..."
       class="flex-1 px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
     />
     <button
