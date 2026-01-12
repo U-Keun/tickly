@@ -8,6 +8,7 @@ export interface TodoItem {
   text: string;
   done: boolean;
   category_id: number | null;
+  display_order: number;
 }
 
 export interface Template {

@@ -5,6 +5,7 @@
   import TodoItemComponent from '../components/TodoItem.svelte';
   import AddItemInput from '../components/AddItemInput.svelte';
   import TemplateSection from '../components/TemplateSection.svelte';
+  import SwipeableItem from '../components/SwipeableItem.svelte';
 
   let items = $state<TodoItem[]>([]);
   let categories = $state<Category[]>([]);
@@ -337,23 +338,27 @@
     />
 
     <!-- Todo List -->
-    <div class="divide-y divide-gray-200">
-      {#if items.length === 0}
-        <div class="p-8 text-center text-gray-400">
-          <p>아직 항목이 없습니다.</p>
-          <p class="text-sm mt-1">챙겨야 할 물건을 추가해보세요!</p>
-        </div>
-      {:else}
+    {#if items.length === 0}
+      <div class="p-8 text-center text-gray-400">
+        <p>아직 항목이 없습니다.</p>
+        <p class="text-sm mt-1">챙겨야 할 물건을 추가해보세요!</p>
+      </div>
+    {:else}
+      <div class="divide-y divide-gray-200">
         {#each items as item (item.id)}
-          <TodoItemComponent
-            {item}
-            onToggle={toggleItem}
-            onDelete={deleteItem}
-            onEdit={editItem}
-          />
+          <SwipeableItem {item} onDelete={deleteItem}>
+            {#snippet children()}
+              <TodoItemComponent
+                {item}
+                onToggle={toggleItem}
+                onDelete={deleteItem}
+                onEdit={editItem}
+              />
+            {/snippet}
+          </SwipeableItem>
         {/each}
-      {/if}
-    </div>
+      </div>
+    {/if}
   </main>
 
   <!-- Floating Reset Button -->

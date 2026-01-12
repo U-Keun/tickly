@@ -85,17 +85,4 @@
       </svg>
     </button>
   {/if}
-
-  <!-- Delete Button -->
-  {#if !isEditing}
-    <button
-      onclick={() => onDelete(item.id)}
-      class="flex-shrink-0 w-8 h-8 text-red-500 hover:bg-red-50 rounded flex items-center justify-center"
-      aria-label="Delete item"
-    >
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-  {/if}
 </div>

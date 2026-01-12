@@ -1,3 +1,43 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Global styles for touch interactions */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection in specific elements */
+input,
+textarea,
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Override svelte-dnd-action default styles */
+[aria-grabbed="true"] {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+[aria-dropeffect="move"] {
+  background-color: transparent !important;
+}
+
+.drop-zone-indicator,
+.dnd-drop-indicator {
+  display: none !important;
+}
+
+/* Remove all pseudo-elements from dnd */
+[aria-grabbed="true"]::before,
+[aria-grabbed="true"]::after,
+[aria-dropeffect="move"]::before,
+[aria-dropeffect="move"]::after {
+  display: none !important;
+}
