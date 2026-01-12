@@ -17,6 +17,8 @@
   let isAddingCategory = $state(false);
   let newCategoryName = $state('');
   let showResetConfirm = $state(false);
+  let showIntro = $state(false);
+  let introText = $state('');
 
   async function loadCategories() {
     try {
@@ -223,7 +225,25 @@
     }
   }
 
+  async function playIntroAnimation() {
+    const fullText = 'Tickly';
+    for (let i = 0; i <= fullText.length; i++) {
+      introText = fullText.slice(0, i);
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+    await new Promise(resolve => setTimeout(resolve, 500));
+    showIntro = false;
+    localStorage.setItem('tickly_intro_seen', 'true');
+  }
+
   onMount(async () => {
+    // Check if first time user
+    const hasSeenIntro = localStorage.getItem('tickly_intro_seen');
+    if (!hasSeenIntro) {
+      showIntro = true;
+      playIntroAnimation();
+    }
+
     // Check and auto-reset if new day
     try {
       const wasReset = await invoke<boolean>('check_and_auto_reset');
@@ -241,13 +261,6 @@
 </script>
 
 <div class="min-h-screen bg-gray-100 flex flex-col">
-  <!-- Header -->
-  <header class="bg-white shadow-sm">
-    <div class="max-w-2xl mx-auto px-4 py-6">
-      <h1 class="text-2xl font-bold text-gray-900">Tickly</h1>
-    </div>
-  </header>
-
   <!-- Category Tabs -->
   <div class="bg-white border-b border-gray-200">
     <div class="max-w-2xl mx-auto px-4">
@@ -393,6 +406,13 @@
           </button>
         </div>
       </div>
+    </div>
+  {/if}
+
+  <!-- Intro Typing Animation -->
+  {#if showIntro}
+    <div class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+      <h1 class="text-5xl font-bold text-gray-900">{introText}<span class="animate-pulse">|</span></h1>
     </div>
   {/if}
 </div>
