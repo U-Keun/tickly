@@ -88,8 +88,11 @@
     onDelete(item.id);
   }
 
-  function closeSwipe() {
+  function closeSwipe(e?: Event) {
     if (swipeState === 'revealed') {
+      // Prevent event propagation to avoid interfering with button clicks
+      e?.stopPropagation();
+      e?.preventDefault();
       translateX = 0;
       swipeState = 'idle';
     }

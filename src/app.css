@@ -41,3 +41,14 @@ textarea,
 [aria-dropeffect="move"]::after {
   display: none !important;
 }
+
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-hide {
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}

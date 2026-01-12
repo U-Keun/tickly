@@ -260,11 +260,11 @@
   });
 </script>
 
-<div class="min-h-screen bg-gray-100 flex flex-col">
+<div class="h-screen bg-gray-100 flex flex-col overflow-hidden">
   <!-- Category Tabs -->
-  <div class="bg-white border-b border-gray-200">
+  <div class="bg-white border-b border-gray-200 flex-shrink-0">
     <div class="max-w-2xl mx-auto px-4">
-      <div class="flex overflow-x-auto gap-2 py-3">
+      <div class="flex overflow-x-auto gap-2 py-3 flex-nowrap scrollbar-hide">
         {#each categories as category (category.id)}
           {#if editingCategoryId === category.id}
             <!-- Editing Mode -->
@@ -337,41 +337,46 @@
   </div>
 
   <!-- Main Content -->
-  <main class="flex-1 max-w-2xl w-full mx-auto bg-white shadow-lg">
-    <AddItemInput onAdd={addItem} />
+  <main class="flex-1 max-w-2xl w-full mx-auto bg-white shadow-lg flex flex-col overflow-hidden">
+    <!-- Fixed Header Section -->
+    <div class="flex-shrink-0">
+      <AddItemInput onAdd={addItem} />
 
-    <TemplateSection
-      {templates}
-      onAddTemplate={addTemplate}
-      onEditTemplate={editTemplate}
-      onDeleteTemplate={deleteTemplate}
-      onUseTemplate={useTemplate}
-    />
+      <TemplateSection
+        {templates}
+        onAddTemplate={addTemplate}
+        onEditTemplate={editTemplate}
+        onDeleteTemplate={deleteTemplate}
+        onUseTemplate={useTemplate}
+      />
+    </div>
 
-    <!-- Todo List -->
-    {#if items.length === 0}
-      <div class="p-8 text-center text-gray-400">
-        <p>아직 항목이 없습니다.</p>
-        <p class="text-sm mt-1">챙겨야 할 물건을 추가해보세요!</p>
-      </div>
-    {:else}
-      <div class="divide-y divide-gray-200">
-        {#each items as item (item.id)}
-          <div animate:flip={{ duration: 300 }}>
-            <SwipeableItem {item} onDelete={deleteItem}>
-              {#snippet children()}
-                <TodoItemComponent
-                  {item}
-                  onToggle={toggleItem}
-                  onDelete={deleteItem}
-                  onEdit={editItem}
-                />
-              {/snippet}
-            </SwipeableItem>
-          </div>
-        {/each}
-      </div>
-    {/if}
+    <!-- Scrollable Todo List -->
+    <div class="flex-1 overflow-y-auto">
+      {#if items.length === 0}
+        <div class="p-8 text-center text-gray-400">
+          <p>아직 항목이 없습니다.</p>
+          <p class="text-sm mt-1">챙겨야 할 물건을 추가해보세요!</p>
+        </div>
+      {:else}
+        <div class="divide-y divide-gray-200">
+          {#each items as item (item.id)}
+            <div animate:flip={{ duration: 300 }}>
+              <SwipeableItem {item} onDelete={deleteItem}>
+                {#snippet children()}
+                  <TodoItemComponent
+                    {item}
+                    onToggle={toggleItem}
+                    onDelete={deleteItem}
+                    onEdit={editItem}
+                  />
+                {/snippet}
+              </SwipeableItem>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
   </main>
 
   <!-- Floating Reset Button -->
