@@ -23,6 +23,7 @@
   let selectedCategoryForMenu = $state<Category | null>(null);
   let longPressTimer: number | null = null;
   let showDeleteCategoryConfirm = $state(false);
+  let isSubmittingCategory = $state(false);
 
   async function loadCategories() {
     try {
@@ -100,10 +101,12 @@
   function startAddCategory() {
     isAddingCategory = true;
     newCategoryName = '';
+    isSubmittingCategory = false;
   }
 
   async function saveNewCategory() {
     if (newCategoryName.trim()) {
+      isSubmittingCategory = true;
       try {
         const newCategory = await invoke<Category>('add_category', { name: newCategoryName.trim() });
         categories = [...categories, newCategory];
@@ -113,13 +116,28 @@
         await loadItems();
       } catch (error) {
         console.error('Failed to add category:', error);
+        isSubmittingCategory = false;
       }
     }
   }
 
   function cancelAddCategory() {
-    isAddingCategory = false;
-    newCategoryName = '';
+    if (!isSubmittingCategory) {
+      isAddingCategory = false;
+      newCategoryName = '';
+    }
+  }
+
+  function handleAddCategoryBlur() {
+    if (isSubmittingCategory) return;
+
+    // If there's a value, save it (for iOS Done button)
+    // If empty, cancel
+    if (newCategoryName.trim()) {
+      saveNewCategory();
+    } else {
+      cancelAddCategory();
+    }
   }
 
   function startEditCategory(category: Category) {
@@ -374,7 +392,7 @@
                 if (e.key === 'Enter') saveNewCategory();
                 if (e.key === 'Escape') cancelAddCategory();
               }}
-              onblur={saveNewCategory}
+              onblur={handleAddCategoryBlur}
               class="w-24 px-2 py-1 text-sm border border-green-500 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
               type="text"
               placeholder="카테고리명"
