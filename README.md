@@ -8,9 +8,21 @@
 
 ### 주요 기능
 
-- ✅ 항목 추가/삭제/완료 표시
+#### 기본 기능
+- ✅ 항목 추가/수정/삭제/완료 표시
 - 💾 SQLite 영구 저장 (앱 재시작 후에도 데이터 유지)
+- 🔄 자동 일일 초기화 (매일 체크가 자동으로 리셋)
+
+#### 고급 기능
+- 📁 **카테고리 관리** - 상황별 리스트 분리 (집, 여행, 운동 등)
+- ⭐ **템플릿** - 자주 사용하는 항목을 빠르게 추가
+- 👆 **스와이프 삭제** - iOS 네이티브 스타일 제스처
+- 🔀 **드래그 정렬** - 항목 순서를 자유롭게 변경
+- 📊 **자동 정렬** - 완료된 항목이 자동으로 아래로 이동
+
+#### 플랫폼
 - 📱 iOS 네이티브 앱 지원
+- 🖥️ macOS, Windows, Linux 데스크톱 지원
 - 🎨 심플하고 깔끔한 UI
 - 🚀 빠른 성능
 
@@ -89,7 +101,10 @@ Tickly/
 │   │   └── +page.svelte          # 메인 페이지
 │   ├── components/
 │   │   ├── TodoItem.svelte       # Todo 항목 컴포넌트
-│   │   └── AddItemInput.svelte   # 입력 컴포넌트
+│   │   ├── AddItemInput.svelte   # 입력 컴포넌트
+│   │   ├── TemplateSection.svelte # 템플릿 관리 컴포넌트
+│   │   ├── SwipeableItem.svelte  # 스와이프 삭제 래퍼
+│   │   └── DragDropList.svelte   # 드래그 앤 드롭 컴포넌트
 │   ├── types.ts                  # TypeScript 타입 정의
 │   └── app.css                   # TailwindCSS 스타일
 ├── src-tauri/                    # Rust 백엔드
@@ -99,7 +114,8 @@ Tickly/
 │   ├── Cargo.toml                # Rust 의존성
 │   └── gen/apple/                # iOS 프로젝트 파일
 ├── CLAUDE.md                     # 프로젝트 가이드
-└── README.md                     # 이 파일
+├── README.md                     # 이 파일
+└── TODO.md                       # 개발 계획 및 진행 상황
 ```
 
 ## 데이터 저장
