@@ -265,6 +265,7 @@
 					"\".\"",
 				);
 				INFOPLIST_FILE = tickly_iOS/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -363,6 +364,7 @@
 					"\".\"",
 				);
 				INFOPLIST_FILE = tickly_iOS/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -462,7 +464,7 @@
 				29F12A6907390CF549D28504 /* release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = debug;
+			defaultConfigurationName = release;
 		};
 		BA43B5E6241D7CEB5A262123 /* Build configuration list for PBXProject "tickly" */ = {
 			isa = XCConfigurationList;
@@ -471,7 +473,7 @@
 				A67121236F8FD24FC498E7FD /* release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = debug;
+			defaultConfigurationName = release;
 		};
 /* End XCConfigurationList section */
 	};

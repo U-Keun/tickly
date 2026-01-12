@@ -15,6 +15,7 @@ struct TodoItem {
     text: String,
     done: bool,
     category_id: Option<i64>,
+    display_order: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -92,6 +93,23 @@ fn init_database(app: &AppHandle) -> Result<Connection, rusqlite::Error> {
         conn.execute("ALTER TABLE todos ADD COLUMN category_id INTEGER", [])?;
     }
 
+    // Migration: Add display_order column if it doesn't exist
+    let order_column_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='display_order'",
+        [],
+        |row| row.get(0),
+    );
+
+    if let Ok(0) = order_column_exists {
+        conn.execute(
+            "ALTER TABLE todos ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0",
+            [],
+        )?;
+
+        // Assign initial order based on id (preserves current chronological order)
+        conn.execute("UPDATE todos SET display_order = id * 1000", [])?;
+    }
+
     // Create default category if none exists
     let category_count: i64 = conn.query_row(
         "SELECT COUNT(*) FROM categories",
@@ -110,9 +128,28 @@ fn init_database(app: &AppHandle) -> Result<Connection, rusqlite::Error> {
 fn add_item(text: String, category_id: Option<i64>, state: State<AppState>) -> Result<TodoItem, String> {
     let db = state.db.lock().unwrap();
 
+    // Calculate next display_order (max + 1000)
+    let max_order: i64 = if let Some(cat_id) = category_id {
+        db.query_row(
+            "SELECT COALESCE(MAX(display_order), 0) FROM todos WHERE category_id = ?1",
+            params![cat_id],
+            |row| row.get(0),
+        )
+        .unwrap_or(0)
+    } else {
+        db.query_row(
+            "SELECT COALESCE(MAX(display_order), 0) FROM todos",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0)
+    };
+
+    let display_order = max_order + 1000;
+
     db.execute(
-        "INSERT INTO todos (text, done, category_id) VALUES (?1, 0, ?2)",
-        params![text, category_id],
+        "INSERT INTO todos (text, done, category_id, display_order) VALUES (?1, 0, ?2, ?3)",
+        params![text, category_id, display_order],
     )
     .map_err(|e| e.to_string())?;
 
@@ -123,6 +160,7 @@ fn add_item(text: String, category_id: Option<i64>, state: State<AppState>) -> R
         text,
         done: false,
         category_id,
+        display_order,
     })
 }
 
@@ -134,7 +172,7 @@ fn get_items(category_id: Option<i64>, state: State<AppState>) -> Result<Vec<Tod
 
     if let Some(id) = category_id {
         let mut stmt = db
-            .prepare("SELECT id, text, done, category_id FROM todos WHERE category_id = ?1 ORDER BY id")
+            .prepare("SELECT id, text, done, category_id, display_order FROM todos WHERE category_id = ?1 ORDER BY display_order")
             .map_err(|e| e.to_string())?;
 
         let rows = stmt
@@ -144,6 +182,7 @@ fn get_items(category_id: Option<i64>, state: State<AppState>) -> Result<Vec<Tod
                     text: row.get(1)?,
                     done: row.get(2)?,
                     category_id: row.get(3)?,
+                    display_order: row.get(4)?,
                 })
             })
             .map_err(|e| e.to_string())?;
@@ -153,7 +192,7 @@ fn get_items(category_id: Option<i64>, state: State<AppState>) -> Result<Vec<Tod
         }
     } else {
         let mut stmt = db
-            .prepare("SELECT id, text, done, category_id FROM todos ORDER BY id")
+            .prepare("SELECT id, text, done, category_id, display_order FROM todos ORDER BY display_order")
             .map_err(|e| e.to_string())?;
 
         let rows = stmt
@@ -163,6 +202,7 @@ fn get_items(category_id: Option<i64>, state: State<AppState>) -> Result<Vec<Tod
                     text: row.get(1)?,
                     done: row.get(2)?,
                     category_id: row.get(3)?,
+                    display_order: row.get(4)?,
                 })
             })
             .map_err(|e| e.to_string())?;
@@ -435,10 +475,21 @@ fn add_item_from_template(template_id: i64, category_id: i64, state: State<AppSt
         return Err("이 항목이 이미 존재합니다.".to_string());
     }
 
+    // Calculate next display_order
+    let max_order: i64 = db
+        .query_row(
+            "SELECT COALESCE(MAX(display_order), 0) FROM todos WHERE category_id = ?1",
+            params![category_id],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+
+    let display_order = max_order + 1000;
+
     // Add new todo item
     db.execute(
-        "INSERT INTO todos (text, done, category_id) VALUES (?1, 0, ?2)",
-        params![text, category_id],
+        "INSERT INTO todos (text, done, category_id, display_order) VALUES (?1, 0, ?2, ?3)",
+        params![text, category_id, display_order],
     )
     .map_err(|e| e.to_string())?;
 
@@ -449,7 +500,33 @@ fn add_item_from_template(template_id: i64, category_id: i64, state: State<AppSt
         text,
         done: false,
         category_id: Some(category_id),
+        display_order,
     })
+}
+
+#[tauri::command]
+fn reorder_items(item_ids: Vec<i64>, state: State<AppState>) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+
+    // Use transaction for atomic update
+    db.execute("BEGIN TRANSACTION", [])
+        .map_err(|e| e.to_string())?;
+
+    for (index, item_id) in item_ids.iter().enumerate() {
+        let new_order = (index as i64 + 1) * 1000;
+        db.execute(
+            "UPDATE todos SET display_order = ?1 WHERE id = ?2",
+            params![new_order, item_id],
+        )
+        .map_err(|e| {
+            let _ = db.execute("ROLLBACK", []);
+            e.to_string()
+        })?;
+    }
+
+    db.execute("COMMIT", []).map_err(|e| e.to_string())?;
+
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -479,7 +556,8 @@ pub fn run() {
             add_template,
             edit_template,
             delete_template,
-            add_item_from_template
+            add_item_from_template,
+            reorder_items
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
