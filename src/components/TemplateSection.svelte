@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Template } from '../types';
+  import { iosFocusFix } from '$lib/iosFocusFix';
 
   interface Props {
     templates: Template[];
@@ -102,6 +103,7 @@
             {#if editingTemplateId === template.id}
               <!-- Edit Mode -->
               <input
+                use:iosFocusFix
                 bind:value={editingTemplateText}
                 onkeydown={(e) => handleKeydown(e, 'edit')}
                 onblur={saveEditTemplate}
@@ -148,6 +150,7 @@
         {#if isAddingTemplate}
           <div class="flex gap-2 bg-white rounded px-3 py-2 border-2 border-blue-500">
             <input
+              use:iosFocusFix
               bind:value={newTemplateText}
               onkeydown={(e) => handleKeydown(e, 'add')}
               placeholder="템플릿 이름..."

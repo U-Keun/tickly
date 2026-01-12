@@ -7,6 +7,7 @@
   import AddItemInput from '../components/AddItemInput.svelte';
   import TemplateSection from '../components/TemplateSection.svelte';
   import SwipeableItem from '../components/SwipeableItem.svelte';
+  import { iosFocusFix } from '$lib/iosFocusFix';
 
   let items = $state<TodoItem[]>([]);
   let categories = $state<Category[]>([]);
@@ -346,7 +347,7 @@
 
 <div class="app-container bg-gray-100 flex flex-col">
   <!-- Category Tabs -->
-  <div class="bg-white border-b border-gray-200 flex-shrink-0">
+  <div class="category-tabs bg-white border-b border-gray-200 flex-shrink-0">
     <div class="max-w-2xl mx-auto px-4">
       <div class="flex overflow-x-auto gap-2 py-3 flex-nowrap scrollbar-hide">
         {#each categories as category (category.id)}
@@ -354,6 +355,7 @@
             <!-- Editing Mode -->
             <div class="flex items-center gap-1 px-3 py-2 bg-blue-100 rounded-full">
               <input
+                use:iosFocusFix
                 bind:value={editingCategoryName}
                 onkeydown={(e) => {
                   if (e.key === 'Enter') saveEditCategory();
@@ -387,6 +389,7 @@
         {#if isAddingCategory}
           <div class="flex items-center gap-1 px-3 py-2 bg-green-100 rounded-full">
             <input
+              use:iosFocusFix
               bind:value={newCategoryName}
               onkeydown={(e) => {
                 if (e.key === 'Enter') saveNewCategory();
@@ -415,7 +418,7 @@
   <!-- Main Content -->
   <main class="main-content max-w-2xl w-full mx-auto bg-white shadow-lg flex flex-col">
     <!-- Fixed Header Section -->
-    <div class="flex-shrink-0">
+    <div class="fixed-header flex-shrink-0">
       <AddItemInput onAdd={addItem} />
 
       <TemplateSection

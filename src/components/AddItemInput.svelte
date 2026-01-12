@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { iosFocusFix } from '$lib/iosFocusFix';
+
   interface Props {
     onAdd: (text: string) => void;
   }
@@ -19,6 +21,7 @@
 <form onsubmit={handleSubmit} class="p-4 bg-gray-50 border-b border-gray-200">
   <div class="flex gap-2">
     <input
+      use:iosFocusFix
       type="text"
       bind:value={inputText}
       placeholder="항목을 입력하세요..."

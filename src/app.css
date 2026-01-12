@@ -66,11 +66,43 @@ textarea,
 .main-content {
   height: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.category-tabs {
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.category-tabs .scrollbar-hide {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.fixed-header {
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .todo-list-scroll {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  min-height: 0;
+}
+
+@keyframes ios_focus_opacity_blink {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.ios-focus-fix {
+  animation: ios_focus_opacity_blink 0.01s;
+}
+
+input, textarea, select, [contenteditable] {
+  font-size: 16px;
 }
