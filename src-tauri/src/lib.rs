@@ -302,9 +302,9 @@ fn edit_category(id: i64, name: String, state: State<AppState>) -> Result<(), St
 fn delete_category(id: i64, state: State<AppState>) -> Result<(), String> {
     let db = state.db.lock().unwrap();
 
-    // Set category_id to NULL for all todos in this category
+    // Delete all todos in this category
     db.execute(
-        "UPDATE todos SET category_id = NULL WHERE category_id = ?1",
+        "DELETE FROM todos WHERE category_id = ?1",
         params![id],
     )
     .map_err(|e| e.to_string())?;

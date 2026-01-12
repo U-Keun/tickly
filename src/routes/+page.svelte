@@ -19,6 +19,10 @@
   let showResetConfirm = $state(false);
   let showIntro = $state(false);
   let introText = $state('');
+  let showCategoryMenu = $state(false);
+  let selectedCategoryForMenu = $state<Category | null>(null);
+  let longPressTimer: number | null = null;
+  let showDeleteCategoryConfirm = $state(false);
 
   async function loadCategories() {
     try {
@@ -29,6 +33,68 @@
     } catch (error) {
       console.error('Failed to load categories:', error);
     }
+  }
+
+  function handleCategoryTouchStart(category: Category) {
+    longPressTimer = window.setTimeout(() => {
+      selectedCategoryForMenu = category;
+      showCategoryMenu = true;
+    }, 500);
+  }
+
+  function handleCategoryTouchEnd() {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  }
+
+  function closeCategoryMenu() {
+    showCategoryMenu = false;
+    selectedCategoryForMenu = null;
+  }
+
+  function handleEditFromMenu() {
+    if (selectedCategoryForMenu) {
+      startEditCategory(selectedCategoryForMenu);
+      showCategoryMenu = false;
+      selectedCategoryForMenu = null;
+    }
+  }
+
+  function handleDeleteFromMenu() {
+    showCategoryMenu = false;
+    showDeleteCategoryConfirm = true;
+  }
+
+  async function confirmDeleteCategory() {
+    if (!selectedCategoryForMenu) return;
+
+    if (categories.length <= 1) {
+      alert('최소 1개의 카테고리는 유지해야 합니다.');
+      showDeleteCategoryConfirm = false;
+      selectedCategoryForMenu = null;
+      return;
+    }
+
+    try {
+      await invoke('delete_category', { id: selectedCategoryForMenu.id });
+      categories = categories.filter(cat => cat.id !== selectedCategoryForMenu.id);
+      if (selectedCategoryId === selectedCategoryForMenu.id) {
+        selectedCategoryId = categories[0].id;
+        await loadItems();
+      }
+      showDeleteCategoryConfirm = false;
+      selectedCategoryForMenu = null;
+    } catch (error) {
+      console.error('Failed to delete category:', error);
+      alert('카테고리 삭제 실패: ' + error);
+    }
+  }
+
+  function cancelDeleteCategory() {
+    showDeleteCategoryConfirm = false;
+    selectedCategoryForMenu = null;
   }
 
   function startAddCategory() {
@@ -260,7 +326,7 @@
   });
 </script>
 
-<div class="h-screen bg-gray-100 flex flex-col overflow-hidden">
+<div class="app-container bg-gray-100 flex flex-col">
   <!-- Category Tabs -->
   <div class="bg-white border-b border-gray-200 flex-shrink-0">
     <div class="max-w-2xl mx-auto px-4">
@@ -280,27 +346,19 @@
                 type="text"
                 autofocus
               />
-              <button
-                onclick={() => deleteCategory(category.id)}
-                class="text-red-500 hover:text-red-700"
-                title="삭제"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
             </div>
           {:else}
             <!-- Normal Mode -->
             <button
               onclick={() => selectCategory(category.id)}
-              ondblclick={() => startEditCategory(category)}
+              ontouchstart={() => handleCategoryTouchStart(category)}
+              ontouchend={handleCategoryTouchEnd}
+              ontouchcancel={handleCategoryTouchEnd}
               class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors {
                 selectedCategoryId === category.id
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }"
-              title="더블클릭하여 수정"
             >
               {category.name}
             </button>
@@ -337,7 +395,7 @@
   </div>
 
   <!-- Main Content -->
-  <main class="flex-1 max-w-2xl w-full mx-auto bg-white shadow-lg flex flex-col overflow-hidden">
+  <main class="main-content max-w-2xl w-full mx-auto bg-white shadow-lg flex flex-col">
     <!-- Fixed Header Section -->
     <div class="flex-shrink-0">
       <AddItemInput onAdd={addItem} />
@@ -352,7 +410,7 @@
     </div>
 
     <!-- Scrollable Todo List -->
-    <div class="flex-1 overflow-y-auto">
+    <div class="todo-list-scroll">
       {#if items.length === 0}
         <div class="p-8 text-center text-gray-400">
           <p>아직 항목이 없습니다.</p>
@@ -408,6 +466,62 @@
             class="px-4 py-2 text-white bg-orange-500 hover:bg-orange-600 rounded-lg"
           >
             초기화
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Category Menu Modal -->
+  {#if showCategoryMenu && selectedCategoryForMenu}
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick={closeCategoryMenu}>
+      <div class="bg-white rounded-lg p-6 max-w-sm mx-4 min-w-[280px]" onclick={(e) => e.stopPropagation()}>
+        <h3 class="text-lg font-semibold mb-4 text-center">{selectedCategoryForMenu.name}</h3>
+        <div class="flex flex-col gap-2">
+          <button
+            onclick={handleEditFromMenu}
+            class="px-4 py-3 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg text-left font-medium"
+          >
+            이름 수정
+          </button>
+          <button
+            onclick={handleDeleteFromMenu}
+            class="px-4 py-3 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg text-left font-medium"
+          >
+            카테고리 삭제
+          </button>
+          <button
+            onclick={closeCategoryMenu}
+            class="px-4 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg text-left font-medium"
+          >
+            취소
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Delete Category Confirmation Modal -->
+  {#if showDeleteCategoryConfirm && selectedCategoryForMenu}
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick={cancelDeleteCategory}>
+      <div class="bg-white rounded-lg p-6 max-w-sm mx-4" onclick={(e) => e.stopPropagation()}>
+        <h3 class="text-lg font-semibold mb-2">카테고리 삭제</h3>
+        <p class="text-gray-600 mb-6">
+          "{selectedCategoryForMenu.name}" 카테고리를 삭제하시겠습니까?<br/>
+          <span class="text-sm text-red-500">항목들도 함께 삭제됩니다.</span>
+        </p>
+        <div class="flex gap-3 justify-end">
+          <button
+            onclick={cancelDeleteCategory}
+            class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
+          >
+            취소
+          </button>
+          <button
+            onclick={confirmDeleteCategory}
+            class="px-4 py-2 text-white bg-red-500 hover:bg-red-600 rounded-lg"
+          >
+            삭제
           </button>
         </div>
       </div>
