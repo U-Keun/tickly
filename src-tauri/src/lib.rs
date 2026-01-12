@@ -3,6 +3,9 @@ use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 
+#[cfg(target_os = "ios")]
+mod ios_keyboard_scroll_lock;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Category {
     id: i64,
@@ -538,6 +541,12 @@ pub fn run() {
             app.manage(AppState {
                 db: Mutex::new(conn),
             });
+            #[cfg(target_os = "ios")]
+            {
+              if let Some(w) = app.get_webview_window("main") {
+                ios_keyboard_scroll_lock::lock_outer_scroll_while_keyboard(&w);
+              }
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
