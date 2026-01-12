@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { flip } from 'svelte/animate';
   import { invoke } from '@tauri-apps/api/core';
   import type { TodoItem, Category, Template } from '../types';
   import TodoItemComponent from '../components/TodoItem.svelte';
@@ -143,9 +144,7 @@
   async function toggleItem(id: number) {
     try {
       await invoke('toggle_item', { id });
-      items = items.map(item =>
-        item.id === id ? { ...item, done: !item.done } : item
-      );
+      await loadItems();
     } catch (error) {
       console.error('Failed to toggle item:', error);
     }
@@ -345,16 +344,18 @@
     {:else}
       <div class="divide-y divide-gray-200">
         {#each items as item (item.id)}
-          <SwipeableItem {item} onDelete={deleteItem}>
-            {#snippet children()}
-              <TodoItemComponent
-                {item}
-                onToggle={toggleItem}
-                onDelete={deleteItem}
-                onEdit={editItem}
-              />
-            {/snippet}
-          </SwipeableItem>
+          <div animate:flip={{ duration: 300 }}>
+            <SwipeableItem {item} onDelete={deleteItem}>
+              {#snippet children()}
+                <TodoItemComponent
+                  {item}
+                  onToggle={toggleItem}
+                  onDelete={deleteItem}
+                  onEdit={editItem}
+                />
+              {/snippet}
+            </SwipeableItem>
+          </div>
         {/each}
       </div>
     {/if}

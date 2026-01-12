@@ -172,7 +172,7 @@ fn get_items(category_id: Option<i64>, state: State<AppState>) -> Result<Vec<Tod
 
     if let Some(id) = category_id {
         let mut stmt = db
-            .prepare("SELECT id, text, done, category_id, display_order FROM todos WHERE category_id = ?1 ORDER BY display_order")
+            .prepare("SELECT id, text, done, category_id, display_order FROM todos WHERE category_id = ?1 ORDER BY done ASC, display_order ASC")
             .map_err(|e| e.to_string())?;
 
         let rows = stmt
@@ -192,7 +192,7 @@ fn get_items(category_id: Option<i64>, state: State<AppState>) -> Result<Vec<Tod
         }
     } else {
         let mut stmt = db
-            .prepare("SELECT id, text, done, category_id, display_order FROM todos ORDER BY display_order")
+            .prepare("SELECT id, text, done, category_id, display_order FROM todos ORDER BY done ASC, display_order ASC")
             .map_err(|e| e.to_string())?;
 
         let rows = stmt
