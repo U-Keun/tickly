@@ -1,11 +1,21 @@
-export function iosFocusFix(node: HTMLElement) {
+export function iosFocusFix(node: HTMLInputElement | HTMLTextAreaElement) {
+  // iOS auto-scroll prevention using readonly trick
+  node.setAttribute('readonly', 'readonly');
+
   const onFocus = () => {
-    node.classList.remove('ios-focus-fix'); // 재적용 보장
-    // 다음 tick에 붙여야 애니메이션이 다시 돈다
+    // Remove readonly on focus to allow typing
+    node.removeAttribute('readonly');
+
+    // Also add the animation class as backup
+    node.classList.remove('ios-focus-fix');
     requestAnimationFrame(() => node.classList.add('ios-focus-fix'));
   };
 
-  const onBlur = () => node.classList.remove('ios-focus-fix');
+  const onBlur = () => {
+    // Restore readonly when not focused
+    node.setAttribute('readonly', 'readonly');
+    node.classList.remove('ios-focus-fix');
+  };
 
   node.addEventListener('focus', onFocus);
   node.addEventListener('blur', onBlur);
@@ -14,6 +24,7 @@ export function iosFocusFix(node: HTMLElement) {
     destroy() {
       node.removeEventListener('focus', onFocus);
       node.removeEventListener('blur', onBlur);
+      node.removeAttribute('readonly');
     }
   };
 }

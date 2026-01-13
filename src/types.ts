@@ -10,10 +10,3 @@ export interface TodoItem {
   category_id: number | null;
   display_order: number;
 }
-
-export interface Template {
-  id: number;
-  text: string;
-  category_id: number | null;
-  display_order: number;
-}

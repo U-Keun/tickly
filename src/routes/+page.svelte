@@ -2,10 +2,9 @@
   import { onMount } from 'svelte';
   import { flip } from 'svelte/animate';
   import { invoke } from '@tauri-apps/api/core';
-  import type { TodoItem, Category, Template } from '../types';
+  import type { TodoItem, Category } from '../types';
   import TodoItemComponent from '../components/TodoItem.svelte';
   import AddItemInput from '../components/AddItemInput.svelte';
-  import TemplateSection from '../components/TemplateSection.svelte';
   import SwipeableItem from '../components/SwipeableItem.svelte';
   import CategoryTabs from '../components/CategoryTabs.svelte';
   import ConfirmModal from '../components/ConfirmModal.svelte';
@@ -16,7 +15,6 @@
   // Core app state
   let items = $state<TodoItem[]>([]);
   let categories = $state<Category[]>([]);
-  let templates = $state<Template[]>([]);
   let selectedCategoryId = $state<number | null>(null);
 
   // Modal control state
@@ -44,14 +42,6 @@
       items = await invoke<TodoItem[]>('get_items', { categoryId: selectedCategoryId });
     } catch (error) {
       console.error('Failed to load items:', error);
-    }
-  }
-
-  async function loadTemplates() {
-    try {
-      templates = await invoke<Template[]>('get_templates');
-    } catch (error) {
-      console.error('Failed to load templates:', error);
     }
   }
 
@@ -168,51 +158,6 @@
     }
   }
 
-  // Template handlers
-  async function addTemplate(text: string) {
-    try {
-      const newTemplate = await invoke<Template>('add_template', { text });
-      templates = [...templates, newTemplate];
-    } catch (error) {
-      console.error('Failed to add template:', error);
-    }
-  }
-
-  async function editTemplate(id: number, text: string) {
-    try {
-      await invoke('edit_template', { id, text });
-      templates = templates.map(t => (t.id === id ? { ...t, text } : t));
-    } catch (error) {
-      console.error('Failed to edit template:', error);
-    }
-  }
-
-  async function deleteTemplate(id: number) {
-    try {
-      await invoke('delete_template', { id });
-      templates = templates.filter(t => t.id !== id);
-    } catch (error) {
-      console.error('Failed to delete template:', error);
-    }
-  }
-
-  async function useTemplate(templateId: number) {
-    if (selectedCategoryId === null) return;
-    try {
-      const newItem = await invoke<TodoItem>('add_item_from_template', {
-        templateId,
-        categoryId: selectedCategoryId
-      });
-      items = [...items, newItem];
-    } catch (error) {
-      if (typeof error === 'string' && error.includes('이미 존재')) {
-        console.log('Item already exists in the list');
-      } else {
-        console.error('Failed to add item from template:', error);
-      }
-    }
-  }
-
   onMount(async () => {
     // Check and auto-reset if new day
     try {
@@ -226,7 +171,6 @@
 
     await loadCategories();
     await loadItems();
-    await loadTemplates();
   });
 </script>
 
@@ -247,14 +191,6 @@
     <!-- Fixed Header Section -->
     <div class="fixed-header flex-shrink-0">
       <AddItemInput onAdd={addItem} />
-
-      <TemplateSection
-        {templates}
-        onAddTemplate={addTemplate}
-        onEditTemplate={editTemplate}
-        onDeleteTemplate={deleteTemplate}
-        onUseTemplate={useTemplate}
-      />
     </div>
 
     <!-- Scrollable Todo List -->
