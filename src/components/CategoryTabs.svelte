@@ -103,13 +103,13 @@
 </script>
 
 <!-- Category Tabs -->
-<div class="category-tabs bg-white border-b border-gray-200 flex-shrink-0">
+<div class="category-tabs bg-canvas border-b border-stroke flex-shrink-0">
   <div class="max-w-2xl mx-auto px-4">
     <div class="flex overflow-x-auto gap-2 py-3 flex-nowrap scrollbar-hide">
       {#each categories as category (category.id)}
         {#if editingCategoryId === category.id}
           <!-- Editing Mode -->
-          <div class="flex items-center gap-1 px-3 py-2 bg-blue-100 rounded-full">
+          <div class="flex items-center gap-1 px-3 py-2 bg-accent-sky rounded-full">
             <input
               use:iosFocusFix
               bind:value={editingCategoryName}
@@ -118,7 +118,7 @@
                 if (e.key === 'Escape') cancelEditCategory();
               }}
               onblur={saveEditCategory}
-              class="w-24 px-2 py-1 text-sm border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              class="w-24 px-2 py-1 text-sm border border-accent-sky-strong rounded text-ink focus:outline-none focus:ring-1 focus:ring-accent-sky-strong"
               type="text"
               autofocus
             />
@@ -132,8 +132,8 @@
             ontouchcancel={handleCategoryTouchEnd}
             class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors {
               selectedCategoryId === category.id
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-accent-sky-strong text-ink'
+                : 'bg-paper text-ink-muted hover:bg-mist'
             }"
           >
             {category.name}
@@ -143,7 +143,7 @@
 
       <!-- Add Category Button or Input -->
       {#if isAddingCategory}
-        <div class="flex items-center gap-1 px-3 py-2 bg-green-100 rounded-full">
+        <div class="flex items-center gap-1 px-3 py-2 bg-accent-mint rounded-full">
           <input
             use:iosFocusFix
             bind:value={newCategoryName}
@@ -152,7 +152,7 @@
               if (e.key === 'Escape') cancelAddCategory();
             }}
             onblur={handleAddCategoryBlur}
-            class="w-24 px-2 py-1 text-sm border border-green-500 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
+            class="w-24 px-2 py-1 text-sm border border-accent-mint-strong rounded text-ink focus:outline-none focus:ring-1 focus:ring-accent-mint-strong"
             type="text"
             placeholder="카테고리명"
             autofocus
@@ -161,7 +161,7 @@
       {:else}
         <button
           onclick={startAddCategory}
-          class="px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 whitespace-nowrap"
+          class="px-4 py-2 rounded-full text-sm font-medium bg-accent-mint text-ink hover:bg-accent-mint-strong whitespace-nowrap"
           title="카테고리 추가"
         >
           + 추가

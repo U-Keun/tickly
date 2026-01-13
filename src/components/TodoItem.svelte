@@ -43,15 +43,15 @@
   }
 </script>
 
-<div class="flex items-center gap-3 p-4 bg-white border-b border-gray-200">
+<div class="flex items-center gap-3 p-4 bg-paper border-b border-stroke">
   <!-- Checkbox -->
   <button
     onclick={() => onToggle(item.id)}
-    class="flex-shrink-0 w-6 h-6 rounded border-2 border-gray-300 flex items-center justify-center {item.done ? 'bg-blue-500 border-blue-500' : 'bg-white'}"
+    class="flex-shrink-0 w-6 h-6 rounded border-2 border-stroke flex items-center justify-center {item.done ? 'bg-accent-sky-strong border-accent-sky-strong' : 'bg-paper'}"
     aria-label={item.done ? 'Mark as incomplete' : 'Mark as complete'}
   >
     {#if item.done}
-      <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-4 h-4 text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
       </svg>
     {/if}
@@ -64,11 +64,11 @@
       bind:value={editText}
       onkeydown={handleKeydown}
       onblur={saveEdit}
-      class="flex-1 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="flex-1 px-2 py-1 border border-accent-sky-strong rounded text-ink focus:outline-none focus:ring-2 focus:ring-accent-sky"
       type="text"
     />
   {:else}
-    <div class="flex-1 {item.done ? 'line-through text-gray-400' : 'text-gray-800'}">
+    <div class="flex-1 {item.done ? 'line-through text-ink-muted' : 'text-ink'}">
       {item.text}
     </div>
   {/if}
@@ -77,7 +77,7 @@
   {#if !isEditing}
     <button
       onclick={startEdit}
-      class="flex-shrink-0 w-8 h-8 text-blue-500 hover:bg-blue-50 rounded flex items-center justify-center"
+      class="flex-shrink-0 w-8 h-8 text-accent-sky-strong hover:bg-accent-sky rounded flex items-center justify-center"
       aria-label="Edit item"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

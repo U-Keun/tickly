@@ -9,7 +9,7 @@
 <!-- Floating Reset Button -->
 <button
   onclick={onReset}
-  class="fixed bottom-6 right-6 w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+  class="fixed bottom-6 right-6 w-14 h-14 bg-accent-peach-strong hover:bg-accent-peach text-ink rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
   title="체크 초기화"
 >
   <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
