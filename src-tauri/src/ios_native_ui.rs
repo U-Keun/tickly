@@ -46,7 +46,7 @@ pub fn setup_native_ui(webview_window: &WebviewWindow, app_handle: AppHandle) {
             // Create native UI container (only for AddItemInput)
             let native_container = UIView::new(mtm);
             native_container.setTranslatesAutoresizingMaskIntoConstraints(false);
-            native_container.setBackgroundColor(Some(&UIColor::whiteColor()));
+            native_container.setBackgroundColor(Some(&UIColor::colorWithRed_green_blue_alpha(0.9725, 0.9647, 0.9412, 1.0)));
 
             // Add container to window (above webview)
             window.addSubview(&native_container);
@@ -90,18 +90,19 @@ fn create_add_item_input_view(mtm: MainThreadMarker, shared_state: Arc<SharedSta
     unsafe {
         let container = UIView::new(mtm);
         container.setTranslatesAutoresizingMaskIntoConstraints(false);
-        container.setBackgroundColor(Some(&UIColor::colorWithWhite_alpha(0.95, 1.0)));
+        container.setBackgroundColor(Some(&UIColor::colorWithRed_green_blue_alpha(0.9725, 0.9647, 0.9412, 1.0)));
 
         let text_field = UITextField::new(mtm);
         text_field.setTranslatesAutoresizingMaskIntoConstraints(false);
         text_field.setPlaceholder(Some(&NSString::from_str("항목을 입력하세요...")));
         text_field.setBorderStyle(UITextBorderStyle::RoundedRect);
+        text_field.setBackgroundColor(Some(&UIColor::whiteColor()));
 
         let add_button = UIButton::buttonWithType(UIButtonType::System, mtm);
         add_button.setTranslatesAutoresizingMaskIntoConstraints(false);
         add_button.setTitle_forState(Some(&NSString::from_str("추가")), UIControlState::Normal);
-        add_button.setTitleColor_forState(Some(&UIColor::whiteColor()), UIControlState::Normal);
-        add_button.setBackgroundColor(Some(&UIColor::systemBlueColor()));
+        add_button.setTitleColor_forState(Some(&UIColor::colorWithRed_green_blue_alpha(0.1686, 0.1686, 0.1686, 1.0)), UIControlState::Normal);
+        add_button.setBackgroundColor(Some(&UIColor::colorWithRed_green_blue_alpha(0.6549, 0.7804, 0.9059, 1.0)));
         add_button.layer().setCornerRadius(8.0);
 
         container.addSubview(&text_field);
