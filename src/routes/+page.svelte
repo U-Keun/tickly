@@ -227,7 +227,7 @@
   </div>
 
   <!-- Main Content -->
-  <main class="main-content max-w-2xl w-full mx-auto bg-white shadow-lg flex flex-col sketch-border {isIOS ? 'fixed top-[104px] left-0 right-0 bottom-0' : ''}">
+  <main class="main-content max-w-2xl w-full mx-auto bg-white shadow-lg flex flex-col {isIOS ? 'fixed top-[104px] left-0 right-0 bottom-0' : ''}">
     <!-- Fixed Header Section (hidden on iOS - using native UI) -->
     {#if !isIOS}
       <div class="fixed-header flex-shrink-0">
@@ -243,7 +243,7 @@
           <p class="text-sm mt-1">챙겨야 할 물건을 추가해보세요!</p>
         </div>
       {:else}
-        <div class="space-y-3 px-2 py-3">
+        <div class="divide-y divide-stroke">
           {#each items as item (item.id)}
             <div animate:flip={{ duration: 300 }}>
               <SwipeableItem {item} onDelete={deleteItem}>

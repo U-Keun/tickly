@@ -74,7 +74,7 @@
   }
 </script>
 
-<div class="sketch-border bg-white mx-4 my-3">
+<div class="border-b border-stroke bg-canvas">
   <!-- Expand/Collapse Header -->
   <button
     onclick={() => (isExpanded = !isExpanded)}
@@ -128,14 +128,8 @@
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                    stroke-width="1.7"
-                    d="M5 18.5l4.1-.8 7.8-8.1-3.6-3.5-7.9 8.2-.4 4.2z"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.2"
-                    d="M11.8 6.4l3.6 3.5"
+                    stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                   />
                 </svg>
               </button>
@@ -145,18 +139,7 @@
                 title="삭제"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.7"
-                    d="M5.5 18.2l13.2-12.4"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.4"
-                    d="M6.2 6.3l11.5 11.6"
-                  />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             {/if}

@@ -43,29 +43,18 @@
   }
 </script>
 
-<div class="flex items-center gap-3 p-4 bg-paper sketch-border">
+<div class="flex items-center gap-3 p-4 bg-paper border-b border-stroke">
   <!-- Checkbox -->
   <button
     onclick={() => onToggle(item.id)}
-    class="flex-shrink-0 w-7 h-7 rounded-full text-ink flex items-center justify-center"
+    class="flex-shrink-0 w-6 h-6 rounded border-2 border-stroke flex items-center justify-center {item.done ? 'bg-accent-sky-strong border-accent-sky-strong' : 'bg-paper'}"
     aria-label={item.done ? 'Mark as incomplete' : 'Mark as complete'}
   >
-    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="1.8"
-        d="M12 3.6c4.5-.3 8.4 3.1 8.2 7.8-.2 4.4-3.7 8.2-8.3 8.1-4.6-.1-8.2-3.8-8-8.5.2-4.2 3.5-7.7 8.1-7.4"
-      />
-      {#if item.done}
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2.2"
-          d="M7.2 12.6l3.1 3 6.7-7.1"
-        />
-      {/if}
-    </svg>
+    {#if item.done}
+      <svg class="w-4 h-4 text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+      </svg>
+    {/if}
   </button>
 
   <!-- Text or Input -->
@@ -92,18 +81,7 @@
       aria-label="Edit item"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="1.8"
-          d="M4.5 18.8l4.6-.9 8.3-8.6-3.8-3.7-8.5 8.7-.6 4.5z"
-        />
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="1.3"
-          d="M12.1 6.1l3.8 3.7"
-        />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
       </svg>
     </button>
   {/if}

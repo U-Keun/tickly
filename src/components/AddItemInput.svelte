@@ -18,7 +18,7 @@
   }
 </script>
 
-<form onsubmit={handleSubmit} class="p-4 bg-white sketch-border">
+<form onsubmit={handleSubmit} class="p-4 bg-canvas border-b border-stroke">
   <div class="flex gap-2">
     <input
       use:iosFocusFix
