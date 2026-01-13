@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { flip } from 'svelte/animate';
   import { invoke } from '@tauri-apps/api/core';
+  import { listen } from '@tauri-apps/api/event';
   import type { TodoItem, Category } from '../types';
   import TodoItemComponent from '../components/TodoItem.svelte';
   import AddItemInput from '../components/AddItemInput.svelte';
@@ -16,6 +17,9 @@
   let items = $state<TodoItem[]>([]);
   let categories = $state<Category[]>([]);
   let selectedCategoryId = $state<number | null>(null);
+
+  // Platform detection
+  let isIOS = $state(false);
 
   // Modal control state
   let showResetConfirm = $state(false);
@@ -46,9 +50,18 @@
   }
 
   // Category handlers
-  function selectCategory(categoryId: number) {
+  async function selectCategory(categoryId: number) {
     selectedCategoryId = categoryId;
-    loadItems();
+    await loadItems();
+
+    // Update native input category on iOS
+    if (isIOS) {
+      try {
+        await invoke('set_native_selected_category', { categoryId });
+      } catch (error) {
+        console.error('Failed to set native selected category:', error);
+      }
+    }
   }
 
   async function handleAddCategory(name: string) {
@@ -159,6 +172,22 @@
   }
 
   onMount(async () => {
+    // Detect platform
+    try {
+      const platform = await invoke<string>('get_platform');
+      isIOS = platform === 'ios';
+    } catch (error) {
+      console.error('Failed to detect platform:', error);
+    }
+
+    // Setup event listeners for native UI (iOS only)
+    if (isIOS) {
+      // Listen for items added from native input
+      const unlistenItemAdded = await listen('native-item-added', async () => {
+        await loadItems();
+      });
+    }
+
     // Check and auto-reset if new day
     try {
       const wasReset = await invoke<boolean>('check_and_auto_reset');
@@ -171,30 +200,43 @@
 
     await loadCategories();
     await loadItems();
+
+    // Set initial category for native input on iOS
+    if (isIOS && selectedCategoryId) {
+      try {
+        await invoke('set_native_selected_category', { categoryId: selectedCategoryId });
+      } catch (error) {
+        console.error('Failed to set initial native selected category:', error);
+      }
+    }
   });
 </script>
 
 <div class="app-container bg-gray-100 flex flex-col">
   <!-- Category Tabs Component -->
-  <CategoryTabs
-    bind:this={categoryTabsComponent}
-    {categories}
-    {selectedCategoryId}
-    onSelectCategory={selectCategory}
-    onAddCategory={handleAddCategory}
-    onEditCategory={handleEditCategory}
-    onCategoryLongPress={handleCategoryLongPress}
-  />
+  <div class="{isIOS ? 'fixed top-[60px] left-0 right-0 z-10 bg-white' : ''}">
+    <CategoryTabs
+      bind:this={categoryTabsComponent}
+      {categories}
+      {selectedCategoryId}
+      onSelectCategory={selectCategory}
+      onAddCategory={handleAddCategory}
+      onEditCategory={handleEditCategory}
+      onCategoryLongPress={handleCategoryLongPress}
+    />
+  </div>
 
   <!-- Main Content -->
-  <main class="main-content max-w-2xl w-full mx-auto bg-white shadow-lg flex flex-col">
-    <!-- Fixed Header Section -->
-    <div class="fixed-header flex-shrink-0">
-      <AddItemInput onAdd={addItem} />
-    </div>
+  <main class="main-content max-w-2xl w-full mx-auto bg-white shadow-lg flex flex-col {isIOS ? 'fixed top-[104px] left-0 right-0 bottom-0' : ''}">
+    <!-- Fixed Header Section (hidden on iOS - using native UI) -->
+    {#if !isIOS}
+      <div class="fixed-header flex-shrink-0">
+        <AddItemInput onAdd={addItem} />
+      </div>
+    {/if}
 
     <!-- Scrollable Todo List -->
-    <div class="todo-list-scroll">
+    <div class="todo-list-scroll {isIOS ? 'py-4' : ''}">
       {#if items.length === 0}
         <div class="p-8 text-center text-gray-400">
           <p>아직 항목이 없습니다.</p>
