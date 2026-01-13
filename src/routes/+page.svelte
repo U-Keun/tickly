@@ -230,7 +230,7 @@
   });
 </script>
 
-<div class="app-container bg-gray-100 flex flex-col">
+<div class="app-container bg-paper flex flex-col">
   <!-- Category Tabs Component -->
   <CategoryTabs
     bind:this={categoryTabsComponent}
@@ -243,7 +243,7 @@
   />
 
   <!-- Main Content -->
-  <main class="main-content max-w-2xl w-full mx-auto bg-white shadow-lg flex flex-col">
+  <main class="main-content max-w-2xl w-full mx-auto bg-canvas shadow-lg flex flex-col border border-stroke">
     <!-- Fixed Header Section -->
     <div class="fixed-header flex-shrink-0">
       <AddItemInput onAdd={addItem} />
@@ -258,14 +258,14 @@
     </div>
 
     <!-- Scrollable Todo List -->
-    <div class="todo-list-scroll">
+    <div class="todo-list-scroll border-t border-stroke">
       {#if items.length === 0}
-        <div class="p-8 text-center text-gray-400">
+        <div class="p-8 text-center text-ink-muted">
           <p>아직 항목이 없습니다.</p>
           <p class="text-sm mt-1">챙겨야 할 물건을 추가해보세요!</p>
         </div>
       {:else}
-        <div class="divide-y divide-gray-200">
+        <div class="divide-y divide-stroke">
           {#each items as item (item.id)}
             <div animate:flip={{ duration: 300 }}>
               <SwipeableItem {item} onDelete={deleteItem}>

@@ -18,18 +18,18 @@
   }
 </script>
 
-<form onsubmit={handleSubmit} class="p-4 bg-gray-50 border-b border-gray-200">
+<form onsubmit={handleSubmit} class="p-4 bg-canvas border-b border-stroke">
   <div class="flex gap-2">
     <input
       use:iosFocusFix
       type="text"
       bind:value={inputText}
       placeholder="항목을 입력하세요..."
-      class="flex-1 px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      class="flex-1 px-4 py-3 text-base border border-stroke rounded-lg text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-accent-sky focus:border-transparent"
     />
     <button
       type="submit"
-      class="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 active:bg-blue-700 transition-colors"
+      class="px-6 py-3 bg-accent-sky text-ink rounded-lg font-medium hover:bg-accent-sky-strong active:bg-accent-sky-strong transition-colors"
     >
       추가
     </button>

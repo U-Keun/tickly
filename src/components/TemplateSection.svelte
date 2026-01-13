@@ -74,24 +74,24 @@
   }
 </script>
 
-<div class="border-b border-gray-200 bg-gray-50">
+<div class="border-b border-stroke bg-canvas">
   <!-- Expand/Collapse Header -->
   <button
     onclick={() => (isExpanded = !isExpanded)}
-    class="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-100 transition-colors"
+    class="w-full px-4 py-3 flex items-center justify-between hover:bg-mist transition-colors"
   >
     <div class="flex items-center gap-2">
       <svg
-        class="w-5 h-5 text-gray-600 transition-transform {isExpanded ? 'rotate-90' : ''}"
+        class="w-5 h-5 text-ink-muted transition-transform {isExpanded ? 'rotate-90' : ''}"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
       >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
       </svg>
-      <span class="text-sm font-medium text-gray-700">템플릿 ({templates.length})</span>
+      <span class="text-sm font-medium text-ink">템플릿 ({templates.length})</span>
     </div>
-    <span class="text-xs text-gray-500">자주 사용하는 항목을 저장하세요</span>
+    <span class="text-xs text-ink-muted">자주 사용하는 항목을 저장하세요</span>
   </button>
 
   {#if isExpanded}
@@ -99,7 +99,7 @@
       <!-- Template List -->
       <div class="space-y-2">
         {#each templates as template (template.id)}
-          <div class="flex items-center gap-2 bg-white rounded px-3 py-2 border border-gray-200">
+          <div class="flex items-center gap-2 bg-paper rounded px-3 py-2 border border-stroke">
             {#if editingTemplateId === template.id}
               <!-- Edit Mode -->
               <input
@@ -107,7 +107,7 @@
                 bind:value={editingTemplateText}
                 onkeydown={(e) => handleKeydown(e, 'edit')}
                 onblur={saveEditTemplate}
-                class="flex-1 px-2 py-1 text-sm border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                class="flex-1 px-2 py-1 text-sm border border-accent-sky-strong rounded text-ink focus:outline-none focus:ring-1 focus:ring-accent-sky-strong"
                 type="text"
                 autofocus
               />
@@ -115,13 +115,13 @@
               <!-- Display Mode -->
               <button
                 onclick={() => onUseTemplate(template.id)}
-                class="flex-1 text-left text-sm text-gray-700 hover:text-blue-600 transition-colors"
+                class="flex-1 text-left text-sm text-ink hover:text-accent-sky-strong transition-colors"
               >
                 {template.text}
               </button>
               <button
                 onclick={() => startEditTemplate(template)}
-                class="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                class="p-1 text-ink-muted hover:text-accent-sky-strong transition-colors"
                 title="수정"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +135,7 @@
               </button>
               <button
                 onclick={() => onDeleteTemplate(template.id)}
-                class="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                class="p-1 text-ink-muted hover:text-accent-peach-strong transition-colors"
                 title="삭제"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,25 +148,25 @@
 
         <!-- Add Template Input -->
         {#if isAddingTemplate}
-          <div class="flex gap-2 bg-white rounded px-3 py-2 border-2 border-blue-500">
+          <div class="flex gap-2 bg-paper rounded px-3 py-2 border-2 border-accent-sky-strong">
             <input
               use:iosFocusFix
               bind:value={newTemplateText}
               onkeydown={(e) => handleKeydown(e, 'add')}
               placeholder="템플릿 이름..."
-              class="flex-1 px-2 py-1 text-sm focus:outline-none"
+              class="flex-1 px-2 py-1 text-sm text-ink placeholder:text-ink-muted focus:outline-none"
               type="text"
               autofocus
             />
             <button
               onclick={saveNewTemplate}
-              class="px-3 py-1 text-sm text-white bg-blue-500 hover:bg-blue-600 rounded"
+              class="px-3 py-1 text-sm text-ink bg-accent-sky-strong hover:bg-accent-sky rounded"
             >
               저장
             </button>
             <button
               onclick={cancelAddTemplate}
-              class="px-3 py-1 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded"
+              class="px-3 py-1 text-sm text-ink-muted bg-mist hover:bg-stroke rounded"
             >
               취소
             </button>
@@ -174,14 +174,14 @@
         {:else}
           <button
             onclick={startAddTemplate}
-            class="w-full px-3 py-2 text-sm text-blue-600 border-2 border-dashed border-blue-300 rounded hover:bg-blue-50 transition-colors"
+            class="w-full px-3 py-2 text-sm text-accent-sky-strong border-2 border-dashed border-accent-sky rounded hover:bg-accent-sky transition-colors"
           >
             + 템플릿 추가
           </button>
         {/if}
 
         {#if templates.length === 0 && !isAddingTemplate}
-          <p class="text-center text-sm text-gray-400 py-4">
+          <p class="text-center text-sm text-ink-muted py-4">
             템플릿이 없습니다.<br />
             자주 사용하는 항목을 템플릿으로 저장하세요.
           </p>
