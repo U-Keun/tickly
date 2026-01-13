@@ -13,6 +13,17 @@
   title="체크 초기화"
 >
   <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.7"
+      d="M4 4.5v4.6h.7m14.7 2a7.7 7.7 0 0 0-15-1.8m0 0h4.1m11.2 10.1v-4.4h-.7m.7 0a7.8 7.8 0 0 1-14.6-2.2m14.6 2.2h-4.2"
+    />
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.1"
+      d="M3.8 8.8l2.2-2.3"
+    />
   </svg>
 </button>
