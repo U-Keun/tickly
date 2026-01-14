@@ -118,7 +118,7 @@
                 if (e.key === 'Escape') cancelEditCategory();
               }}
               onblur={saveEditCategory}
-              class="w-24 px-2 py-1 text-sm border border-accent-sky-strong rounded text-ink focus:outline-none focus:ring-1 focus:ring-accent-sky-strong"
+              class="w-24 px-2 py-1 text-sm border border-accent-sky-strong rounded text-ink focus:outline-none focus:ring-0 focus:border-accent-sky-strong focus:bg-paper"
               type="text"
               autofocus
             />
@@ -152,7 +152,7 @@
               if (e.key === 'Escape') cancelAddCategory();
             }}
             onblur={handleAddCategoryBlur}
-            class="w-24 px-2 py-1 text-sm border border-accent-mint-strong rounded text-ink focus:outline-none focus:ring-1 focus:ring-accent-mint-strong"
+            class="w-24 px-2 py-1 text-sm border border-accent-mint-strong rounded text-ink focus:outline-none focus:ring-0 focus:border-accent-mint-strong focus:bg-paper"
             type="text"
             placeholder="카테고리명"
             autofocus
