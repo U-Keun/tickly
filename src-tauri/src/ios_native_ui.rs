@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use objc2::rc::Retained;
 use objc2::runtime::NSObject;
@@ -67,6 +67,24 @@ pub fn setup_native_ui(webview_window: &WebviewWindow, app_handle: AppHandle) {
             add_input_view.leadingAnchor().constraintEqualToAnchor(&native_container.leadingAnchor()).setActive(true);
             add_input_view.trailingAnchor().constraintEqualToAnchor(&native_container.trailingAnchor()).setActive(true);
             add_input_view.heightAnchor().constraintEqualToConstant(60.0).setActive(true);
+
+            // Adjust webview frame to render below native UI
+            let wk_webview_view: &UIView = &*webview.inner().cast();
+            let window_frame = window.frame();
+            let safe_area_top = window.safeAreaInsets().top;
+
+            // Webview should start at: safe_area_top + native_container_height
+            let webview_top = safe_area_top + total_height;
+            let webview_height = window_frame.size.height - webview_top;
+
+            let new_frame = objc2_core_foundation::CGRect {
+                origin: objc2_core_foundation::CGPoint { x: 0.0, y: webview_top },
+                size: objc2_core_foundation::CGSize {
+                    width: window_frame.size.width,
+                    height: webview_height
+                },
+            };
+            wk_webview_view.setFrame(new_frame);
 
             // Disable webview scroll
             let scroll_view: Retained<UIScrollView> = msg_send![wk_webview, scrollView];

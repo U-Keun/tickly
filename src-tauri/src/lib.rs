@@ -433,8 +433,10 @@ pub fn run() {
             #[cfg(target_os = "ios")]
             {
               if let Some(w) = app.get_webview_window("main") {
-                ios_keyboard_scroll_lock::lock_outer_scroll_while_keyboard(&w);
+                // Setup native UI first to adjust webview frame
                 ios_native_ui::setup_native_ui(&w, app.handle().clone());
+                // Then setup keyboard lock with adjusted frame
+                ios_keyboard_scroll_lock::lock_outer_scroll_while_keyboard(&w);
               }
             }
             Ok(())

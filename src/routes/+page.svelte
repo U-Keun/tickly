@@ -214,7 +214,7 @@
 
 <div class="app-container bg-paper flex flex-col">
   <!-- Category Tabs Component -->
-  <div class="{isIOS ? 'fixed top-[60px] left-0 right-0 z-10 bg-white' : ''}">
+  <div>
     <CategoryTabs
       bind:this={categoryTabsComponent}
       {categories}
@@ -227,7 +227,7 @@
   </div>
 
   <!-- Main Content -->
-  <main class="main-content max-w-2xl w-full mx-auto bg-white shadow-lg flex flex-col {isIOS ? 'fixed top-[104px] left-0 right-0 bottom-0' : ''}">
+  <main class="main-content max-w-2xl w-full mx-auto bg-white shadow-lg flex flex-col">
     <!-- Fixed Header Section (hidden on iOS - using native UI) -->
     {#if !isIOS}
       <div class="fixed-header flex-shrink-0">
@@ -236,7 +236,7 @@
     {/if}
 
     <!-- Scrollable Todo List -->
-    <div class="todo-list-scroll {isIOS ? 'py-4' : ''}">
+    <div class="todo-list-scroll">
       {#if items.length === 0}
         <div class="p-8 text-center text-ink-muted">
           <p>아직 항목이 없습니다.</p>
