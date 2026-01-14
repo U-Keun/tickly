@@ -118,7 +118,7 @@
                 if (e.key === 'Escape') cancelEditCategory();
               }}
               onblur={saveEditCategory}
-              class="w-24 px-2 py-1 text-sm border border-accent-sky-strong rounded text-ink focus:outline-none focus:ring-1 focus:ring-accent-sky-strong"
+              class="w-24 px-2 py-1 text-sm border border-accent-sky-strong rounded text-ink focus:outline-none focus:ring-0 focus:border-accent-sky-strong focus:bg-paper"
               type="text"
               autofocus
             />
@@ -143,7 +143,7 @@
 
       <!-- Add Category Button or Input -->
       {#if isAddingCategory}
-        <div class="flex items-center gap-1 px-3 py-2 bg-accent-mint rounded-full">
+        <div class="flex items-center gap-1 px-3 py-2 min-w-[96px] bg-accent-mint rounded-full">
           <input
             use:iosFocusFix
             bind:value={newCategoryName}
@@ -152,7 +152,7 @@
               if (e.key === 'Escape') cancelAddCategory();
             }}
             onblur={handleAddCategoryBlur}
-            class="w-24 px-2 py-1 text-sm border border-accent-mint-strong rounded text-ink focus:outline-none focus:ring-1 focus:ring-accent-mint-strong"
+            class="w-full px-2 py-1 text-sm border border-accent-mint-strong rounded text-ink focus:outline-none focus:ring-0 focus:border-accent-mint-strong focus:bg-paper"
             type="text"
             placeholder="카테고리명"
             autofocus
@@ -161,7 +161,7 @@
       {:else}
         <button
           onclick={startAddCategory}
-          class="px-4 py-2 rounded-full text-sm font-medium bg-accent-mint text-ink hover:bg-accent-mint-strong whitespace-nowrap"
+          class="min-w-[96px] px-4 py-2 rounded-full text-sm font-medium bg-accent-mint text-ink hover:bg-accent-mint-strong whitespace-nowrap flex items-center justify-center"
           title="카테고리 추가"
         >
           + 추가
