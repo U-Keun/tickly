@@ -152,7 +152,7 @@
               if (e.key === 'Escape') cancelAddCategory();
             }}
             onblur={handleAddCategoryBlur}
-            class="w-full px-2 py-1 text-sm border border-accent-mint-strong rounded text-ink focus:outline-none focus:ring-0 focus:border-accent-mint-strong focus:bg-paper"
+            class="w-24 px-2 py-1 text-sm border border-accent-mint-strong rounded text-ink focus:outline-none focus:ring-0 focus:border-accent-mint-strong focus:bg-paper"
             type="text"
             placeholder="카테고리명"
             autofocus
