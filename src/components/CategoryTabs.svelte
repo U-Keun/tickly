@@ -105,24 +105,22 @@
 <!-- Category Tabs -->
 <div class="category-tabs bg-canvas border-b border-stroke flex-shrink-0">
   <div class="max-w-2xl mx-auto px-4">
-    <div class="flex overflow-x-auto gap-2 py-3 flex-nowrap scrollbar-hide">
+    <div class="flex overflow-x-auto gap-2 h-14 items-center flex-nowrap scrollbar-hide">
       {#each categories as category (category.id)}
         {#if editingCategoryId === category.id}
           <!-- Editing Mode -->
-          <div class="flex items-center gap-1 px-3 py-2 bg-accent-sky rounded-full">
-            <input
-              use:iosFocusFix
-              bind:value={editingCategoryName}
-              onkeydown={(e) => {
-                if (e.key === 'Enter') saveEditCategory();
-                if (e.key === 'Escape') cancelEditCategory();
-              }}
-              onblur={saveEditCategory}
-              class="w-24 px-2 py-1 text-sm border border-accent-sky-strong rounded text-ink focus:outline-none focus:ring-0 focus:border-accent-sky-strong focus:bg-paper"
-              type="text"
-              autofocus
-            />
-          </div>
+          <input
+            use:iosFocusFix
+            bind:value={editingCategoryName}
+            onkeydown={(e) => {
+              if (e.key === 'Enter') saveEditCategory();
+              if (e.key === 'Escape') cancelEditCategory();
+            }}
+            onblur={saveEditCategory}
+            class="w-24 px-4 py-2 rounded-full text-sm font-medium bg-accent-sky-strong text-ink focus:outline-none focus:ring-0"
+            type="text"
+            autofocus
+          />
         {:else}
           <!-- Normal Mode -->
           <button
@@ -143,21 +141,19 @@
 
       <!-- Add Category Button or Input -->
       {#if isAddingCategory}
-        <div class="flex items-center gap-1 px-3 py-2 min-w-[96px] bg-accent-mint rounded-full">
-          <input
-            use:iosFocusFix
-            bind:value={newCategoryName}
-            onkeydown={(e) => {
-              if (e.key === 'Enter') saveNewCategory();
-              if (e.key === 'Escape') cancelAddCategory();
-            }}
-            onblur={handleAddCategoryBlur}
-            class="w-24 px-2 py-1 text-sm border border-accent-mint-strong rounded text-ink focus:outline-none focus:ring-0 focus:border-accent-mint-strong focus:bg-paper"
-            type="text"
-            placeholder="카테고리명"
-            autofocus
-          />
-        </div>
+        <input
+          use:iosFocusFix
+          bind:value={newCategoryName}
+          onkeydown={(e) => {
+            if (e.key === 'Enter') saveNewCategory();
+            if (e.key === 'Escape') cancelAddCategory();
+          }}
+          onblur={handleAddCategoryBlur}
+          class="w-24 px-4 py-2 rounded-full text-sm font-medium bg-accent-mint text-ink placeholder-ink-muted focus:outline-none focus:ring-0"
+          type="text"
+          placeholder="카테고리명"
+          autofocus
+        />
       {:else}
         <button
           onclick={startAddCategory}

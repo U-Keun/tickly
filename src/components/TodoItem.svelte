@@ -43,7 +43,7 @@
   }
 </script>
 
-<div class="flex items-center gap-3 p-4 bg-paper border-b border-stroke">
+<div class="flex items-center gap-3 px-4 h-14 bg-paper border-b border-stroke">
   <!-- Checkbox -->
   <button
     onclick={() => onToggle(item.id)}
@@ -68,7 +68,7 @@
       type="text"
     />
   {:else}
-    <div class="flex-1 {item.done ? 'line-through text-ink-muted' : 'text-ink'}">
+    <div class="flex-1 truncate {item.done ? 'line-through text-ink-muted' : 'text-ink'}">
       {item.text}
     </div>
   {/if}

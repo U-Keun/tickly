@@ -158,9 +158,11 @@
 
   .swipe-delete-button {
     position: absolute;
-    top: 0;
+    top: 50%;
     right: 0;
-    bottom: 0;
+    transform: translateY(-50%);
+    width: 56px;
+    height: 56px;
     background: #ef4444; /* red-500 */
     display: flex;
     align-items: center;
@@ -171,6 +173,7 @@
   .delete-button-inner {
     display: flex;
     align-items: center;
+    justify-content: center;
     color: white;
     padding: 0;
     background: none;

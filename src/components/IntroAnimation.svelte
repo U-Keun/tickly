@@ -12,16 +12,11 @@
     }
     await new Promise(resolve => setTimeout(resolve, 500));
     showIntro = false;
-    localStorage.setItem('tickly_intro_seen', 'true');
   }
 
   onMount(() => {
-    // Check if first time user
-    const hasSeenIntro = localStorage.getItem('tickly_intro_seen');
-    if (!hasSeenIntro) {
-      showIntro = true;
-      playIntroAnimation();
-    }
+    showIntro = true;
+    playIntroAnimation();
   });
 </script>
 
