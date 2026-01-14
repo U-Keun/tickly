@@ -143,7 +143,7 @@
 
       <!-- Add Category Button or Input -->
       {#if isAddingCategory}
-        <div class="flex items-center gap-1 px-3 py-2 bg-accent-mint rounded-full">
+        <div class="flex items-center gap-1 px-3 py-2 min-w-[96px] bg-accent-mint rounded-full">
           <input
             use:iosFocusFix
             bind:value={newCategoryName}
@@ -161,7 +161,7 @@
       {:else}
         <button
           onclick={startAddCategory}
-          class="px-4 py-2 rounded-full text-sm font-medium bg-accent-mint text-ink hover:bg-accent-mint-strong whitespace-nowrap"
+          class="min-w-[96px] px-4 py-2 rounded-full text-sm font-medium bg-accent-mint text-ink hover:bg-accent-mint-strong whitespace-nowrap flex items-center justify-center"
           title="카테고리 추가"
         >
           + 추가
