@@ -240,7 +240,7 @@
       {#if items.length === 0}
         <div class="p-8 text-center text-ink-muted">
           <p>아직 항목이 없습니다.</p>
-          <p class="text-sm mt-1">챙겨야 할 물건을 추가해보세요!</p>
+          <p class="text-sm mt-1">항목을 추가해보세요!</p>
         </div>
       {:else}
         <div class="divide-y divide-stroke">
