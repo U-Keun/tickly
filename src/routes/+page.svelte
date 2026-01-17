@@ -4,7 +4,8 @@
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import type { TodoItem, Category } from '../types';
-  import TodoItemComponent from '../components/TodoItem.svelte';
+  import LeafTodoItem from '../components/LeafTodoItem.svelte';
+  import MemoDrawer from '../components/MemoDrawer.svelte';
   import AddItemInput from '../components/AddItemInput.svelte';
   import SwipeableItem from '../components/SwipeableItem.svelte';
   import CategoryTabs from '../components/CategoryTabs.svelte';
@@ -169,6 +170,17 @@
     }
   }
 
+  async function updateMemo(id: number, memo: string | null) {
+    try {
+      await invoke('update_item_memo', { id, memo });
+      items = items.map(item =>
+        item.id === id ? { ...item, memo } : item
+      );
+    } catch (error) {
+      console.error('Failed to update memo:', error);
+    }
+  }
+
   onMount(async () => {
     // Detect platform
     try {
@@ -241,17 +253,24 @@
           <p class="text-sm mt-1">항목을 추가해보세요!</p>
         </div>
       {:else}
-        <div class="divide-y divide-stroke">
+        <div class="item-list">
           {#each items as item (item.id)}
-            <div animate:flip={{ duration: 300 }}>
+            <div animate:flip={{ duration: 300 }} class="item-wrapper">
               <SwipeableItem {item} onDelete={deleteItem}>
                 {#snippet children()}
-                  <TodoItemComponent
+                  <LeafTodoItem
                     {item}
                     onToggle={toggleItem}
-                    onDelete={deleteItem}
                     onEdit={editItem}
-                  />
+                  >
+                    {#snippet drawerContent({ item: drawerItem, closeDrawer })}
+                      <MemoDrawer
+                        item={drawerItem}
+                        onSaveMemo={updateMemo}
+                        {closeDrawer}
+                      />
+                    {/snippet}
+                  </LeafTodoItem>
                 {/snippet}
               </SwipeableItem>
             </div>

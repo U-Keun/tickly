@@ -9,4 +9,5 @@ export interface TodoItem {
   done: boolean;
   category_id: number | null;
   display_order: number;
+  memo: string | null;
 }

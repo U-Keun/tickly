@@ -107,6 +107,17 @@ html, body {
   min-height: 0;
 }
 
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.item-wrapper {
+  /* wrapper for flip animation */
+}
+
 @keyframes ios_focus_opacity_blink {
   0% { opacity: 0; }
   100% { opacity: 1; }

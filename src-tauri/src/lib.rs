@@ -28,6 +28,7 @@ struct TodoItem {
     done: bool,
     category_id: Option<i64>,
     display_order: i64,
+    memo: Option<String>,
 }
 
 struct AppState {
@@ -102,6 +103,17 @@ fn init_database(app: &AppHandle) -> Result<Connection, rusqlite::Error> {
         conn.execute("UPDATE todos SET display_order = id * 1000", [])?;
     }
 
+    // Migration: Add memo column if it doesn't exist
+    let memo_column_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='memo'",
+        [],
+        |row| row.get(0),
+    );
+
+    if let Ok(0) = memo_column_exists {
+        conn.execute("ALTER TABLE todos ADD COLUMN memo TEXT", [])?;
+    }
+
     // Create default category if none exists
     let category_count: i64 = conn.query_row(
         "SELECT COUNT(*) FROM categories",
@@ -153,6 +165,7 @@ fn add_item(text: String, category_id: Option<i64>, state: State<AppState>) -> R
         done: false,
         category_id,
         display_order,
+        memo: None,
     })
 }
 
@@ -164,7 +177,7 @@ fn get_items(category_id: Option<i64>, state: State<AppState>) -> Result<Vec<Tod
 
     if let Some(id) = category_id {
         let mut stmt = db
-            .prepare("SELECT id, text, done, category_id, display_order FROM todos WHERE category_id = ?1 ORDER BY done ASC, display_order ASC")
+            .prepare("SELECT id, text, done, category_id, display_order, memo FROM todos WHERE category_id = ?1 ORDER BY done ASC, display_order ASC")
             .map_err(|e| e.to_string())?;
 
         let rows = stmt
@@ -175,6 +188,7 @@ fn get_items(category_id: Option<i64>, state: State<AppState>) -> Result<Vec<Tod
                     done: row.get(2)?,
                     category_id: row.get(3)?,
                     display_order: row.get(4)?,
+                    memo: row.get(5)?,
                 })
             })
             .map_err(|e| e.to_string())?;
@@ -184,7 +198,7 @@ fn get_items(category_id: Option<i64>, state: State<AppState>) -> Result<Vec<Tod
         }
     } else {
         let mut stmt = db
-            .prepare("SELECT id, text, done, category_id, display_order FROM todos ORDER BY done ASC, display_order ASC")
+            .prepare("SELECT id, text, done, category_id, display_order, memo FROM todos ORDER BY done ASC, display_order ASC")
             .map_err(|e| e.to_string())?;
 
         let rows = stmt
@@ -195,6 +209,7 @@ fn get_items(category_id: Option<i64>, state: State<AppState>) -> Result<Vec<Tod
                     done: row.get(2)?,
                     category_id: row.get(3)?,
                     display_order: row.get(4)?,
+                    memo: row.get(5)?,
                 })
             })
             .map_err(|e| e.to_string())?;
@@ -237,6 +252,19 @@ fn edit_item(id: i64, text: String, state: State<AppState>) -> Result<(), String
     db.execute(
         "UPDATE todos SET text = ?1 WHERE id = ?2",
         params![text, id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+fn update_item_memo(id: i64, memo: Option<String>, state: State<AppState>) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+
+    db.execute(
+        "UPDATE todos SET memo = ?1 WHERE id = ?2",
+        params![memo, id],
     )
     .map_err(|e| e.to_string())?;
 
@@ -447,6 +475,7 @@ pub fn run() {
             toggle_item,
             delete_item,
             edit_item,
+            update_item_memo,
             get_categories,
             add_category,
             edit_category,
