@@ -67,8 +67,7 @@
   async function handleAddCategory(name: string) {
     const newCategory = await invoke<Category>('add_category', { name });
     categories = [...categories, newCategory];
-    selectedCategoryId = newCategory.id;
-    await loadItems();
+    await selectCategory(newCategory.id);
   }
 
   async function handleEditCategory(id: number, name: string) {
@@ -110,8 +109,7 @@
       await invoke('delete_category', { id: selectedCategoryForMenu.id });
       categories = categories.filter(cat => cat.id !== selectedCategoryForMenu.id);
       if (selectedCategoryId === selectedCategoryForMenu.id) {
-        selectedCategoryId = categories[0].id;
-        await loadItems();
+        await selectCategory(categories[0].id);
       }
       showDeleteCategoryConfirm = false;
       selectedCategoryForMenu = null;
