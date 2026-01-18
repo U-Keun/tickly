@@ -279,6 +279,8 @@
   /* drawer inset area */
   .drawerArea {
     margin-top: 10px;
+    position: relative;
+    z-index: 20;
   }
 
   /* drawer also leaf shape */

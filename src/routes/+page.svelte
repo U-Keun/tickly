@@ -2,16 +2,14 @@
   import { onMount } from 'svelte';
   import { flip } from 'svelte/animate';
   import { invoke } from '@tauri-apps/api/core';
-  import { listen } from '@tauri-apps/api/event';
   import type { TodoItem, Category } from '../types';
   import LeafTodoItem from '../components/LeafTodoItem.svelte';
   import MemoDrawer from '../components/MemoDrawer.svelte';
-  import AddItemInput from '../components/AddItemInput.svelte';
+  import AddItemModal from '../components/AddItemModal.svelte';
   import SwipeableItem from '../components/SwipeableItem.svelte';
   import CategoryTabs from '../components/CategoryTabs.svelte';
   import ConfirmModal from '../components/ConfirmModal.svelte';
   import CategoryMenuModal from '../components/CategoryMenuModal.svelte';
-  import ResetButton from '../components/ResetButton.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
 
   // Core app state
@@ -19,13 +17,11 @@
   let categories = $state<Category[]>([]);
   let selectedCategoryId = $state<number | null>(null);
 
-  // Platform detection
-  let isIOS = $state(false);
-
   // Modal control state
   let showResetConfirm = $state(false);
   let showCategoryMenu = $state(false);
   let showDeleteCategoryConfirm = $state(false);
+  let showAddItemModal = $state(false);
   let selectedCategoryForMenu = $state<Category | null>(null);
 
   // Reference to CategoryTabs component
@@ -54,15 +50,6 @@
   async function selectCategory(categoryId: number) {
     selectedCategoryId = categoryId;
     await loadItems();
-
-    // Update native input category on iOS
-    if (isIOS) {
-      try {
-        await invoke('set_native_selected_category', { categoryId });
-      } catch (error) {
-        console.error('Failed to set native selected category:', error);
-      }
-    }
   }
 
   async function handleAddCategory(name: string) {
@@ -132,9 +119,14 @@
   }
 
   // Item handlers
-  async function addItem(text: string) {
+  async function addItem(text: string, memo: string | null = null) {
     try {
       const newItem = await invoke<TodoItem>('add_item', { text, categoryId: selectedCategoryId });
+      // If memo provided, save it immediately
+      if (memo) {
+        await invoke('update_item_memo', { id: newItem.id, memo });
+        newItem.memo = memo;
+      }
       items = [...items, newItem];
     } catch (error) {
       console.error('Failed to add item:', error);
@@ -181,22 +173,40 @@
     }
   }
 
-  onMount(async () => {
-    // Detect platform
-    try {
-      const platform = await invoke<string>('get_platform');
-      isIOS = platform === 'ios';
-    } catch (error) {
-      console.error('Failed to detect platform:', error);
-    }
+  // Safe area bottom value (calculated on iOS)
+  // Default to 34px (typical iPhone safe area) to prevent initial flicker
+  let safeAreaBottom = $state(34);
 
-    // Setup event listeners for native UI (iOS only)
-    if (isIOS) {
-      // Listen for items added from native input
-      const unlistenItemAdded = await listen('native-item-added', async () => {
-        await loadItems();
-      });
+  function calculateSafeArea() {
+    // Get the actual safe area from CSS environment variable
+    const testEl = document.createElement('div');
+    testEl.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0);visibility:hidden;';
+    document.body.appendChild(testEl);
+    const height = testEl.offsetHeight;
+    document.body.removeChild(testEl);
+
+    // Ignore abnormally large values (iOS bug on app start)
+    // Normal iPhone safe area is around 34px
+    if (height > 50) {
+      console.log('Ignoring abnormal safe area:', height);
+      return 34; // Use default iPhone value
     }
+    return height;
+  }
+
+  onMount(async () => {
+    // Calculate safe area after a delay (iOS needs time to initialize)
+    const updateSafeArea = () => {
+      safeAreaBottom = calculateSafeArea();
+    };
+
+    // Try multiple times to get correct safe area
+    setTimeout(updateSafeArea, 100);
+    setTimeout(updateSafeArea, 500);
+    setTimeout(updateSafeArea, 1500);
+
+    // Also update on resize/orientation change
+    window.addEventListener('resize', updateSafeArea);
 
     // Check and auto-reset if new day
     try {
@@ -210,15 +220,6 @@
 
     await loadCategories();
     await loadItems();
-
-    // Set initial category for native input on iOS
-    if (isIOS && selectedCategoryId) {
-      try {
-        await invoke('set_native_selected_category', { categoryId: selectedCategoryId });
-      } catch (error) {
-        console.error('Failed to set initial native selected category:', error);
-      }
-    }
   });
 </script>
 
@@ -237,14 +238,7 @@
   </div>
 
   <!-- Main Content -->
-  <main class="main-content max-w-2xl w-full mx-auto bg-white shadow-lg flex flex-col">
-    <!-- Fixed Header Section (hidden on iOS - using native UI) -->
-    {#if !isIOS}
-      <div class="fixed-header flex-shrink-0">
-        <AddItemInput onAdd={addItem} />
-      </div>
-    {/if}
-
+  <main class="main-content max-w-2xl w-full mx-auto flex flex-col">
     <!-- Scrollable Todo List -->
     <div class="todo-list-scroll">
       {#if items.length === 0}
@@ -280,8 +274,76 @@
     </div>
   </main>
 
-  <!-- Reset Button Component -->
-  <ResetButton onReset={() => showResetConfirm = true} />
+  <!-- Bottom Navigation Bar -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20" style="padding-bottom: {safeAreaBottom}px;">
+    <div class="flex justify-around items-center h-14">
+      <!-- Reorder Button -->
+      <button
+        class="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-gray-900"
+        title="순서 바꾸기"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <span class="text-xs mt-1">순서</span>
+      </button>
+
+      <!-- Home Button -->
+      <button
+        class="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-gray-900"
+        title="홈"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        <span class="text-xs mt-1">홈</span>
+      </button>
+
+      <!-- Settings Button -->
+      <button
+        class="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-gray-900"
+        title="설정"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <span class="text-xs mt-1">설정</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Floating Action Buttons -->
+  <div class="fixed bottom-20 right-6 flex flex-col gap-3 items-center z-10" style="margin-bottom: env(safe-area-inset-bottom, 0);">
+    <!-- Add Button -->
+    <button
+      onclick={() => showAddItemModal = true}
+      class="w-14 h-14 bg-sky-400 hover:bg-sky-500 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+      title="항목 추가"
+    >
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+    </button>
+
+    <!-- Reset Button -->
+    <button
+      onclick={() => showResetConfirm = true}
+      class="w-14 h-14 bg-accent-peach-strong hover:bg-accent-peach text-ink rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+      title="체크 초기화"
+    >
+      <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Add Item Modal -->
+  <AddItemModal
+    show={showAddItemModal}
+    onAdd={addItem}
+    onCancel={() => showAddItemModal = false}
+  />
 
   <!-- Reset Confirmation Modal -->
   <ConfirmModal

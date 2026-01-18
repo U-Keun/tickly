@@ -3,17 +3,6 @@ use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 
-#[cfg(target_os = "ios")]
-mod ios_keyboard_scroll_lock;
-
-#[cfg(target_os = "ios")]
-mod ios_native_ui;
-
-#[cfg(target_os = "ios")]
-use std::sync::Mutex as StdMutex;
-
-#[cfg(target_os = "ios")]
-static SELECTED_CATEGORY_FOR_NATIVE_INPUT: StdMutex<Option<i64>> = StdMutex::new(None);
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Category {
@@ -427,28 +416,6 @@ fn reorder_items(item_ids: Vec<i64>, state: State<AppState>) -> Result<(), Strin
     Ok(())
 }
 
-#[tauri::command]
-fn get_platform() -> String {
-    #[cfg(target_os = "ios")]
-    return "ios".to_string();
-
-    #[cfg(not(target_os = "ios"))]
-    return "other".to_string();
-}
-
-#[cfg(target_os = "ios")]
-#[tauri::command]
-fn set_native_selected_category(category_id: i64) -> Result<(), String> {
-    *SELECTED_CATEGORY_FOR_NATIVE_INPUT.lock().unwrap() = Some(category_id);
-    Ok(())
-}
-
-#[cfg(not(target_os = "ios"))]
-#[tauri::command]
-fn set_native_selected_category(_category_id: i64) -> Result<(), String> {
-    Ok(())
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -458,15 +425,6 @@ pub fn run() {
             app.manage(AppState {
                 db: Mutex::new(conn),
             });
-            #[cfg(target_os = "ios")]
-            {
-              if let Some(w) = app.get_webview_window("main") {
-                // Setup native UI first to adjust webview frame
-                ios_native_ui::setup_native_ui(&w, app.handle().clone());
-                // Then setup keyboard lock with adjusted frame
-                ios_keyboard_scroll_lock::lock_outer_scroll_while_keyboard(&w);
-              }
-            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -482,9 +440,7 @@ pub fn run() {
             delete_category,
             reset_all_items,
             check_and_auto_reset,
-            reorder_items,
-            get_platform,
-            set_native_selected_category
+            reorder_items
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
