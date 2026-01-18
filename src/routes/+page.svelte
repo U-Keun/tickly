@@ -174,8 +174,8 @@
   }
 
   // Safe area bottom value (calculated on iOS)
-  // Default to 34px (typical iPhone safe area) to prevent initial flicker
-  let safeAreaBottom = $state(34);
+  // Start at 0 so the nav bar renders slim on first paint.
+  let safeAreaBottom = $state(0);
 
   function calculateSafeArea() {
     // Get the actual safe area from CSS environment variable
@@ -185,19 +185,19 @@
     const height = testEl.offsetHeight;
     document.body.removeChild(testEl);
 
-    // Ignore abnormally large values (iOS bug on app start)
-    // Normal iPhone safe area is around 34px
-    if (height > 50) {
-      console.log('Ignoring abnormal safe area:', height);
-      return 34; // Use default iPhone value
-    }
     return height;
   }
 
   onMount(async () => {
     // Calculate safe area after a delay (iOS needs time to initialize)
     const updateSafeArea = () => {
-      safeAreaBottom = calculateSafeArea();
+      const measured = calculateSafeArea();
+      // Ignore abnormally large values (iOS bug on app start).
+      // Normal iPhone safe area is around 34px.
+      if (measured > 50 || measured < 0) {
+        return;
+      }
+      safeAreaBottom = measured;
     };
 
     // Try multiple times to get correct safe area
@@ -207,6 +207,8 @@
 
     // Also update on resize/orientation change
     window.addEventListener('resize', updateSafeArea);
+    window.visualViewport?.addEventListener('resize', updateSafeArea);
+    window.visualViewport?.addEventListener('scroll', updateSafeArea);
 
     // Check and auto-reset if new day
     try {
