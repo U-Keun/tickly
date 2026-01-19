@@ -8,6 +8,7 @@ use tauri::{AppHandle, Manager, State};
 struct Category {
     id: i64,
     name: String,
+    display_order: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -103,6 +104,23 @@ fn init_database(app: &AppHandle) -> Result<Connection, rusqlite::Error> {
         conn.execute("ALTER TABLE todos ADD COLUMN memo TEXT", [])?;
     }
 
+    // Migration: Add display_order column to categories if it doesn't exist
+    let cat_order_column_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('categories') WHERE name='display_order'",
+        [],
+        |row| row.get(0),
+    );
+
+    if let Ok(0) = cat_order_column_exists {
+        conn.execute(
+            "ALTER TABLE categories ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0",
+            [],
+        )?;
+
+        // Assign initial order based on id
+        conn.execute("UPDATE categories SET display_order = id * 1000", [])?;
+    }
+
     // Create default category if none exists
     let category_count: i64 = conn.query_row(
         "SELECT COUNT(*) FROM categories",
@@ -111,7 +129,7 @@ fn init_database(app: &AppHandle) -> Result<Connection, rusqlite::Error> {
     )?;
 
     if category_count == 0 {
-        conn.execute("INSERT INTO categories (name) VALUES (?1)", params!["기본"])?;
+        conn.execute("INSERT INTO categories (name, display_order) VALUES (?1, 1000)", params!["기본"])?;
     }
 
     Ok(conn)
@@ -265,7 +283,7 @@ fn get_categories(state: State<AppState>) -> Result<Vec<Category>, String> {
     let db = state.db.lock().unwrap();
 
     let mut stmt = db
-        .prepare("SELECT id, name FROM categories ORDER BY id")
+        .prepare("SELECT id, name, display_order FROM categories ORDER BY display_order ASC")
         .map_err(|e| e.to_string())?;
 
     let categories = stmt
@@ -273,6 +291,7 @@ fn get_categories(state: State<AppState>) -> Result<Vec<Category>, String> {
             Ok(Category {
                 id: row.get(0)?,
                 name: row.get(1)?,
+                display_order: row.get(2)?,
             })
         })
         .map_err(|e| e.to_string())?
@@ -286,12 +305,24 @@ fn get_categories(state: State<AppState>) -> Result<Vec<Category>, String> {
 fn add_category(name: String, state: State<AppState>) -> Result<Category, String> {
     let db = state.db.lock().unwrap();
 
-    db.execute("INSERT INTO categories (name) VALUES (?1)", params![name])
-        .map_err(|e| e.to_string())?;
+    // Calculate next display_order (max + 1000)
+    let max_order: i64 = db.query_row(
+        "SELECT COALESCE(MAX(display_order), 0) FROM categories",
+        [],
+        |row| row.get(0),
+    ).unwrap_or(0);
+
+    let display_order = max_order + 1000;
+
+    db.execute(
+        "INSERT INTO categories (name, display_order) VALUES (?1, ?2)",
+        params![name, display_order],
+    )
+    .map_err(|e| e.to_string())?;
 
     let id = db.last_insert_rowid();
 
-    Ok(Category { id, name })
+    Ok(Category { id, name, display_order })
 }
 
 #[tauri::command]
@@ -392,6 +423,31 @@ fn check_and_auto_reset(state: State<AppState>) -> Result<bool, String> {
 }
 
 #[tauri::command]
+fn reorder_categories(category_ids: Vec<i64>, state: State<AppState>) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+
+    // Use transaction for atomic update
+    db.execute("BEGIN TRANSACTION", [])
+        .map_err(|e| e.to_string())?;
+
+    for (index, category_id) in category_ids.iter().enumerate() {
+        let new_order = (index as i64 + 1) * 1000;
+        db.execute(
+            "UPDATE categories SET display_order = ?1 WHERE id = ?2",
+            params![new_order, category_id],
+        )
+        .map_err(|e| {
+            let _ = db.execute("ROLLBACK", []);
+            e.to_string()
+        })?;
+    }
+
+    db.execute("COMMIT", []).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
 fn reorder_items(item_ids: Vec<i64>, state: State<AppState>) -> Result<(), String> {
     let db = state.db.lock().unwrap();
 
@@ -440,7 +496,8 @@ pub fn run() {
             delete_category,
             reset_all_items,
             check_and_auto_reset,
-            reorder_items
+            reorder_items,
+            reorder_categories
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

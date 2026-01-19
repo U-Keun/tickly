@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { flip } from 'svelte/animate';
+  import { fly } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
   import { invoke } from '@tauri-apps/api/core';
   import type { TodoItem, Category } from '../types';
   import LeafTodoItem from '../components/LeafTodoItem.svelte';
@@ -11,6 +13,7 @@
   import ConfirmModal from '../components/ConfirmModal.svelte';
   import CategoryMenuModal from '../components/CategoryMenuModal.svelte';
   import ReorderItemsModal from '../components/ReorderItemsModal.svelte';
+  import ReorderCategoriesModal from '../components/ReorderCategoriesModal.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
 
   // Core app state
@@ -24,6 +27,7 @@
   let showDeleteCategoryConfirm = $state(false);
   let showAddItemModal = $state(false);
   let showReorderModal = $state(false);
+  let showReorderCategoriesModal = $state(false);
   let selectedCategoryForMenu = $state<Category | null>(null);
 
   // Edit mode state
@@ -185,6 +189,10 @@
     items = updatedItems;
   }
 
+  function handleCategoriesReorder(updatedCategories: Category[]) {
+    categories = updatedCategories;
+  }
+
   function handleHomeClick() {
     if (categories.length > 0) {
       selectCategory(categories[0].id);
@@ -246,6 +254,7 @@
       onAddCategory={handleAddCategory}
       onEditCategory={handleEditCategory}
       onCategoryLongPress={handleCategoryLongPress}
+      onReorderCategories={() => showReorderCategoriesModal = true}
     />
   </div>
 
@@ -328,7 +337,12 @@
 
   <!-- Floating Action Buttons -->
   {#if !isEditingItem}
-  <div class="fixed bottom-12 right-6 flex flex-col gap-3 items-center z-10" style="margin-bottom: {safeAreaBottom}px;">
+  <div
+    class="fixed bottom-12 right-6 flex flex-col gap-3 items-center z-10"
+    style="margin-bottom: {safeAreaBottom}px;"
+    in:fly={{ y: 100, duration: 400, delay: 300, easing: cubicOut }}
+    out:fly={{ y: 100, duration: 300, easing: cubicOut }}
+  >
     <!-- Add Button -->
     <button
       onclick={() => showAddItemModal = true}
@@ -365,6 +379,13 @@
     {items}
     onItemsReorder={handleItemsReorder}
     onClose={() => showReorderModal = false}
+  />
+
+  <ReorderCategoriesModal
+    show={showReorderCategoriesModal}
+    {categories}
+    onCategoriesReorder={handleCategoriesReorder}
+    onClose={() => showReorderCategoriesModal = false}
   />
 
   <!-- Reset Confirmation Modal -->

@@ -9,9 +9,10 @@
     onAddCategory: (name: string) => Promise<void>;
     onEditCategory: (id: number, name: string) => Promise<void>;
     onCategoryLongPress: (category: Category) => void;
+    onReorderCategories: () => void;
   }
 
-  let { categories, selectedCategoryId, onSelectCategory, onAddCategory, onEditCategory, onCategoryLongPress }: Props = $props();
+  let { categories, selectedCategoryId, onSelectCategory, onAddCategory, onEditCategory, onCategoryLongPress, onReorderCategories }: Props = $props();
 
   // Local state for inline editing
   let editingCategoryId = $state<number | null>(null);
@@ -163,6 +164,17 @@
           +
         </button>
       {/if}
+
+      <!-- Reorder Categories Button -->
+      <button
+        onclick={onReorderCategories}
+        class="w-9 h-9 rounded-full bg-paper text-ink-muted hover:bg-mist flex items-center justify-center"
+        title="카테고리 순서 변경"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
     </div>
   </div>
 </div>
