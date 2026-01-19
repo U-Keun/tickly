@@ -31,10 +31,10 @@
 
 <!-- Intro Typing Animation -->
 {#if showIntro}
-  <div class="fixed inset-0 bg-white z-50 flex items-center justify-center">
-    <h1 class="text-5xl font-bold text-gray-900">{introText}<span class="animate-pulse">|</span></h1>
+  <div class="fixed inset-0 bg-paper z-50 flex items-center justify-center">
+    <h1 class="text-5xl font-bold text-ink">{introText}<span class="animate-pulse">|</span></h1>
   </div>
 {/if}
 {#if showWhite}
-    <div class="fixed inset-0 bg-white z-50"></div>
+    <div class="fixed inset-0 bg-paper z-50"></div>
 {/if}
