@@ -27,17 +27,25 @@ Tickly/
 ├── src/
 │   ├── routes/
 │   │   ├── +layout.svelte      # Global layout with CSS imports
-│   │   ├── +layout.ts           # SPA mode config
-│   │   └── +page.svelte         # Main app page
-│   ├── components/              # Reusable Svelte components
-│   ├── app.css                  # Tailwind directives
-│   └── app.html                 # Root HTML template
+│   │   ├── +layout.ts          # SPA mode config
+│   │   ├── +page.svelte        # Main app page
+│   │   └── settings/
+│   │       ├── +page.svelte    # Settings main page
+│   │       └── theme/
+│   │           └── +page.svelte # Theme customization page
+│   ├── components/             # Reusable Svelte components
+│   ├── lib/
+│   │   ├── themes.ts           # Theme presets and utilities
+│   │   └── iosFocusFix.ts      # iOS input focus fix
+│   ├── types.ts                # TypeScript type definitions
+│   ├── app.css                 # Tailwind directives + CSS variables
+│   └── app.html                # Root HTML template
 ├── src-tauri/
-│   ├── src/lib.rs               # Tauri commands and app logic
-│   ├── src/main.rs              # App entry point
-│   └── tauri.conf.json          # Tauri configuration
-├── static/                      # Static assets (IMPORTANT: use for iOS)
-└── tailwind.config.ts           # TailwindCSS configuration
+│   ├── src/lib.rs              # Tauri commands and app logic
+│   ├── src/main.rs             # App entry point
+│   └── tauri.conf.json         # Tauri configuration
+├── static/                     # Static assets (IMPORTANT: use for iOS)
+└── tailwind.config.ts          # TailwindCSS configuration
 ```
 
 ## Design Philosophy
@@ -198,8 +206,38 @@ src/
 ### Styling Guidelines
 - Use TailwindCSS utilities exclusively
 - Avoid custom CSS unless absolutely necessary
-- Use Tailwind's color palette
+- **Use CSS variables for colors** (theme system support)
 - Follow mobile-first responsive design
+
+## Theme System
+
+The app uses CSS variables for theming, allowing users to customize colors.
+
+### CSS Variables (defined in `app.css`)
+```css
+:root {
+  --color-paper: #f8f7f3;      /* Main background */
+  --color-canvas: #f2efe8;     /* Secondary background */
+  --color-ink: #5b5852;        /* Primary text */
+  --color-ink-muted: #7a776f;  /* Secondary text */
+  --color-accent-sky: #a8bddb; /* Primary accent */
+  /* ... more colors */
+}
+```
+
+### Using Theme Colors
+- **In Tailwind**: Use custom colors like `bg-paper`, `text-ink`, `bg-accent-sky`
+- **In CSS**: Use `var(--color-paper)`, `var(--color-ink)`, etc.
+- **Avoid hardcoding colors** - always use CSS variables for theme consistency
+
+### Theme Presets
+5 built-in presets: 기본(Default), 다크(Dark), 오션(Ocean), 포레스트(Forest), 선셋(Sunset)
+
+### Adding New Theme Colors
+1. Add CSS variable in `src/app.css` `:root`
+2. Add Tailwind mapping in `tailwind.config.ts`
+3. Add to `ThemeColors` interface in `src/types.ts`
+4. Update theme presets in `src/lib/themes.ts`
 
 ## Git Workflow
 
@@ -219,13 +257,22 @@ git commit -m "feat: add todo item completion toggle
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
 
+## Implemented Features
+
+- ✅ Todo CRUD (add, edit, delete, toggle)
+- ✅ Category management (add, edit, delete, reorder)
+- ✅ Item reordering (drag & drop)
+- ✅ Swipe to delete
+- ✅ Memo for each item
+- ✅ Auto daily reset
+- ✅ Theme customization (5 presets + custom colors)
+- ✅ Settings page structure
+- ✅ iOS-optimized UI with safe area handling
+
 ## Next Steps
 
-1. Implement basic todo functionality (add, delete, toggle)
-2. Create simple, touch-friendly UI
-3. Test on iOS simulator
-4. Deploy to physical iPhone for testing
-5. Prepare App Store assets (icon, screenshots, description)
-6. Submit to App Store
+1. Prepare App Store assets (icon, screenshots, description)
+2. Submit to App Store
+3. Iterate based on user feedback
 
 Keep it simple. Ship fast. Iterate based on real user feedback.
