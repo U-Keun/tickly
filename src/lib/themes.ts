@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/core';
 import type { ThemeColors, ThemePreset } from '../types';
+import { getSetting, setSetting } from './services/settingsService';
 
 // Default theme (기본)
 const defaultColors: ThemeColors = {
@@ -128,7 +128,7 @@ export interface SavedTheme {
 
 export async function saveTheme(theme: SavedTheme): Promise<void> {
   try {
-    await invoke('set_setting', { key: 'theme', value: JSON.stringify(theme) });
+    await setSetting('theme', JSON.stringify(theme));
   } catch (error) {
     console.error('Failed to save theme:', error);
   }
@@ -136,7 +136,7 @@ export async function saveTheme(theme: SavedTheme): Promise<void> {
 
 export async function loadSavedTheme(): Promise<SavedTheme | null> {
   try {
-    const value = await invoke<string | null>('get_setting', { key: 'theme' });
+    const value = await getSetting('theme');
     if (value) {
       return JSON.parse(value);
     }
