@@ -10,6 +10,7 @@
   import CategoryTabs from '../components/CategoryTabs.svelte';
   import ConfirmModal from '../components/ConfirmModal.svelte';
   import CategoryMenuModal from '../components/CategoryMenuModal.svelte';
+  import ReorderItemsModal from '../components/ReorderItemsModal.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
 
   // Core app state
@@ -22,6 +23,7 @@
   let showCategoryMenu = $state(false);
   let showDeleteCategoryConfirm = $state(false);
   let showAddItemModal = $state(false);
+  let showReorderModal = $state(false);
   let selectedCategoryForMenu = $state<Category | null>(null);
 
   // Safe area bottom padding (measured via JavaScript to avoid iOS WebView bug)
@@ -176,6 +178,10 @@
     }
   }
 
+  function handleItemsReorder(updatedItems: TodoItem[]) {
+    items = updatedItems;
+  }
+
   function measureSafeArea(): number {
     const testEl = document.createElement('div');
     testEl.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0);visibility:hidden;pointer-events:none;';
@@ -278,6 +284,7 @@
       <button
         class="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-gray-900"
         title="순서 바꾸기"
+        onclick={() => showReorderModal = true}
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -340,6 +347,13 @@
     show={showAddItemModal}
     onAdd={addItem}
     onCancel={() => showAddItemModal = false}
+  />
+
+  <ReorderItemsModal
+    show={showReorderModal}
+    {items}
+    onItemsReorder={handleItemsReorder}
+    onClose={() => showReorderModal = false}
   />
 
   <!-- Reset Confirmation Modal -->
