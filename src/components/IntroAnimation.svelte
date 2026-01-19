@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
 
   let showIntro = $state(false);
+  let showWhite = $state(false);
   let introText = $state('');
 
   async function playIntroAnimation() {
@@ -12,6 +13,9 @@
     }
     await new Promise(resolve => setTimeout(resolve, 500));
     showIntro = false;
+    showWhite = true;
+    await new Promise(resolve => setTimeout(resolve, 400));
+    showWhite = false;
   }
 
   onMount(() => {
@@ -25,4 +29,7 @@
   <div class="fixed inset-0 bg-white z-50 flex items-center justify-center">
     <h1 class="text-5xl font-bold text-gray-900">{introText}<span class="animate-pulse">|</span></h1>
   </div>
+{/if}
+{#if showWhite}
+    <div class="fixed inset-0 bg-white z-50"></div>
 {/if}
