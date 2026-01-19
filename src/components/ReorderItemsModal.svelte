@@ -66,6 +66,11 @@
                 <p class="text-sm font-medium text-ink truncate">
                   {item.text}
                 </p>
+                {#if item.memo}
+                  <p class="text-xs text-ink-muted truncate mt-1">
+                    {item.memo}
+                  </p>
+                {/if}
               </div>
               {#if item.done}
                 <span class="text-xs text-green-600 font-medium">완료</span>

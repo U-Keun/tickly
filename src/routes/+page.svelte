@@ -182,11 +182,6 @@
     items = updatedItems;
   }
 
-  async function handleHomeClick() {
-    if (categories.length === 0) return;
-    await selectCategory(categories[0].id);
-  }
-
   function measureSafeArea(): number {
     const testEl = document.createElement('div');
     testEl.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0);visibility:hidden;pointer-events:none;';
