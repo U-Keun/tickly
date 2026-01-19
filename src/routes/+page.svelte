@@ -24,6 +24,9 @@
   let showAddItemModal = $state(false);
   let selectedCategoryForMenu = $state<Category | null>(null);
 
+  // Safe area bottom padding (measured via JavaScript to avoid iOS WebView bug)
+  let safeAreaBottom = $state(0);
+
   // Reference to CategoryTabs component
   let categoryTabsComponent: any;
 
@@ -173,42 +176,34 @@
     }
   }
 
-  // Safe area bottom value (calculated on iOS)
-  // Start at 0 so the nav bar renders slim on first paint.
-  let safeAreaBottom = $state(0);
-
-  function calculateSafeArea() {
-    // Get the actual safe area from CSS environment variable
+  function measureSafeArea(): number {
     const testEl = document.createElement('div');
-    testEl.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0);visibility:hidden;';
+    testEl.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0);visibility:hidden;pointer-events:none;';
     document.body.appendChild(testEl);
     const height = testEl.offsetHeight;
     document.body.removeChild(testEl);
-
     return height;
   }
 
   onMount(async () => {
-    // Calculate safe area after a delay (iOS needs time to initialize)
-    const updateSafeArea = () => {
-      const measured = calculateSafeArea();
-      // Ignore abnormally large values (iOS bug on app start).
-      // Normal iPhone safe area is around 34px.
-      if (measured > 50 || measured < 0) {
-        return;
+    // Measure safe area after iOS WebView stabilizes
+    // Normal iPhone safe area is around 34px, reject abnormal values (>50px or <=0)
+    const applySafeArea = () => {
+      const measured = measureSafeArea();
+      if (measured > 0 && measured <= 50) {
+        safeAreaBottom = measured;
+      } else if (measured > 50) {
+        // Abnormally large value - use standard iPhone safe area
+        safeAreaBottom = 34;
       }
-      safeAreaBottom = measured;
     };
 
-    // Try multiple times to get correct safe area
-    setTimeout(updateSafeArea, 100);
-    setTimeout(updateSafeArea, 500);
-    setTimeout(updateSafeArea, 1500);
+    // Try multiple times with increasing delays
+    setTimeout(applySafeArea, 2000);
+    setTimeout(applySafeArea, 3000);
 
-    // Also update on resize/orientation change
-    window.addEventListener('resize', updateSafeArea);
-    window.visualViewport?.addEventListener('resize', updateSafeArea);
-    window.visualViewport?.addEventListener('scroll', updateSafeArea);
+    // Also update on orientation change
+    window.addEventListener('resize', applySafeArea);
 
     // Check and auto-reset if new day
     try {
@@ -316,7 +311,7 @@
   </nav>
 
   <!-- Floating Action Buttons -->
-  <div class="fixed bottom-20 right-6 flex flex-col gap-3 items-center z-10" style="margin-bottom: env(safe-area-inset-bottom, 0);">
+  <div class="fixed bottom-20 right-6 flex flex-col gap-3 items-center z-10" style="margin-bottom: {safeAreaBottom}px;">
     <!-- Add Button -->
     <button
       onclick={() => showAddItemModal = true}
