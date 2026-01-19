@@ -100,11 +100,11 @@
   .outer {
     width: 100%;
     box-sizing: border-box;
-    background: #faf6f1;
+    background: var(--color-paper);
 
     /* leaf shape: TL/BR angular, TR/BL rounded */
     border-radius: 0 20px 0 20px;
-    border: 2px solid #333;
+    border: 2px solid var(--color-ink);
 
     /* inset feel */
     padding: 12px;
@@ -114,6 +114,7 @@
 
     /* default text size */
     font-size: 16px;
+    color: var(--color-ink);
   }
 
   .outer.disabled {
@@ -121,7 +122,7 @@
   }
 
   .outer.done {
-    background: #f0ebe5;
+    background: var(--color-canvas);
   }
 
   .header {
@@ -138,7 +139,7 @@
     flex: 0 0 30px;
 
     background: transparent;
-    border: 2px solid #333;
+    border: 2px solid var(--color-ink);
     border-radius: 0 10px 0 10px;
 
     display: grid;
@@ -148,7 +149,7 @@
   }
 
   .leafBox:focus-visible {
-    outline: 3px solid #000;
+    outline: 3px solid var(--color-ink);
     outline-offset: 4px;
   }
 
@@ -156,7 +157,7 @@
     width: 21px;
     height: 21px;
     fill: none;
-    stroke: #333;
+    stroke: var(--color-ink);
     stroke-width: 3.0;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -190,8 +191,8 @@
 
   /* drawer also leaf shape */
   .drawerPanel {
-    border: 2px solid #333;
-    background: #fff;
+    border: 2px solid var(--color-ink);
+    background: var(--color-white);
     border-radius: 0 18px 0 18px;
     padding: 14px;
     box-sizing: border-box;

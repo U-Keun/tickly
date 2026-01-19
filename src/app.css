@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme CSS Variables */
+:root {
+  --color-paper: #f8f7f3;
+  --color-canvas: #f2efe8;
+  --color-mist: #ede9e1;
+  --color-stroke: #e2ded5;
+  --color-ink: #5b5852;
+  --color-ink-muted: #7a776f;
+  --color-accent-sky: #a8bddb;
+  --color-accent-sky-strong: #8ea9cf;
+  --color-accent-mint: #bfd9c8;
+  --color-accent-mint-strong: #a7c8b5;
+  --color-accent-peach: #e9c1ad;
+  --color-accent-peach-strong: #dba892;
+  --color-white: #ffffff;
+  --color-border: #e5e7eb;
+}
+
 /* Global styles for touch interactions */
 * {
   -webkit-tap-highlight-color: transparent;

@@ -12,3 +12,26 @@ export interface TodoItem {
   display_order: number;
   memo: string | null;
 }
+
+export interface ThemeColors {
+  paper: string;
+  canvas: string;
+  mist: string;
+  stroke: string;
+  ink: string;
+  inkMuted: string;
+  accentSky: string;
+  accentSkyStrong: string;
+  accentMint: string;
+  accentMintStrong: string;
+  accentPeach: string;
+  accentPeachStrong: string;
+  white: string;
+  border: string;
+}
+
+export interface ThemePreset {
+  id: string;
+  name: string;
+  colors: ThemeColors;
+}

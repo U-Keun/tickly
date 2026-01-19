@@ -3,6 +3,7 @@
   import { flip } from 'svelte/animate';
   import { fly } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
+  import { goto } from '$app/navigation';
   import { invoke } from '@tauri-apps/api/core';
   import type { TodoItem, Category } from '../types';
   import LeafTodoItem from '../components/LeafTodoItem.svelte';
@@ -15,6 +16,7 @@
   import ReorderItemsModal from '../components/ReorderItemsModal.svelte';
   import ReorderCategoriesModal from '../components/ReorderCategoriesModal.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
+  import { initializeTheme } from '../lib/themes';
 
   // Core app state
   let items = $state<TodoItem[]>([]);
@@ -32,6 +34,10 @@
 
   // Edit mode state
   let isEditingItem = $state(false);
+
+  // FAB visibility (for entry animation)
+  let showFab = $state(false);
+  let fabDelay = $state(300);
 
   // Safe area bottom padding (measured via JavaScript to avoid iOS WebView bug)
   let safeAreaBottom = $state(0);
@@ -96,7 +102,8 @@
   }
 
   async function confirmDeleteCategory() {
-    if (!selectedCategoryForMenu) return;
+    const categoryToDelete = selectedCategoryForMenu;
+    if (!categoryToDelete) return;
 
     if (categories.length <= 1) {
       alert('최소 1개의 카테고리는 유지해야 합니다.');
@@ -106,9 +113,9 @@
     }
 
     try {
-      await invoke('delete_category', { id: selectedCategoryForMenu.id });
-      categories = categories.filter(cat => cat.id !== selectedCategoryForMenu.id);
-      if (selectedCategoryId === selectedCategoryForMenu.id) {
+      await invoke('delete_category', { id: categoryToDelete.id });
+      categories = categories.filter(cat => cat.id !== categoryToDelete.id);
+      if (selectedCategoryId === categoryToDelete.id) {
         await selectCategory(categories[0].id);
       }
       showDeleteCategoryConfirm = false;
@@ -209,21 +216,32 @@
   }
 
   onMount(async () => {
+    // Initialize theme from saved settings
+    await initializeTheme();
+
     // Measure safe area after iOS WebView stabilizes
     // Normal iPhone safe area is around 34px, reject abnormal values (>50px or <=0)
     const applySafeArea = () => {
       const measured = measureSafeArea();
       if (measured > 0 && measured <= 50) {
         safeAreaBottom = measured;
+        sessionStorage.setItem('safeAreaBottom', String(measured));
       } else if (measured > 50) {
         // Abnormally large value - use standard iPhone safe area
         safeAreaBottom = 34;
+        sessionStorage.setItem('safeAreaBottom', '34');
       }
     };
 
-    // Try multiple times with increasing delays
-    setTimeout(applySafeArea, 2000);
-    setTimeout(applySafeArea, 3000);
+    // Use cached value if available, otherwise measure
+    const cachedSafeArea = sessionStorage.getItem('safeAreaBottom');
+    if (cachedSafeArea) {
+      safeAreaBottom = Number(cachedSafeArea);
+    } else {
+      // Try multiple times with increasing delays (first load only)
+      setTimeout(applySafeArea, 2000);
+      setTimeout(applySafeArea, 3000);
+    }
 
     // Also update on orientation change
     window.addEventListener('resize', applySafeArea);
@@ -240,6 +258,12 @@
 
     await loadCategories();
     await loadItems();
+
+    // Show FAB with animation (no delay if intro already played)
+    if (sessionStorage.getItem('introPlayed')) {
+      fabDelay = 0;
+    }
+    showFab = true;
   });
 </script>
 
@@ -298,11 +322,12 @@
   </main>
 
   <!-- Bottom Navigation Bar -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20">
+  <nav class="fixed bottom-0 left-0 right-0 z-20" style="background: var(--color-white); border-top: 1px solid var(--color-border);">
     <div class="flex justify-around items-center h-14">
       <!-- Reorder Button -->
       <button
-        class="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-gray-900"
+        class="flex flex-col items-center justify-center flex-1 h-full"
+        style="color: var(--color-ink-muted);"
         title="순서 바꾸기"
         onclick={() => showReorderModal = true}
       >
@@ -313,7 +338,8 @@
 
       <!-- Home Button -->
       <button
-        class="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-gray-900"
+        class="flex flex-col items-center justify-center flex-1 h-full"
+        style="color: var(--color-ink-muted);"
         title="홈"
         onclick={handleHomeClick}
       >
@@ -324,8 +350,10 @@
 
       <!-- Settings Button -->
       <button
-        class="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-gray-900"
+        class="flex flex-col items-center justify-center flex-1 h-full"
+        style="color: var(--color-ink-muted);"
         title="설정"
+        onclick={() => goto('/settings')}
       >
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -336,17 +364,17 @@
   </nav>
 
   <!-- Floating Action Buttons -->
-  {#if !isEditingItem}
+  {#if showFab && !isEditingItem}
   <div
-    class="fixed bottom-12 right-6 flex flex-col gap-3 items-center z-10"
+    class="fixed bottom-12 right-6 flex flex-col gap-3 items-center z-10 transition-[margin] duration-300"
     style="margin-bottom: {safeAreaBottom}px;"
-    in:fly={{ y: 100, duration: 400, delay: 300, easing: cubicOut }}
+    in:fly={{ y: 100, duration: 400, delay: fabDelay, easing: cubicOut }}
     out:fly={{ y: 100, duration: 300, easing: cubicOut }}
   >
     <!-- Add Button -->
     <button
       onclick={() => showAddItemModal = true}
-      class="w-14 h-14 bg-sky-400 hover:bg-sky-500 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+      class="w-14 h-14 bg-accent-sky-strong hover:bg-accent-sky text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
       title="항목 추가"
     >
       <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">

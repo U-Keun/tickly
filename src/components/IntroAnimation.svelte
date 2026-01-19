@@ -19,6 +19,11 @@
   }
 
   onMount(() => {
+    // 세션 내 첫 로드시에만 애니메이션 실행
+    if (sessionStorage.getItem('introPlayed')) {
+      return;
+    }
+    sessionStorage.setItem('introPlayed', 'true');
     showIntro = true;
     playIntroAnimation();
   });

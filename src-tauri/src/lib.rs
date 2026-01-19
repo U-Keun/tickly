@@ -472,6 +472,36 @@ fn reorder_items(item_ids: Vec<i64>, state: State<AppState>) -> Result<(), Strin
     Ok(())
 }
 
+#[tauri::command]
+fn get_setting(key: String, state: State<AppState>) -> Result<Option<String>, String> {
+    let db = state.db.lock().unwrap();
+
+    let result: Result<String, _> = db.query_row(
+        "SELECT value FROM settings WHERE key = ?1",
+        params![key],
+        |row| row.get(0),
+    );
+
+    match result {
+        Ok(value) => Ok(Some(value)),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+#[tauri::command]
+fn set_setting(key: String, value: String, state: State<AppState>) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+
+    db.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
+        params![key, value],
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -497,7 +527,9 @@ pub fn run() {
             reset_all_items,
             check_and_auto_reset,
             reorder_items,
-            reorder_categories
+            reorder_categories,
+            get_setting,
+            set_setting
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -5,19 +5,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        paper: '#f8f7f3',
-        canvas: '#f2efe8',
-        mist: '#ede9e1',
-        stroke: '#e2ded5',
-        ink: '#5b5852',
-        'ink-muted': '#7a776f',
+        paper: 'var(--color-paper)',
+        canvas: 'var(--color-canvas)',
+        mist: 'var(--color-mist)',
+        stroke: 'var(--color-stroke)',
+        ink: 'var(--color-ink)',
+        'ink-muted': 'var(--color-ink-muted)',
         accent: {
-          sky: '#a8bddb',
-          'sky-strong': '#8ea9cf',
-          mint: '#bfd9c8',
-          'mint-strong': '#a7c8b5',
-          peach: '#e9c1ad',
-          'peach-strong': '#dba892',
+          sky: 'var(--color-accent-sky)',
+          'sky-strong': 'var(--color-accent-sky-strong)',
+          mint: 'var(--color-accent-mint)',
+          'mint-strong': 'var(--color-accent-mint-strong)',
+          peach: 'var(--color-accent-peach)',
+          'peach-strong': 'var(--color-accent-peach-strong)',
         },
       },
       fontFamily: {

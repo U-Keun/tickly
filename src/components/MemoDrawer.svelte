@@ -156,43 +156,47 @@
   .label {
     font-size: 14px;
     font-weight: 500;
-    color: #333;
+    color: var(--color-ink);
   }
 
   .text-input {
     width: 100%;
     padding: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-stroke);
     border-radius: 8px;
     font-size: 14px;
     line-height: 1.4;
     box-sizing: border-box;
+    background: var(--color-white);
+    color: var(--color-ink);
   }
 
   .text-input:focus {
     outline: none;
-    border-color: #87CEEB;
+    border-color: var(--color-accent-sky);
   }
 
   .memo-textarea {
     width: 100%;
     padding: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-stroke);
     border-radius: 8px;
     font-size: 14px;
     line-height: 1.4;
     resize: none;
     box-sizing: border-box;
+    background: var(--color-white);
+    color: var(--color-ink);
   }
 
   .memo-textarea:focus {
     outline: none;
-    border-color: #87CEEB;
+    border-color: var(--color-accent-sky);
   }
 
   .memo-textarea::placeholder,
   .text-input::placeholder {
-    color: #999;
+    color: var(--color-ink-muted);
   }
 
   .memo-display {
@@ -204,7 +208,7 @@
   .memo-text {
     margin: 0;
     font-size: 14px;
-    color: #666;
+    color: var(--color-ink-muted);
     line-height: 1.4;
     white-space: pre-wrap;
   }
@@ -236,21 +240,21 @@
   }
 
   .btn-cancel {
-    background: #f0f0f0;
-    color: #666;
+    background: var(--color-canvas);
+    color: var(--color-ink-muted);
   }
 
   .btn-cancel:hover {
-    background: #e0e0e0;
+    background: var(--color-mist);
   }
 
   .btn-save {
-    background: #87CEEB;
-    color: #333;
+    background: var(--color-accent-sky);
+    color: var(--color-ink);
   }
 
   .btn-save:hover {
-    background: #7AC5E0;
+    background: var(--color-accent-sky-strong);
   }
 
   .btn-save:disabled {
@@ -259,11 +263,11 @@
   }
 
   .btn-edit {
-    background: #87CEEB;
-    color: #333;
+    background: var(--color-accent-sky);
+    color: var(--color-ink);
   }
 
   .btn-edit:hover {
-    background: #7AC5E0;
+    background: var(--color-accent-sky-strong);
   }
 </style>
