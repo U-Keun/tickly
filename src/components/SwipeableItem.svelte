@@ -17,8 +17,8 @@
   let isDraggingHorizontally = $state(false);
   let containerElement: HTMLDivElement;
 
-  const SWIPE_THRESHOLD = 56; // pixels to trigger reveal
-  const DELETE_BUTTON_WIDTH = 56; // pixels
+  const SWIPE_THRESHOLD = 36; // pixels to trigger reveal
+  const DELETE_BUTTON_WIDTH = 44; // pixels (button + left margin)
 
   function handleTouchStart(e: TouchEvent) {
     const touch = e.touches[0];
@@ -127,10 +127,10 @@
   {#if swipeState === 'revealed' || swipeState === 'swiping'}
     <div
       class="swipe-delete-button"
-      style="opacity: {Math.min(1, Math.abs(translateX) / DELETE_BUTTON_WIDTH)}; width: {DELETE_BUTTON_WIDTH}px;"
+      style="opacity: {Math.min(1, Math.abs(translateX) / DELETE_BUTTON_WIDTH)};"
     >
       <button onclick={handleDelete} class="delete-button-inner" aria-label="삭제" title="삭제">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -152,7 +152,7 @@
 
   .swipe-content {
     position: relative;
-    background: white;
+    background: transparent;
     will-change: transform;
   }
 
@@ -161,12 +161,11 @@
     top: 50%;
     right: 0;
     transform: translateY(-50%);
-    width: 56px;
-    height: 56px;
-    background: #ef4444; /* red-500 */
+    width: 44px;
+    height: 36px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     pointer-events: all;
   }
 
@@ -176,11 +175,12 @@
     justify-content: center;
     color: white;
     padding: 0;
-    background: none;
+    background: #ef4444; /* red-500 */
     border: none;
     cursor: pointer;
-    width: 100%;
-    height: 100%;
+    width: 36px;
+    height: 36px;
+    border-radius: 0 10px 0 10px;
   }
 
   .delete-button-inner:active {

@@ -26,6 +26,9 @@
   let showReorderModal = $state(false);
   let selectedCategoryForMenu = $state<Category | null>(null);
 
+  // Edit mode state
+  let isEditingItem = $state(false);
+
   // Safe area bottom padding (measured via JavaScript to avoid iOS WebView bug)
   let safeAreaBottom = $state(0);
 
@@ -182,6 +185,12 @@
     items = updatedItems;
   }
 
+  function handleHomeClick() {
+    if (categories.length > 0) {
+      selectCategory(categories[0].id);
+    }
+  }
+
   function measureSafeArea(): number {
     const testEl = document.createElement('div');
     testEl.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0);visibility:hidden;pointer-events:none;';
@@ -264,6 +273,8 @@
                       <MemoDrawer
                         item={drawerItem}
                         onSaveMemo={updateMemo}
+                        onEditText={editItem}
+                        onEditModeChange={(editing) => isEditingItem = editing}
                         {closeDrawer}
                       />
                     {/snippet}
@@ -316,7 +327,8 @@
   </nav>
 
   <!-- Floating Action Buttons -->
-  <div class="fixed bottom-20 right-6 flex flex-col gap-3 items-center z-10" style="margin-bottom: {safeAreaBottom}px;">
+  {#if !isEditingItem}
+  <div class="fixed bottom-12 right-6 flex flex-col gap-3 items-center z-10" style="margin-bottom: {safeAreaBottom}px;">
     <!-- Add Button -->
     <button
       onclick={() => showAddItemModal = true}
@@ -339,6 +351,7 @@
       </svg>
     </button>
   </div>
+  {/if}
 
   <!-- Add Item Modal -->
   <AddItemModal

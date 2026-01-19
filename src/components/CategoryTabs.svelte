@@ -157,10 +157,10 @@
       {:else}
         <button
           onclick={startAddCategory}
-          class="min-w-[96px] px-4 py-2 rounded-full text-sm font-medium bg-accent-mint text-ink hover:bg-accent-mint-strong whitespace-nowrap flex items-center justify-center"
+          class="w-9 h-9 rounded-full text-lg font-medium bg-accent-mint text-ink hover:bg-accent-mint-strong flex items-center justify-center"
           title="카테고리 추가"
         >
-          + 추가
+          +
         </button>
       {/if}
     </div>
