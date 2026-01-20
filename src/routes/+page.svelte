@@ -1,9 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { flip } from 'svelte/animate';
-  import { fly } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
-  import { goto } from '$app/navigation';
   import type { Category } from '../types';
   import LeafTodoItem from '../components/LeafTodoItem.svelte';
   import MemoDrawer from '../components/MemoDrawer.svelte';
@@ -15,6 +12,8 @@
   import ReorderItemsModal from '../components/ReorderItemsModal.svelte';
   import ReorderCategoriesModal from '../components/ReorderCategoriesModal.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
+  import BottomNav from '../components/BottomNav.svelte';
+  import FloatingActions from '../components/FloatingActions.svelte';
   import { initializeTheme } from '../lib/themes';
   import { appStore, modalStore } from '../lib/stores';
   import * as todoApi from '../lib/api/todoApi';
@@ -174,78 +173,19 @@
   </main>
 
   <!-- Bottom Navigation Bar -->
-  <nav class="fixed bottom-0 left-0 right-0 z-20" style="background: var(--color-white); border-top: 1px solid var(--color-border);">
-    <div class="flex justify-around items-center h-14">
-      <!-- Reorder Button -->
-      <button
-        class="flex flex-col items-center justify-center flex-1 h-full"
-        style="color: var(--color-ink-muted);"
-        title={i18n.t('reorder')}
-        onclick={modalStore.openReorderModal}
-      >
-        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
-
-      <!-- Home Button -->
-      <button
-        class="flex flex-col items-center justify-center flex-1 h-full"
-        style="color: var(--color-ink-muted);"
-        title={i18n.t('home')}
-        onclick={appStore.goToFirstCategory}
-      >
-        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-      </button>
-
-      <!-- Settings Button -->
-      <button
-        class="flex flex-col items-center justify-center flex-1 h-full"
-        style="color: var(--color-ink-muted);"
-        title={i18n.t('settings')}
-        onclick={() => goto('/settings')}
-      >
-        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      </button>
-    </div>
-  </nav>
+  <BottomNav
+    onReorder={modalStore.openReorderModal}
+    onHome={appStore.goToFirstCategory}
+  />
 
   <!-- Floating Action Buttons -->
-  {#if showFab && !isEditingItem}
-  <div
-    class="fixed bottom-12 right-6 flex flex-col gap-3 items-center z-10 transition-[margin] duration-300"
-    style="margin-bottom: {safeAreaBottom}px;"
-    in:fly={{ y: 100, duration: 400, delay: fabDelay, easing: cubicOut }}
-    out:fly={{ y: 100, duration: 300, easing: cubicOut }}
-  >
-    <!-- Add Button -->
-    <button
-      onclick={modalStore.openAddItemModal}
-      class="w-14 h-14 bg-accent-sky-strong hover:bg-accent-sky text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
-      title={i18n.t('addItem')}
-    >
-      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-      </svg>
-    </button>
-
-    <!-- Reset Button -->
-    <button
-      onclick={modalStore.openResetConfirm}
-      class="w-14 h-14 bg-accent-peach-strong hover:bg-accent-peach text-ink rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
-      title={i18n.t('resetCheck')}
-    >
-      <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-      </svg>
-    </button>
-  </div>
-  {/if}
+  <FloatingActions
+    show={showFab && !isEditingItem}
+    {safeAreaBottom}
+    delay={fabDelay}
+    onAdd={modalStore.openAddItemModal}
+    onReset={modalStore.openResetConfirm}
+  />
 
   <!-- Add Item Modal -->
   <AddItemModal
