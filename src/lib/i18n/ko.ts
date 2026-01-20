@@ -68,6 +68,36 @@ export const ko = {
   todoPlaceholderAlt: '할 일을 입력하세요...',
   memoPlaceholderAlt: '메모를 입력하세요...',
   save: '저장',
+
+  // Theme settings
+  themeTitle: '테마 설정',
+  presetTheme: '프리셋 테마',
+  preview: '미리보기',
+  customColors: '커스텀 색상',
+  custom: '커스텀',
+
+  // Theme presets
+  themeDefault: '기본',
+  themeDark: '다크',
+  themeOcean: '오션',
+  themeForest: '포레스트',
+  themeSunset: '선셋',
+
+  // Color labels
+  colorPaper: '배경 (Paper)',
+  colorCanvas: '캔버스 (Canvas)',
+  colorMist: '미스트 (Mist)',
+  colorStroke: '테두리 (Stroke)',
+  colorInk: '텍스트 (Ink)',
+  colorInkMuted: '텍스트 흐림 (Ink Muted)',
+  colorAccentSky: '스카이 (Sky)',
+  colorAccentSkyStrong: '스카이 진함 (Sky Strong)',
+  colorAccentMint: '민트 (Mint)',
+  colorAccentMintStrong: '민트 진함 (Mint Strong)',
+  colorAccentPeach: '피치 (Peach)',
+  colorAccentPeachStrong: '피치 진함 (Peach Strong)',
+  colorWhite: '흰색 (White)',
+  colorBorder: '경계선 (Border)',
 };
 
 export type Translations = typeof ko;

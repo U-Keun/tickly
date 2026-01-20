@@ -13,25 +13,46 @@
   import ColorPicker from '../../../components/ColorPicker.svelte';
   import ThemePreview from '../../../components/ThemePreview.svelte';
   import SettingsLayout from '../../../components/SettingsLayout.svelte';
+  import { i18n } from '$lib/i18n';
 
   type ColorKey = keyof ThemeColors;
 
-  const colorLabels: Record<ColorKey, string> = {
-    paper: '배경 (Paper)',
-    canvas: '캔버스 (Canvas)',
-    mist: '미스트 (Mist)',
-    stroke: '테두리 (Stroke)',
-    ink: '텍스트 (Ink)',
-    inkMuted: '텍스트 흐림 (Ink Muted)',
-    accentSky: '스카이 (Sky)',
-    accentSkyStrong: '스카이 진함 (Sky Strong)',
-    accentMint: '민트 (Mint)',
-    accentMintStrong: '민트 진함 (Mint Strong)',
-    accentPeach: '피치 (Peach)',
-    accentPeachStrong: '피치 진함 (Peach Strong)',
-    white: '흰색 (White)',
-    border: '경계선 (Border)',
+  // Color key to i18n key mapping
+  const colorKeyMap: Record<ColorKey, string> = {
+    paper: 'colorPaper',
+    canvas: 'colorCanvas',
+    mist: 'colorMist',
+    stroke: 'colorStroke',
+    ink: 'colorInk',
+    inkMuted: 'colorInkMuted',
+    accentSky: 'colorAccentSky',
+    accentSkyStrong: 'colorAccentSkyStrong',
+    accentMint: 'colorAccentMint',
+    accentMintStrong: 'colorAccentMintStrong',
+    accentPeach: 'colorAccentPeach',
+    accentPeachStrong: 'colorAccentPeachStrong',
+    white: 'colorWhite',
+    border: 'colorBorder',
   };
+
+  // Preset ID to i18n key mapping
+  const presetNameMap: Record<string, string> = {
+    default: 'themeDefault',
+    dark: 'themeDark',
+    ocean: 'themeOcean',
+    forest: 'themeForest',
+    sunset: 'themeSunset',
+  };
+
+  function getPresetName(presetId: string): string {
+    const key = presetNameMap[presetId];
+    return key ? i18n.t(key as keyof typeof i18n.t) : presetId;
+  }
+
+  function getColorLabel(colorKey: ColorKey): string {
+    const key = colorKeyMap[colorKey];
+    return key ? i18n.t(key as keyof typeof i18n.t) : colorKey;
+  }
 
   let selectedPresetId = $state<string | null>('default');
   let isCustomMode = $state(false);
@@ -102,10 +123,10 @@
   }
 </script>
 
-<SettingsLayout title="테마 설정" onBack={handleBack} contentClass="pb-24">
+<SettingsLayout title={i18n.t('themeTitle')} onBack={handleBack} contentClass="pb-24">
   <!-- Preset Selection -->
   <section class="section">
-    <h2 class="section-title">프리셋 테마</h2>
+    <h2 class="section-title">{i18n.t('presetTheme')}</h2>
     <div class="preset-grid">
       {#each themePresets as preset}
         <button
@@ -117,7 +138,7 @@
             class="preset-preview"
             style="background: linear-gradient(135deg, {preset.colors.paper} 0%, {preset.colors.canvas} 50%, {preset.colors.accentSky} 100%);"
           ></div>
-          <span class="preset-name">{preset.name}</span>
+          <span class="preset-name">{getPresetName(preset.id)}</span>
         </button>
       {/each}
       <button
@@ -130,25 +151,25 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
           </svg>
         </div>
-        <span class="preset-name">커스텀</span>
+        <span class="preset-name">{i18n.t('custom')}</span>
       </button>
     </div>
   </section>
 
   <!-- Theme Preview -->
   <section class="section">
-    <h2 class="section-title">미리보기</h2>
+    <h2 class="section-title">{i18n.t('preview')}</h2>
     <ThemePreview colors={currentColors} />
   </section>
 
   <!-- Custom Colors (only in custom mode) -->
   {#if isCustomMode}
     <section class="section">
-      <h2 class="section-title">커스텀 색상</h2>
+      <h2 class="section-title">{i18n.t('customColors')}</h2>
       <div class="color-list">
-        {#each Object.entries(colorLabels) as [key, label]}
+        {#each Object.keys(colorKeyMap) as key}
           <ColorPicker
-            {label}
+            label={getColorLabel(key as ColorKey)}
             value={currentColors[key as ColorKey]}
             onChange={(value) => handleColorChange(key as ColorKey, value)}
           />
@@ -160,7 +181,7 @@
   {#snippet footer()}
     <div class="save-section">
       <button class="save-btn" onclick={handleSave}>
-        저장
+        {i18n.t('save')}
       </button>
     </div>
   {/snippet}

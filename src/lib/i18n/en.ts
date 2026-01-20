@@ -70,4 +70,34 @@ export const en: Translations = {
   todoPlaceholderAlt: 'Enter your task...',
   memoPlaceholderAlt: 'Enter a memo...',
   save: 'Save',
+
+  // Theme settings
+  themeTitle: 'Theme Settings',
+  presetTheme: 'Preset Themes',
+  preview: 'Preview',
+  customColors: 'Custom Colors',
+  custom: 'Custom',
+
+  // Theme presets
+  themeDefault: 'Default',
+  themeDark: 'Dark',
+  themeOcean: 'Ocean',
+  themeForest: 'Forest',
+  themeSunset: 'Sunset',
+
+  // Color labels
+  colorPaper: 'Paper',
+  colorCanvas: 'Canvas',
+  colorMist: 'Mist',
+  colorStroke: 'Stroke',
+  colorInk: 'Ink',
+  colorInkMuted: 'Ink Muted',
+  colorAccentSky: 'Sky',
+  colorAccentSkyStrong: 'Sky Strong',
+  colorAccentMint: 'Mint',
+  colorAccentMintStrong: 'Mint Strong',
+  colorAccentPeach: 'Peach',
+  colorAccentPeachStrong: 'Peach Strong',
+  colorWhite: 'White',
+  colorBorder: 'Border',
 };
