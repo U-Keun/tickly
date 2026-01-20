@@ -134,7 +134,7 @@
   </div>
 
   <!-- Main Content -->
-  <main class="main-content max-w-2xl w-full mx-auto flex flex-col">
+  <main class="main-content max-w-2xl w-full mx-auto flex flex-col flex-1 min-h-0">
     <!-- Scrollable Todo List -->
     <div class="todo-list-scroll">
       {#if appStore.items.length === 0}

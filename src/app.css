@@ -136,6 +136,8 @@ html, body {
   flex-direction: column;
   gap: 8px;
   padding: 12px;
+  /* Extra bottom padding for fixed bottom nav (56px) + FAB buttons (~150px) */
+  padding-bottom: 220px;
 }
 
 .item-wrapper {
