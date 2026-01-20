@@ -4,7 +4,6 @@
   import { fly } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { goto } from '$app/navigation';
-  import { invoke } from '@tauri-apps/api/core';
   import type { TodoItem, Category } from '../types';
   import LeafTodoItem from '../components/LeafTodoItem.svelte';
   import MemoDrawer from '../components/MemoDrawer.svelte';
@@ -17,6 +16,8 @@
   import ReorderCategoriesModal from '../components/ReorderCategoriesModal.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
   import { initializeTheme } from '../lib/themes';
+  import * as categoryApi from '../lib/api/categoryApi';
+  import * as todoApi from '../lib/api/todoApi';
 
   // Core app state
   let items = $state<TodoItem[]>([]);
@@ -47,7 +48,7 @@
 
   async function loadCategories() {
     try {
-      categories = await invoke<Category[]>('get_categories');
+      categories = await categoryApi.getCategories();
       if (categories.length > 0 && selectedCategoryId === null) {
         selectedCategoryId = categories[0].id;
       }
@@ -58,7 +59,7 @@
 
   async function loadItems() {
     try {
-      items = await invoke<TodoItem[]>('get_items', { categoryId: selectedCategoryId });
+      items = await todoApi.getItems(selectedCategoryId);
     } catch (error) {
       console.error('Failed to load items:', error);
     }
@@ -71,13 +72,13 @@
   }
 
   async function handleAddCategory(name: string) {
-    const newCategory = await invoke<Category>('add_category', { name });
+    const newCategory = await categoryApi.addCategory(name);
     categories = [...categories, newCategory];
     await selectCategory(newCategory.id);
   }
 
   async function handleEditCategory(id: number, name: string) {
-    await invoke('edit_category', { id, name });
+    await categoryApi.editCategory(id, name);
     categories = categories.map(cat =>
       cat.id === id ? { ...cat, name } : cat
     );
@@ -113,7 +114,7 @@
     }
 
     try {
-      await invoke('delete_category', { id: categoryToDelete.id });
+      await categoryApi.deleteCategory(categoryToDelete.id);
       categories = categories.filter(cat => cat.id !== categoryToDelete.id);
       if (selectedCategoryId === categoryToDelete.id) {
         await selectCategory(categories[0].id);
@@ -129,7 +130,7 @@
   // Reset handler
   async function confirmReset() {
     try {
-      await invoke('reset_all_items', { categoryId: selectedCategoryId });
+      await todoApi.resetAllItems(selectedCategoryId);
       items = items.map(item => ({ ...item, done: false }));
       showResetConfirm = false;
     } catch (error) {
@@ -140,10 +141,10 @@
   // Item handlers
   async function addItem(text: string, memo: string | null = null) {
     try {
-      const newItem = await invoke<TodoItem>('add_item', { text, categoryId: selectedCategoryId });
+      const newItem = await todoApi.addItem(text, selectedCategoryId);
       // If memo provided, save it immediately
       if (memo) {
-        await invoke('update_item_memo', { id: newItem.id, memo });
+        await todoApi.updateItemMemo(newItem.id, memo);
         newItem.memo = memo;
       }
       items = [...items, newItem];
@@ -154,7 +155,7 @@
 
   async function toggleItem(id: number) {
     try {
-      await invoke('toggle_item', { id });
+      await todoApi.toggleItem(id);
       await loadItems();
     } catch (error) {
       console.error('Failed to toggle item:', error);
@@ -163,7 +164,7 @@
 
   async function deleteItem(id: number) {
     try {
-      await invoke('delete_item', { id });
+      await todoApi.deleteItem(id);
       items = items.filter(item => item.id !== id);
     } catch (error) {
       console.error('Failed to delete item:', error);
@@ -172,7 +173,7 @@
 
   async function editItem(id: number, text: string) {
     try {
-      await invoke('edit_item', { id, text });
+      await todoApi.editItem(id, text);
       items = items.map(item =>
         item.id === id ? { ...item, text } : item
       );
@@ -183,7 +184,7 @@
 
   async function updateMemo(id: number, memo: string | null) {
     try {
-      await invoke('update_item_memo', { id, memo });
+      await todoApi.updateItemMemo(id, memo);
       items = items.map(item =>
         item.id === id ? { ...item, memo } : item
       );
@@ -248,7 +249,7 @@
 
     // Check and auto-reset if new day
     try {
-      const wasReset = await invoke<boolean>('check_and_auto_reset');
+      const wasReset = await todoApi.checkAndAutoReset();
       if (wasReset) {
         console.log('Auto-reset performed for new day');
       }

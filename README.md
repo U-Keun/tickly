@@ -35,6 +35,34 @@
 - **Styling**: TailwindCSS
 - **Platform**: iOS, macOS, Windows, Linux
 
+## 아키텍처
+
+### 계층형 아키텍처
+
+프로젝트는 유지보수성과 관심사 분리를 위해 계층형 아키텍처를 따릅니다:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Frontend                              │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
+│  │   Routes    │ -> │ Components  │ -> │  API Layer  │     │
+│  └─────────────┘    └─────────────┘    └─────────────┘     │
+└─────────────────────────────────────────────────────────────┘
+                              │ invoke()
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Rust Backend                             │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
+│  │  Commands   │ -> │  Services   │ -> │ Repository  │     │
+│  └─────────────┘    └─────────────┘    └─────────────┘     │
+│                                               │              │
+│                                               ▼              │
+│                                        ┌─────────────┐      │
+│                                        │   SQLite    │      │
+│                                        └─────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ## 개발 환경 설정
 
 ### 필수 요구사항
@@ -97,32 +125,50 @@ Xcode가 자동으로 열리고 빌드가 진행됩니다. 빌드 완료 후 기
 
 ```
 Tickly/
-├── src/                          # 프론트엔드 소스
+├── src/                              # Frontend (SvelteKit)
 │   ├── routes/
-│   │   ├── +page.svelte          # 메인 페이지
+│   │   ├── +page.svelte              # 메인 페이지
 │   │   └── settings/
-│   │       ├── +page.svelte      # 설정 메인 페이지
+│   │       ├── +page.svelte          # 설정 메인 페이지
 │   │       └── theme/
-│   │           └── +page.svelte  # 테마 설정 페이지
-│   ├── components/
-│   │   ├── LeafTodoItem.svelte   # Todo 항목 컴포넌트
-│   │   ├── AddItemModal.svelte   # 항목 추가 모달
-│   │   ├── SwipeableItem.svelte  # 스와이프 삭제 래퍼
-│   │   ├── CategoryTabs.svelte   # 카테고리 탭
-│   │   ├── ColorPicker.svelte    # 색상 선택기
-│   │   └── ThemePreview.svelte   # 테마 미리보기
+│   │           └── +page.svelte      # 테마 설정 페이지
+│   ├── components/                   # 재사용 가능한 컴포넌트
+│   │   ├── LeafTodoItem.svelte       # Todo 항목 컴포넌트
+│   │   ├── AddItemModal.svelte       # 항목 추가 모달
+│   │   ├── SwipeableItem.svelte      # 스와이프 삭제 래퍼
+│   │   ├── CategoryTabs.svelte       # 카테고리 탭
+│   │   └── ...
 │   ├── lib/
-│   │   └── themes.ts             # 테마 프리셋 및 유틸리티
-│   ├── types.ts                  # TypeScript 타입 정의
-│   └── app.css                   # TailwindCSS + CSS 변수
-├── src-tauri/                    # Rust 백엔드
+│   │   ├── api/                      # API 레이어 (Tauri invoke 래퍼)
+│   │   │   ├── categoryApi.ts        # Category API
+│   │   │   ├── todoApi.ts            # Todo API
+│   │   │   └── settingsApi.ts        # Settings API
+│   │   └── themes.ts                 # 테마 프리셋 및 유틸리티
+│   ├── types.ts                      # TypeScript 타입 정의
+│   └── app.css                       # TailwindCSS + CSS 변수
+├── src-tauri/                        # Backend (Rust + Tauri)
 │   ├── src/
-│   │   └── lib.rs                # Todo CRUD 로직 + SQLite
-│   ├── tauri.conf.json           # Tauri 설정
-│   ├── Cargo.toml                # Rust 의존성
-│   └── gen/apple/                # iOS 프로젝트 파일
-├── CLAUDE.md                     # 프로젝트 가이드
-└── README.md                     # 이 파일
+│   │   ├── lib.rs                    # 앱 진입점 및 모듈 등록
+│   │   ├── models/                   # 데이터 모델
+│   │   │   ├── category.rs           # Category 구조체
+│   │   │   └── todo_item.rs          # TodoItem 구조체
+│   │   ├── repository/               # 데이터 접근 레이어
+│   │   │   ├── database.rs           # DB 초기화
+│   │   │   ├── migration.rs          # 스키마 마이그레이션
+│   │   │   ├── category_repo.rs      # Category CRUD
+│   │   │   ├── todo_repo.rs          # Todo CRUD
+│   │   │   └── settings_repo.rs      # Settings CRUD
+│   │   ├── service/                  # 비즈니스 로직 레이어
+│   │   │   ├── category_service.rs   # Category 비즈니스 로직
+│   │   │   ├── todo_service.rs       # Todo 비즈니스 로직
+│   │   │   └── reset_service.rs      # 리셋 로직
+│   │   └── commands/                 # Tauri 커맨드 핸들러
+│   │       ├── category_commands.rs  # Category 커맨드
+│   │       ├── todo_commands.rs      # Todo 커맨드
+│   │       └── settings_commands.rs  # Settings 커맨드
+│   └── tauri.conf.json               # Tauri 설정
+├── CLAUDE.md                         # 프로젝트 가이드
+└── README.md                         # 이 파일
 ```
 
 ## 데이터 저장
@@ -159,24 +205,32 @@ Tickly/
 <button onclick={handleClick}>Click</button>
 ```
 
-### Tauri Commands
+### API 레이어 사용
 
-백엔드 함수는 `#[tauri::command]` 속성으로 정의되고, 프론트엔드에서 `invoke()`로 호출합니다:
+프론트엔드에서 백엔드와 통신할 때는 반드시 API 레이어를 사용합니다:
 
-```rust
-// Rust
-#[tauri::command]
-fn add_item(text: String, state: State<AppState>) -> Result<TodoItem, String> {
-    // ...
-}
+```typescript
+// ✅ 올바른 방법 - API 모듈 사용
+import * as todoApi from '$lib/api/todoApi';
+import * as categoryApi from '$lib/api/categoryApi';
+
+const items = await todoApi.getItems(categoryId);
+const newItem = await todoApi.addItem('우유 사기', categoryId);
+await todoApi.toggleItem(itemId);
 ```
 
 ```typescript
-// TypeScript
+// ❌ 잘못된 방법 - 직접 invoke 호출
 import { invoke } from '@tauri-apps/api/core';
-
-const newItem = await invoke<TodoItem>('add_item', { text: 'Buy milk' });
+const items = await invoke('get_items', { categoryId });
 ```
+
+### Rust 백엔드 레이어
+
+1. **Models**: 데이터 구조체 정의
+2. **Repository**: 데이터베이스 CRUD 작업
+3. **Service**: 비즈니스 로직 (여러 Repository 조합)
+4. **Commands**: Tauri 커맨드 (Service 호출)
 
 ## 빌드
 

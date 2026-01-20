@@ -17,35 +17,93 @@ Deploy to iOS App Store as quickly as possible with a simple, functional design.
 ### Tech Stack
 - **Frontend**: SvelteKit with TypeScript, Svelte 5 (runes syntax)
 - **Backend**: Rust with Tauri v2 framework
+- **Database**: SQLite (rusqlite)
 - **Styling**: TailwindCSS (utility-first, minimal custom CSS)
 - **Build System**: Vite + Cargo
 - **Target Platform**: iOS (primary), Desktop (secondary)
 
+### Architecture Overview
+
+The project follows a layered architecture for maintainability and separation of concerns:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Frontend                              │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
+│  │   Routes    │ -> │ Components  │ -> │  API Layer  │     │
+│  │ (+page.svelte)   │ (*.svelte)  │    │ (lib/api/*) │     │
+│  └─────────────┘    └─────────────┘    └─────────────┘     │
+└─────────────────────────────────────────────────────────────┘
+                              │ invoke()
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Rust Backend                             │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
+│  │  Commands   │ -> │  Services   │ -> │ Repository  │     │
+│  │ (Tauri API) │    │ (Business)  │    │ (Data Access)│    │
+│  └─────────────┘    └─────────────┘    └─────────────┘     │
+│                                               │              │
+│                                               ▼              │
+│                                        ┌─────────────┐      │
+│                                        │   SQLite    │      │
+│                                        └─────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ### Key Directories
+
 ```
 Tickly/
-├── src/
+├── src/                              # Frontend (SvelteKit)
 │   ├── routes/
-│   │   ├── +layout.svelte      # Global layout with CSS imports
-│   │   ├── +layout.ts          # SPA mode config
-│   │   ├── +page.svelte        # Main app page
+│   │   ├── +layout.svelte            # Global layout with CSS imports
+│   │   ├── +layout.ts                # SPA mode config
+│   │   ├── +page.svelte              # Main app page
 │   │   └── settings/
-│   │       ├── +page.svelte    # Settings main page
+│   │       ├── +page.svelte          # Settings main page
 │   │       └── theme/
-│   │           └── +page.svelte # Theme customization page
-│   ├── components/             # Reusable Svelte components
+│   │           └── +page.svelte      # Theme customization page
+│   ├── components/                   # Reusable Svelte components
 │   ├── lib/
-│   │   ├── themes.ts           # Theme presets and utilities
-│   │   └── iosFocusFix.ts      # iOS input focus fix
-│   ├── types.ts                # TypeScript type definitions
-│   ├── app.css                 # Tailwind directives + CSS variables
-│   └── app.html                # Root HTML template
-├── src-tauri/
-│   ├── src/lib.rs              # Tauri commands and app logic
-│   ├── src/main.rs             # App entry point
-│   └── tauri.conf.json         # Tauri configuration
-├── static/                     # Static assets (IMPORTANT: use for iOS)
-└── tailwind.config.ts          # TailwindCSS configuration
+│   │   ├── api/                      # API Layer (Tauri invoke wrappers)
+│   │   │   ├── index.ts              # Re-exports
+│   │   │   ├── client.ts             # Base invoke wrapper
+│   │   │   ├── categoryApi.ts        # Category API functions
+│   │   │   ├── todoApi.ts            # Todo API functions
+│   │   │   └── settingsApi.ts        # Settings API functions
+│   │   ├── themes.ts                 # Theme presets and utilities
+│   │   └── iosFocusFix.ts            # iOS input focus fix
+│   ├── types.ts                      # TypeScript type definitions
+│   ├── app.css                       # Tailwind directives + CSS variables
+│   └── app.html                      # Root HTML template
+├── src-tauri/                        # Backend (Rust + Tauri)
+│   ├── src/
+│   │   ├── lib.rs                    # App entry point & module exports
+│   │   ├── main.rs                   # Main entry
+│   │   ├── models/                   # Data models
+│   │   │   ├── mod.rs
+│   │   │   ├── category.rs           # Category struct
+│   │   │   └── todo_item.rs          # TodoItem struct
+│   │   ├── repository/               # Data access layer
+│   │   │   ├── mod.rs
+│   │   │   ├── database.rs           # DB initialization
+│   │   │   ├── migration.rs          # Schema migrations
+│   │   │   ├── category_repo.rs      # Category CRUD
+│   │   │   ├── todo_repo.rs          # Todo CRUD
+│   │   │   └── settings_repo.rs      # Settings CRUD
+│   │   ├── service/                  # Business logic layer
+│   │   │   ├── mod.rs
+│   │   │   ├── category_service.rs   # Category business logic
+│   │   │   ├── todo_service.rs       # Todo business logic
+│   │   │   └── reset_service.rs      # Reset/auto-reset logic
+│   │   └── commands/                 # Tauri command handlers
+│   │       ├── mod.rs
+│   │       ├── category_commands.rs  # Category Tauri commands
+│   │       ├── todo_commands.rs      # Todo Tauri commands
+│   │       └── settings_commands.rs  # Settings Tauri commands
+│   └── tauri.conf.json               # Tauri configuration
+├── static/                           # Static assets (IMPORTANT: use for iOS)
+└── tailwind.config.ts                # TailwindCSS configuration
 ```
 
 ## Design Philosophy
@@ -55,6 +113,7 @@ Tickly/
 2. **Speed to Market**: Ship fast, iterate based on user feedback
 3. **Mobile-First**: Optimize for iOS touch experience
 4. **Clean Design**: TailwindCSS utilities, avoid custom styling
+5. **Separation of Concerns**: Clear boundaries between layers
 
 ### UI Guidelines
 - Use simple, clear typography
@@ -98,6 +157,98 @@ This project uses **Svelte 5** with runes syntax:
 </script>
 
 <button onclick={handleClick}>Click me</button>
+```
+
+## API Layer Usage (Frontend)
+
+The frontend uses an API layer to communicate with the Rust backend. **Never call `invoke()` directly** - always use the API modules.
+
+### Using API Modules
+
+```typescript
+// ✅ Correct - use API modules
+import * as todoApi from '$lib/api/todoApi';
+import * as categoryApi from '$lib/api/categoryApi';
+
+const items = await todoApi.getItems(categoryId);
+const newItem = await todoApi.addItem('Buy milk', categoryId);
+await todoApi.toggleItem(itemId);
+
+const categories = await categoryApi.getCategories();
+const newCategory = await categoryApi.addCategory('Work');
+```
+
+```typescript
+// ❌ Wrong - direct invoke call
+import { invoke } from '@tauri-apps/api/core';
+const items = await invoke('get_items', { categoryId });
+```
+
+### Available API Functions
+
+**todoApi.ts**:
+- `getItems(categoryId)` - Get all items in a category
+- `addItem(text, categoryId)` - Create a new item
+- `toggleItem(id)` - Toggle item completion
+- `deleteItem(id)` - Delete an item
+- `editItem(id, text)` - Update item text
+- `updateItemMemo(id, memo)` - Update item memo
+- `reorderItems(itemIds)` - Reorder items
+- `resetAllItems(categoryId)` - Reset all items' done status
+- `checkAndAutoReset()` - Auto-reset if new day
+
+**categoryApi.ts**:
+- `getCategories()` - Get all categories
+- `addCategory(name)` - Create a new category
+- `editCategory(id, name)` - Update category name
+- `deleteCategory(id)` - Delete a category
+- `reorderCategories(categoryIds)` - Reorder categories
+
+**settingsApi.ts**:
+- `getSetting(key)` - Get a setting value
+- `setSetting(key, value)` - Set a setting value
+
+## Rust Backend Architecture
+
+### Layer Responsibilities
+
+1. **Models** (`models/`): Pure data structures with Serde serialization
+2. **Repository** (`repository/`): Direct database operations (CRUD)
+3. **Service** (`service/`): Business logic that may combine multiple repositories
+4. **Commands** (`commands/`): Tauri command handlers, thin wrappers around services
+
+### Adding a New Feature
+
+1. **Add model** (if needed) in `models/`
+2. **Add repository methods** in `repository/`
+3. **Add service methods** (if business logic needed) in `service/`
+4. **Add Tauri command** in `commands/`
+5. **Export command** in `lib.rs` invoke_handler
+6. **Add API function** in frontend `lib/api/`
+7. **Use in component** via API module
+
+### Example: Adding a New Command
+
+```rust
+// 1. commands/todo_commands.rs
+#[tauri::command]
+pub fn my_new_command(id: i64, state: State<AppState>) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    TodoService::my_new_operation(&db, id).map_err(|e| e.to_string())
+}
+
+// 2. lib.rs - add to invoke_handler
+.invoke_handler(tauri::generate_handler![
+    // ... existing commands
+    my_new_command,
+])
+```
+
+```typescript
+// 3. lib/api/todoApi.ts
+export async function myNewOperation(id: number): Promise<void> {
+  return invoke<void>('my_new_command', { id });
+}
 ```
 
 ## Development Commands
@@ -185,23 +336,18 @@ If using external resources (fonts, CDNs), update CSP in `tauri.conf.json`:
 
 ## Project Structure Best Practices
 
-### File Organization
-```
-src/
-├── components/
-│   ├── TodoItem.svelte
-│   ├── TodoList.svelte
-│   └── AddItemInput.svelte
-├── routes/
-│   └── +page.svelte  # Main app page (import components here)
-└── app.css  # Only Tailwind directives
-```
-
-### Component Guidelines
+### Frontend Guidelines
 - One component per file
 - Use Svelte 5 runes syntax
 - Keep components small and focused
+- **Always use API layer** for backend communication
 - Prefer composition over complexity
+
+### Backend Guidelines
+- Keep commands thin (delegate to services)
+- Put business logic in services
+- Put SQL operations in repositories
+- Use transactions for multi-step operations
 
 ### Styling Guidelines
 - Use TailwindCSS utilities exclusively
@@ -254,7 +400,7 @@ git commit -m "feat: add todo item completion toggle
 - Implement toggle state in Tauri backend
 - Update UI to show completed items
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```
 
 ## Implemented Features
@@ -268,6 +414,8 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 - ✅ Theme customization (5 presets + custom colors)
 - ✅ Settings page structure
 - ✅ iOS-optimized UI with safe area handling
+- ✅ Layered architecture (Repository → Service → Commands)
+- ✅ Frontend API layer
 
 ## Next Steps
 

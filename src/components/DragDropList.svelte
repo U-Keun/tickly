@@ -1,7 +1,7 @@
 <script lang="ts">
   import { flip } from 'svelte/animate';
   import { dndzone } from 'svelte-dnd-action';
-  import { invoke } from '@tauri-apps/api/core';
+  import { reorderItems } from '../lib/api/todoApi';
   import type { TodoItem } from '../types';
 
   interface Props {
@@ -26,7 +26,7 @@
     // Save to backend
     const itemIds = items.map(item => item.id);
     try {
-      await invoke('reorder_items', { itemIds });
+      await reorderItems(itemIds);
       onItemsReorder(items);
     } catch (error) {
       console.error('Failed to reorder items:', error);

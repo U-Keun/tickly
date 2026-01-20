@@ -1,7 +1,7 @@
 <script lang="ts">
   import { flip } from 'svelte/animate';
   import { dndzone } from 'svelte-dnd-action';
-  import { invoke } from '@tauri-apps/api/core';
+  import { reorderCategories } from '../lib/api/categoryApi';
   import type { Category } from '../types';
 
   interface Props {
@@ -23,7 +23,7 @@
 
     const categoryIds = categories.map(cat => cat.id);
     try {
-      await invoke('reorder_categories', { categoryIds });
+      await reorderCategories(categoryIds);
       onCategoriesReorder(categories);
     } catch (error) {
       console.error('Failed to reorder categories:', error);
