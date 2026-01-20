@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { TodoItem } from '../types';
   import DragDropList from './DragDropList.svelte';
+  import { i18n } from '$lib/i18n';
 
   interface Props {
     show: boolean;
@@ -36,13 +37,13 @@
     >
       <div class="flex items-center justify-between mb-4">
         <div>
-          <h3 id="reorder-title" class="text-lg font-semibold text-ink">항목 순서 정렬</h3>
-          <p class="text-sm text-ink-muted mt-1">드래그해서 현재 카테고리의 순서를 바꿔보세요.</p>
+          <h3 id="reorder-title" class="text-lg font-semibold text-ink">{i18n.t('reorderItemsTitle')}</h3>
+          <p class="text-sm text-ink-muted mt-1">{i18n.t('reorderItemsSubtitle')}</p>
         </div>
         <button
           class="text-ink-muted hover:text-ink"
           type="button"
-          aria-label="닫기"
+          aria-label={i18n.t('close')}
           onclick={onClose}
         >
           ✕
@@ -51,7 +52,7 @@
 
       {#if items.length === 0}
         <div class="py-10 text-center text-ink-muted text-sm">
-          정렬할 항목이 없습니다.
+          {i18n.t('noItemsToReorder')}
         </div>
       {:else}
         <DragDropList {items} onItemsReorder={onItemsReorder}>
@@ -73,7 +74,7 @@
                 {/if}
               </div>
               {#if item.done}
-                <span class="text-xs text-green-600 font-medium">완료</span>
+                <span class="text-xs text-green-600 font-medium">{i18n.t('done')}</span>
               {/if}
             </div>
           {/snippet}

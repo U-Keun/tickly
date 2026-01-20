@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { i18n } from '$lib/i18n';
+
   interface Props {
     show: boolean;
     onAdd: (text: string, memo: string | null) => void;
@@ -49,10 +51,10 @@
     aria-labelledby="add-item-title"
   >
     <div class="modal-content" onclick={(e) => e.stopPropagation()}>
-      <h3 id="add-item-title" class="modal-title">항목 추가</h3>
+      <h3 id="add-item-title" class="modal-title">{i18n.t('addItemTitle')}</h3>
 
       <div class="form-group">
-        <label for="item-text" class="form-label">할 일</label>
+        <label for="item-text" class="form-label">{i18n.t('todoLabel')}</label>
         <input
           bind:this={textInputElement}
           bind:value={text}
@@ -60,26 +62,26 @@
           id="item-text"
           type="text"
           class="form-input"
-          placeholder="할 일을 입력하세요"
+          placeholder={i18n.t('todoPlaceholder')}
           autocomplete="off"
         />
       </div>
 
       <div class="form-group">
-        <label for="item-memo" class="form-label">메모 (선택)</label>
+        <label for="item-memo" class="form-label">{i18n.t('memoLabel')}</label>
         <textarea
           bind:value={memo}
           onkeydown={handleKeydown}
           id="item-memo"
           class="form-textarea"
-          placeholder="메모를 입력하세요"
+          placeholder={i18n.t('memoPlaceholder')}
           rows="3"
         ></textarea>
       </div>
 
       <div class="button-group">
         <button type="button" class="btn-cancel" onclick={onCancel}>
-          취소
+          {i18n.t('cancel')}
         </button>
         <button
           type="button"
@@ -87,7 +89,7 @@
           onclick={handleSubmit}
           disabled={!text.trim()}
         >
-          추가
+          {i18n.t('add')}
         </button>
       </div>
     </div>

@@ -18,6 +18,7 @@
   import { initializeTheme } from '../lib/themes';
   import { appStore, modalStore } from '../lib/stores';
   import * as todoApi from '../lib/api/todoApi';
+  import { i18n } from '$lib/i18n';
 
   // Local UI state only
   let isEditingItem = $state(false);
@@ -66,8 +67,9 @@
   }
 
   onMount(async () => {
-    // Initialize theme from saved settings
+    // Initialize theme and locale from saved settings
     await initializeTheme();
+    await i18n.loadLocale();
 
     // Measure safe area after iOS WebView stabilizes
     // Normal iPhone safe area is around 34px, reject abnormal values (>50px or <=0)
@@ -138,8 +140,8 @@
     <div class="todo-list-scroll">
       {#if appStore.items.length === 0}
         <div class="p-8 text-center text-ink-muted">
-          <p>아직 항목이 없습니다.</p>
-          <p class="text-sm mt-1">항목을 추가해보세요!</p>
+          <p>{i18n.t('emptyListTitle')}</p>
+          <p class="text-sm mt-1">{i18n.t('emptyListSubtitle')}</p>
         </div>
       {:else}
         <div class="item-list">
@@ -178,7 +180,7 @@
       <button
         class="flex flex-col items-center justify-center flex-1 h-full"
         style="color: var(--color-ink-muted);"
-        title="순서 바꾸기"
+        title={i18n.t('reorder')}
         onclick={modalStore.openReorderModal}
       >
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,7 +192,7 @@
       <button
         class="flex flex-col items-center justify-center flex-1 h-full"
         style="color: var(--color-ink-muted);"
-        title="홈"
+        title={i18n.t('home')}
         onclick={appStore.goToFirstCategory}
       >
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -202,7 +204,7 @@
       <button
         class="flex flex-col items-center justify-center flex-1 h-full"
         style="color: var(--color-ink-muted);"
-        title="설정"
+        title={i18n.t('settings')}
         onclick={() => goto('/settings')}
       >
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -225,7 +227,7 @@
     <button
       onclick={modalStore.openAddItemModal}
       class="w-14 h-14 bg-accent-sky-strong hover:bg-accent-sky text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
-      title="항목 추가"
+      title={i18n.t('addItem')}
     >
       <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -236,7 +238,7 @@
     <button
       onclick={modalStore.openResetConfirm}
       class="w-14 h-14 bg-accent-peach-strong hover:bg-accent-peach text-ink rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
-      title="체크 초기화"
+      title={i18n.t('resetCheck')}
     >
       <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -269,9 +271,10 @@
   <!-- Reset Confirmation Modal -->
   <ConfirmModal
     show={modalStore.showResetConfirm}
-    title="체크 초기화"
-    message="모든 체크를 초기화하시겠습니까?"
-    confirmLabel="초기화"
+    title={i18n.t('resetConfirmTitle')}
+    message={i18n.t('resetConfirmMessage')}
+    confirmLabel={i18n.t('reset')}
+    cancelLabel={i18n.t('cancel')}
     confirmClass="bg-orange-500 hover:bg-orange-600"
     onConfirm={confirmReset}
     onCancel={modalStore.closeResetConfirm}
@@ -289,11 +292,12 @@
   <!-- Delete Category Confirmation Modal -->
   <ConfirmModal
     show={modalStore.showDeleteCategoryConfirm}
-    title="카테고리 삭제"
+    title={i18n.t('categoryDelete')}
     message={modalStore.selectedCategoryForMenu
-      ? `"${modalStore.selectedCategoryForMenu.name}" 카테고리를 삭제하시겠습니까?\n항목들도 함께 삭제됩니다.`
+      ? i18n.t('categoryDeleteConfirmTemplate')(modalStore.selectedCategoryForMenu.name)
       : ''}
-    confirmLabel="삭제"
+    confirmLabel={i18n.t('delete')}
+    cancelLabel={i18n.t('cancel')}
     confirmClass="bg-red-500 hover:bg-red-600"
     onConfirm={confirmDeleteCategory}
     onCancel={modalStore.closeDeleteCategoryConfirm}

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Category } from '../types';
+  import { i18n } from '$lib/i18n';
 
   interface Props {
     show: boolean;
@@ -21,19 +22,19 @@
           onclick={onEdit}
           class="px-4 py-3 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg text-left font-medium"
         >
-          이름 수정
+          {i18n.t('editName')}
         </button>
         <button
           onclick={onDelete}
           class="px-4 py-3 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg text-left font-medium"
         >
-          카테고리 삭제
+          {i18n.t('categoryDelete')}
         </button>
         <button
           onclick={onClose}
           class="px-4 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg text-left font-medium"
         >
-          취소
+          {i18n.t('cancel')}
         </button>
       </div>
     </div>

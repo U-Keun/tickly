@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { TodoItem } from '../types';
+  import { i18n } from '$lib/i18n';
 
   interface Props {
     item: TodoItem;
@@ -70,14 +71,14 @@
   {#if isEditMode}
     <!-- Edit Mode -->
     <div class="edit-section">
-      <label class="label" for="text-input">항목</label>
+      <label class="label" for="text-input">{i18n.t('itemLabel')}</label>
       <input
         id="text-input"
         bind:value={editText}
         onkeydown={handleKeydown}
         class="text-input"
         type="text"
-        placeholder="할 일을 입력하세요..."
+        placeholder={i18n.t('todoPlaceholderAlt')}
       />
     </div>
     <div class="edit-section">
@@ -86,7 +87,7 @@
         bind:value={memoText}
         onkeydown={handleKeydown}
         class="memo-textarea"
-        placeholder="메모를 입력하세요..."
+        placeholder={i18n.t('memoPlaceholderAlt')}
         rows="3"
       ></textarea>
     </div>
@@ -95,7 +96,7 @@
         type="button"
         class="btn-cancel"
         onclick={cancelEdit}
-        title="취소"
+        title={i18n.t('cancel')}
       >
         <!-- Lucide X icon -->
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -108,7 +109,7 @@
         class="btn-save"
         onclick={saveChanges}
         disabled={isSaving}
-        title="저장"
+        title={i18n.t('save')}
       >
         <!-- Lucide Check icon -->
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -128,7 +129,7 @@
         type="button"
         class="btn-edit"
         onclick={enterEditMode}
-        title="수정"
+        title={i18n.t('edit')}
       >
         <!-- Lucide Pencil icon -->
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Category } from '../types';
   import { iosFocusFix } from '$lib/iosFocusFix';
+  import { i18n } from '$lib/i18n';
 
   interface Props {
     categories: Category[];
@@ -87,7 +88,7 @@
         editingCategoryName = '';
       } catch (error) {
         console.error('Failed to edit category:', error);
-        alert('카테고리 수정 실패: ' + error);
+        alert(i18n.t('categoryEditFailed') + error);
       }
     }
   }
@@ -152,14 +153,14 @@
           onblur={handleAddCategoryBlur}
           class="w-24 px-4 py-2 rounded-full text-sm font-medium bg-accent-mint text-ink placeholder-ink-muted focus:outline-none focus:ring-0"
           type="text"
-          placeholder="카테고리명"
+          placeholder={i18n.t('categoryPlaceholder')}
           autofocus
         />
       {:else}
         <button
           onclick={startAddCategory}
           class="w-9 h-9 rounded-full text-lg font-medium bg-accent-mint text-ink hover:bg-accent-mint-strong flex items-center justify-center"
-          title="카테고리 추가"
+          title={i18n.t('addCategory')}
         >
           +
         </button>
@@ -169,7 +170,7 @@
       <button
         onclick={onReorderCategories}
         class="w-9 h-9 rounded-full bg-paper text-ink-muted hover:bg-mist flex items-center justify-center"
-        title="카테고리 순서 변경"
+        title={i18n.t('reorderCategories')}
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
