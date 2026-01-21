@@ -61,9 +61,16 @@ Tickly/
 │   │   ├── +page.svelte              # Main app page
 │   │   └── settings/
 │   │       ├── +page.svelte          # Settings main page
-│   │       └── theme/
-│   │           └── +page.svelte      # Theme customization page
+│   │       ├── theme/
+│   │       │   └── +page.svelte      # Theme customization page
+│   │       └── language/
+│   │           └── +page.svelte      # Language settings page
 │   ├── components/                   # Reusable Svelte components
+│   │   ├── ModalWrapper.svelte       # Common modal layout
+│   │   ├── SettingsLayout.svelte     # Common settings page layout
+│   │   ├── BottomNav.svelte          # Bottom navigation bar
+│   │   ├── FloatingActions.svelte    # FAB buttons (add, reset)
+│   │   └── ...                       # Other components
 │   ├── lib/
 │   │   ├── api/                      # API Layer (Tauri invoke wrappers)
 │   │   │   ├── index.ts              # Re-exports
@@ -71,6 +78,15 @@ Tickly/
 │   │   │   ├── categoryApi.ts        # Category API functions
 │   │   │   ├── todoApi.ts            # Todo API functions
 │   │   │   └── settingsApi.ts        # Settings API functions
+│   │   ├── stores/                   # Svelte 5 reactive stores
+│   │   │   ├── index.ts              # Re-exports
+│   │   │   ├── appStore.svelte.ts    # App state (categories, items)
+│   │   │   └── modalStore.svelte.ts  # Modal visibility state
+│   │   ├── i18n/                     # Internationalization
+│   │   │   ├── index.ts              # Re-exports
+│   │   │   ├── i18nStore.svelte.ts   # i18n store with locale state
+│   │   │   ├── ko.ts                 # Korean translations
+│   │   │   └── en.ts                 # English translations
 │   │   ├── themes.ts                 # Theme presets and utilities
 │   │   └── iosFocusFix.ts            # iOS input focus fix
 │   ├── types.ts                      # TypeScript type definitions
@@ -355,6 +371,145 @@ If using external resources (fonts, CDNs), update CSP in `tauri.conf.json`:
 - **Use CSS variables for colors** (theme system support)
 - Follow mobile-first responsive design
 
+## Common Components
+
+The project uses shared layout components to maintain consistency and reduce code duplication.
+
+### ModalWrapper
+
+All modals use `ModalWrapper.svelte` for consistent styling and behavior:
+
+```svelte
+<script lang="ts">
+  import ModalWrapper from './ModalWrapper.svelte';
+</script>
+
+<ModalWrapper show={isOpen} onClose={handleClose} size="sm" position="center">
+  <!-- Modal content here -->
+</ModalWrapper>
+```
+
+**Props:**
+- `show`: boolean - Controls visibility
+- `onClose`: () => void - Called when clicking overlay or pressing Escape
+- `size`: 'sm' | 'md' - Modal width (default: 'sm')
+- `position`: 'center' | 'top' - Vertical alignment (default: 'center')
+
+**Features:**
+- Slide-up animation (fly transition)
+- Fade overlay
+- Keyboard support (Escape to close)
+- Click outside to close
+
+### SettingsLayout
+
+Settings pages use `SettingsLayout.svelte` for consistent header and layout:
+
+```svelte
+<script lang="ts">
+  import SettingsLayout from '../../components/SettingsLayout.svelte';
+</script>
+
+<SettingsLayout title={i18n.t('settingsTitle')} onBack={() => goto('/')}>
+  <!-- Page content here -->
+
+  {#snippet footer()}
+    <!-- Optional fixed footer -->
+  {/snippet}
+</SettingsLayout>
+```
+
+## Internationalization (i18n)
+
+The app supports Korean and English with a reactive i18n system.
+
+### Usage
+
+```typescript
+import { i18n } from '$lib/i18n';
+
+// Get translation
+const text = i18n.t('settingsTitle');
+
+// Get current locale
+const locale = i18n.locale; // 'ko' | 'en'
+
+// Change locale
+await i18n.setLocale('en');
+```
+
+### Adding Translations
+
+1. Add key to `src/lib/i18n/ko.ts`:
+```typescript
+export const ko = {
+  // ...existing keys
+  newKey: '새로운 텍스트',
+};
+```
+
+2. Add same key to `src/lib/i18n/en.ts`:
+```typescript
+export const en: Translations = {
+  // ...existing keys
+  newKey: 'New text',
+};
+```
+
+### Template Functions
+
+For dynamic text with parameters:
+
+```typescript
+// In ko.ts
+categoryDeleteConfirmTemplate: (name: string) =>
+  `"${name}" 카테고리를 삭제하시겠습니까?`,
+
+// Usage
+i18n.t('categoryDeleteConfirmTemplate')(categoryName)
+```
+
+## Store Pattern
+
+The app uses Svelte 5 reactive stores for state management.
+
+### appStore
+
+Manages app-wide state (categories, items, selected category):
+
+```typescript
+import { appStore } from '$lib/stores';
+
+// Read state
+appStore.categories  // Category[]
+appStore.items       // TodoItem[]
+appStore.selectedCategoryId  // number | null
+
+// Actions
+await appStore.loadCategories();
+await appStore.addItem(text, memo);
+await appStore.toggleItem(id);
+appStore.selectCategory(id);
+```
+
+### modalStore
+
+Manages modal visibility state:
+
+```typescript
+import { modalStore } from '$lib/stores';
+
+// Check state
+modalStore.showAddItemModal
+modalStore.showResetConfirm
+modalStore.showCategoryMenu
+
+// Actions
+modalStore.openAddItemModal();
+modalStore.closeAddItemModal();
+modalStore.openCategoryMenu(category);
+```
+
 ## Theme System
 
 The app uses CSS variables for theming, allowing users to customize colors.
@@ -405,17 +560,28 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ## Implemented Features
 
+### Core Features
 - ✅ Todo CRUD (add, edit, delete, toggle)
 - ✅ Category management (add, edit, delete, reorder)
 - ✅ Item reordering (drag & drop)
 - ✅ Swipe to delete
 - ✅ Memo for each item
 - ✅ Auto daily reset
+
+### UI/UX
 - ✅ Theme customization (5 presets + custom colors)
-- ✅ Settings page structure
+- ✅ Internationalization (Korean/English)
 - ✅ iOS-optimized UI with safe area handling
-- ✅ Layered architecture (Repository → Service → Commands)
+- ✅ Unified modal styles with slide-up animation
+- ✅ Common layout components (SettingsLayout, ModalWrapper)
+- ✅ Bottom navigation bar
+- ✅ Floating action buttons
+
+### Architecture
+- ✅ Layered backend (Repository → Service → Commands)
 - ✅ Frontend API layer
+- ✅ Svelte 5 reactive stores (appStore, modalStore)
+- ✅ i18n system with reactive locale
 
 ## Next Steps
 
