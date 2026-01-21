@@ -215,7 +215,7 @@
     message={i18n.t('resetConfirmMessage')}
     confirmLabel={i18n.t('reset')}
     cancelLabel={i18n.t('cancel')}
-    confirmClass="bg-orange-500 hover:bg-orange-600"
+    confirmStyle="warning"
     onConfirm={confirmReset}
     onCancel={modalStore.closeResetConfirm}
   />
@@ -238,7 +238,7 @@
       : ''}
     confirmLabel={i18n.t('delete')}
     cancelLabel={i18n.t('cancel')}
-    confirmClass="bg-red-500 hover:bg-red-600"
+    confirmStyle="danger"
     onConfirm={confirmDeleteCategory}
     onCancel={modalStore.closeDeleteCategoryConfirm}
   />

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Category } from '../types';
+  import ModalWrapper from './ModalWrapper.svelte';
   import { i18n } from '$lib/i18n';
 
   interface Props {
@@ -13,30 +14,73 @@
   let { show, category, onEdit, onDelete, onClose }: Props = $props();
 </script>
 
-{#if show && category}
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick={onClose}>
-    <div class="bg-white rounded-lg p-6 max-w-sm mx-4 min-w-[280px]" onclick={(e) => e.stopPropagation()}>
-      <h3 class="text-lg font-semibold mb-4 text-center">{category.name}</h3>
-      <div class="flex flex-col gap-2">
-        <button
-          onclick={onEdit}
-          class="px-4 py-3 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg text-left font-medium"
-        >
-          {i18n.t('editName')}
-        </button>
-        <button
-          onclick={onDelete}
-          class="px-4 py-3 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg text-left font-medium"
-        >
-          {i18n.t('categoryDelete')}
-        </button>
-        <button
-          onclick={onClose}
-          class="px-4 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg text-left font-medium"
-        >
-          {i18n.t('cancel')}
-        </button>
-      </div>
+<ModalWrapper show={show && !!category} onClose={onClose}>
+  {#if category}
+    <h3 class="modal-title">{category.name}</h3>
+    <div class="menu-list">
+      <button class="menu-item edit" onclick={onEdit}>
+        {i18n.t('editName')}
+      </button>
+      <button class="menu-item danger" onclick={onDelete}>
+        {i18n.t('categoryDelete')}
+      </button>
+      <button class="menu-item cancel" onclick={onClose}>
+        {i18n.t('cancel')}
+      </button>
     </div>
-  </div>
-{/if}
+  {/if}
+</ModalWrapper>
+
+<style>
+  .modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    text-align: center;
+    color: var(--color-ink);
+  }
+
+  .menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .menu-item {
+    padding: 14px 16px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: none;
+  }
+
+  .menu-item.edit {
+    background: var(--color-accent-sky);
+    color: var(--color-ink);
+  }
+
+  .menu-item.edit:hover {
+    background: var(--color-accent-sky-strong);
+  }
+
+  .menu-item.danger {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  .menu-item.danger:hover {
+    background: #fee2e2;
+  }
+
+  .menu-item.cancel {
+    background: var(--color-canvas);
+    color: var(--color-ink-muted);
+  }
+
+  .menu-item.cancel:hover {
+    background: var(--color-mist);
+  }
+</style>

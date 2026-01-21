@@ -1,11 +1,13 @@
 <script lang="ts">
+  import ModalWrapper from './ModalWrapper.svelte';
+
   interface Props {
     show: boolean;
     title: string;
     message: string;
     confirmLabel?: string;
     cancelLabel?: string;
-    confirmClass?: string;
+    confirmStyle?: 'danger' | 'warning' | 'primary';
     onConfirm: () => void;
     onCancel: () => void;
   }
@@ -16,31 +18,91 @@
     message,
     confirmLabel = '확인',
     cancelLabel = '취소',
-    confirmClass = 'bg-blue-500 hover:bg-blue-600',
+    confirmStyle = 'primary',
     onConfirm,
     onCancel
   }: Props = $props();
 </script>
 
-{#if show}
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick={onCancel}>
-    <div class="bg-white rounded-lg p-6 max-w-sm mx-4" onclick={(e) => e.stopPropagation()}>
-      <h3 class="text-lg font-semibold mb-2">{title}</h3>
-      <p class="text-gray-600 mb-6 whitespace-pre-line">{message}</p>
-      <div class="flex gap-3 justify-end">
-        <button
-          onclick={onCancel}
-          class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
-        >
-          {cancelLabel}
-        </button>
-        <button
-          onclick={onConfirm}
-          class="px-4 py-2 text-white rounded-lg {confirmClass}"
-        >
-          {confirmLabel}
-        </button>
-      </div>
-    </div>
+<ModalWrapper {show} onClose={onCancel}>
+  <h3 class="modal-title">{title}</h3>
+  <p class="modal-message">{message}</p>
+  <div class="button-group">
+    <button class="btn btn-cancel" onclick={onCancel}>
+      {cancelLabel}
+    </button>
+    <button class="btn btn-confirm {confirmStyle}" onclick={onConfirm}>
+      {confirmLabel}
+    </button>
   </div>
-{/if}
+</ModalWrapper>
+
+<style>
+  .modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--color-ink);
+  }
+
+  .modal-message {
+    font-size: 15px;
+    color: var(--color-ink-muted);
+    margin-bottom: 24px;
+    white-space: pre-line;
+    line-height: 1.5;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+
+  .btn {
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: none;
+  }
+
+  .btn-cancel {
+    background: var(--color-canvas);
+    color: var(--color-ink-muted);
+  }
+
+  .btn-cancel:hover {
+    background: var(--color-mist);
+  }
+
+  .btn-confirm {
+    color: var(--color-white);
+  }
+
+  .btn-confirm.primary {
+    background: var(--color-accent-sky-strong);
+  }
+
+  .btn-confirm.primary:hover {
+    background: var(--color-accent-sky);
+  }
+
+  .btn-confirm.warning {
+    background: var(--color-accent-peach-strong);
+  }
+
+  .btn-confirm.warning:hover {
+    background: var(--color-accent-peach);
+  }
+
+  .btn-confirm.danger {
+    background: #ef4444;
+  }
+
+  .btn-confirm.danger:hover {
+    background: #dc2626;
+  }
+</style>

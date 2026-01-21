@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { TodoItem } from '../types';
   import DragDropList from './DragDropList.svelte';
+  import ModalWrapper from './ModalWrapper.svelte';
   import { i18n } from '$lib/i18n';
 
   interface Props {
@@ -11,75 +12,127 @@
   }
 
   let { show, items = $bindable([]), onItemsReorder, onClose }: Props = $props();
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      onClose();
-    }
-  }
 </script>
 
-{#if show}
-  <div
-    class="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto"
-    style="padding-top: 12vh; padding-bottom: env(safe-area-inset-bottom, 0);"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="reorder-title"
-    tabindex="0"
-    onclick={onClose}
-    onkeydown={handleKeydown}
-  >
-    <div
-      class="bg-white w-full max-w-md mx-4 rounded-2xl shadow-xl p-6"
-      onclick={(event) => event.stopPropagation()}
-    >
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h3 id="reorder-title" class="text-lg font-semibold text-ink">{i18n.t('reorderItemsTitle')}</h3>
-          <p class="text-sm text-ink-muted mt-1">{i18n.t('reorderItemsSubtitle')}</p>
-        </div>
-        <button
-          class="text-ink-muted hover:text-ink"
-          type="button"
-          aria-label={i18n.t('close')}
-          onclick={onClose}
-        >
-          ✕
-        </button>
-      </div>
-
-      {#if items.length === 0}
-        <div class="py-10 text-center text-ink-muted text-sm">
-          {i18n.t('noItemsToReorder')}
-        </div>
-      {:else}
-        <DragDropList {items} onItemsReorder={onItemsReorder}>
-          {#snippet children(item)}
-            <div class="flex items-center gap-3 py-3 px-2">
-              <div class="drag-handle-zone cursor-grab text-ink-muted">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h8M8 12h8M8 18h8" />
-                </svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-ink truncate">
-                  {item.text}
-                </p>
-                {#if item.memo}
-                  <p class="text-xs text-ink-muted truncate mt-1">
-                    {item.memo}
-                  </p>
-                {/if}
-              </div>
-              {#if item.done}
-                <span class="text-xs text-green-600 font-medium">{i18n.t('done')}</span>
-              {/if}
-            </div>
-          {/snippet}
-        </DragDropList>
-      {/if}
+<ModalWrapper {show} onClose={onClose} size="md" position="top">
+  <div class="modal-header">
+    <div>
+      <h3 class="modal-title">{i18n.t('reorderItemsTitle')}</h3>
+      <p class="modal-subtitle">{i18n.t('reorderItemsSubtitle')}</p>
     </div>
+    <button class="close-btn" type="button" aria-label={i18n.t('close')} onclick={onClose}>
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
   </div>
-{/if}
+
+  {#if items.length === 0}
+    <div class="empty-state">
+      {i18n.t('noItemsToReorder')}
+    </div>
+  {:else}
+    <DragDropList {items} onItemsReorder={onItemsReorder}>
+      {#snippet children(item)}
+        <div class="list-item">
+          <div class="drag-handle-zone">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h8M8 12h8M8 18h8" />
+            </svg>
+          </div>
+          <div class="item-content">
+            <p class="item-text">{item.text}</p>
+            {#if item.memo}
+              <p class="item-memo">{item.memo}</p>
+            {/if}
+          </div>
+          {#if item.done}
+            <span class="done-badge">{i18n.t('done')}</span>
+          {/if}
+        </div>
+      {/snippet}
+    </DragDropList>
+  {/if}
+</ModalWrapper>
+
+<style>
+  .modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  .modal-subtitle {
+    font-size: 14px;
+    color: var(--color-ink-muted);
+    margin-top: 4px;
+  }
+
+  .close-btn {
+    padding: 4px;
+    background: none;
+    border: none;
+    color: var(--color-ink-muted);
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .close-btn:hover {
+    color: var(--color-ink);
+  }
+
+  .empty-state {
+    padding: 40px 0;
+    text-align: center;
+    color: var(--color-ink-muted);
+    font-size: 14px;
+  }
+
+  .list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 8px;
+  }
+
+  .drag-handle-zone {
+    cursor: grab;
+    color: var(--color-ink-muted);
+  }
+
+  .item-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .item-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .item-memo {
+    font-size: 12px;
+    color: var(--color-ink-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 4px;
+  }
+
+  .done-badge {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-accent-mint-strong);
+  }
+</style>
