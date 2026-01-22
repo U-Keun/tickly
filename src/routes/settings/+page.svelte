@@ -21,6 +21,21 @@
       </svg>
     </button>
 
+    <!-- Font Setting -->
+    <button class="settings-item" onclick={() => goto('/settings/font')}>
+      <div class="item-left">
+        <div class="item-icon font-icon">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+          </svg>
+        </div>
+        <span class="item-label">{i18n.t('fontChange')}</span>
+      </div>
+      <svg class="w-5 h-5 chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+
     <!-- Language Setting -->
     <button class="settings-item" onclick={() => goto('/settings/language')}>
       <div class="item-left">
@@ -80,6 +95,10 @@
     background: var(--color-accent-sky);
     border-radius: 8px;
     color: var(--color-ink);
+  }
+
+  .font-icon {
+    background: var(--color-accent-peach);
   }
 
   .language-icon {

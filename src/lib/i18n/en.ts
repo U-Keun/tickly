@@ -100,4 +100,18 @@ export const en: Translations = {
   colorAccentPeachStrong: 'Peach Strong',
   colorWhite: 'White',
   colorBorder: 'Border',
+
+  // Font settings
+  fontChange: 'Change Font',
+  fontTitle: 'Font Settings',
+  fontPreset: 'Font Selection',
+  fontSize: 'Size',
+  fontSizeSmall: 'Small',
+  fontSizeMedium: 'Medium',
+  fontSizeLarge: 'Large',
+  fontSystem: 'System Default',
+  fontNotoSans: 'Noto Sans KR',
+  fontPretendard: 'Pretendard',
+  fontMonospace: 'Monospace',
+  fontPreviewText: 'The quick brown fox jumps over the lazy dog.',
 };

@@ -21,7 +21,12 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Menlo', 'Monaco', 'Courier New', 'monospace'],
+        sans: ['var(--font-family)'],
+      },
+      fontSize: {
+        sm: 'var(--font-size-sm)',
+        base: 'var(--font-size-base)',
+        lg: 'var(--font-size-lg)',
       },
     },
   },

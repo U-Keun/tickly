@@ -15,6 +15,7 @@
   import BottomNav from '../components/BottomNav.svelte';
   import FloatingActions from '../components/FloatingActions.svelte';
   import { initializeTheme } from '../lib/themes';
+  import { initializeFonts } from '../lib/fonts';
   import { appStore, modalStore } from '../lib/stores';
   import * as todoApi from '../lib/api/todoApi';
   import { i18n } from '$lib/i18n';
@@ -66,8 +67,9 @@
   }
 
   onMount(async () => {
-    // Initialize theme and locale from saved settings
+    // Initialize theme, fonts, and locale from saved settings
     await initializeTheme();
+    await initializeFonts();
     await i18n.loadLocale();
 
     // Measure safe area after iOS WebView stabilizes

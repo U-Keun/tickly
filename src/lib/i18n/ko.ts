@@ -98,6 +98,20 @@ export const ko = {
   colorAccentPeachStrong: '피치 진함 (Peach Strong)',
   colorWhite: '흰색 (White)',
   colorBorder: '경계선 (Border)',
+
+  // Font settings
+  fontChange: '폰트 변경',
+  fontTitle: '폰트 설정',
+  fontPreset: '폰트 선택',
+  fontSize: '크기',
+  fontSizeSmall: '작게',
+  fontSizeMedium: '보통',
+  fontSizeLarge: '크게',
+  fontSystem: '시스템 기본',
+  fontNotoSans: 'Noto Sans KR',
+  fontPretendard: 'Pretendard',
+  fontMonospace: '모노스페이스',
+  fontPreviewText: '가나다라마바사 ABCDEFG 1234567890',
 };
 
 export type Translations = typeof ko;

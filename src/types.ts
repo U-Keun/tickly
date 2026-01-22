@@ -35,3 +35,16 @@ export interface ThemePreset {
   name: string;
   colors: ThemeColors;
 }
+
+export type FontSize = 'small' | 'medium' | 'large';
+
+export interface FontPreset {
+  id: string;
+  name: string;
+  fontFamily: string;
+}
+
+export interface FontSettings {
+  presetId: string;
+  size: FontSize;
+}
