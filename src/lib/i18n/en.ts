@@ -13,6 +13,7 @@ export const en: Translations = {
   // FAB buttons
   addItem: 'Add Item',
   resetCheck: 'Reset Checks',
+  menu: 'Menu',
 
   // AddItemModal
   addItemTitle: 'Add Item',

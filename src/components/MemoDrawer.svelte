@@ -71,7 +71,6 @@
   {#if isEditMode}
     <!-- Edit Mode -->
     <div class="edit-section">
-      <label class="label" for="text-input">{i18n.t('itemLabel')}</label>
       <input
         id="text-input"
         bind:value={editText}

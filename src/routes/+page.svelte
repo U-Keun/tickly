@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { flip } from 'svelte/animate';
+  import { goto } from '$app/navigation';
   import type { Category } from '../types';
   import LeafTodoItem from '../components/LeafTodoItem.svelte';
   import MemoDrawer from '../components/MemoDrawer.svelte';
@@ -12,7 +13,6 @@
   import ReorderItemsModal from '../components/ReorderItemsModal.svelte';
   import ReorderCategoriesModal from '../components/ReorderCategoriesModal.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
-  import BottomNav from '../components/BottomNav.svelte';
   import FloatingActions from '../components/FloatingActions.svelte';
   import { initializeTheme } from '../lib/themes';
   import { initializeFonts } from '../lib/fonts';
@@ -23,8 +23,6 @@
   // Local UI state only
   let isEditingItem = $state(false);
   let showFab = $state(false);
-  let fabDelay = $state(300);
-  let safeAreaBottom = $state(0);
 
   // Reference to CategoryTabs component
   let categoryTabsComponent: any;
@@ -57,47 +55,11 @@
     modalStore.closeResetConfirm();
   }
 
-  function measureSafeArea(): number {
-    const testEl = document.createElement('div');
-    testEl.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0);visibility:hidden;pointer-events:none;';
-    document.body.appendChild(testEl);
-    const height = testEl.offsetHeight;
-    document.body.removeChild(testEl);
-    return height;
-  }
-
   onMount(async () => {
     // Initialize theme, fonts, and locale from saved settings
     await initializeTheme();
     await initializeFonts();
     await i18n.loadLocale();
-
-    // Measure safe area after iOS WebView stabilizes
-    // Normal iPhone safe area is around 34px, reject abnormal values (>50px or <=0)
-    const applySafeArea = () => {
-      const measured = measureSafeArea();
-      if (measured > 0 && measured <= 50) {
-        safeAreaBottom = measured;
-        sessionStorage.setItem('safeAreaBottom', String(measured));
-      } else if (measured > 50) {
-        // Abnormally large value - use standard iPhone safe area
-        safeAreaBottom = 34;
-        sessionStorage.setItem('safeAreaBottom', '34');
-      }
-    };
-
-    // Use cached value if available, otherwise measure
-    const cachedSafeArea = sessionStorage.getItem('safeAreaBottom');
-    if (cachedSafeArea) {
-      safeAreaBottom = Number(cachedSafeArea);
-    } else {
-      // Try multiple times with increasing delays (first load only)
-      setTimeout(applySafeArea, 2000);
-      setTimeout(applySafeArea, 3000);
-    }
-
-    // Also update on orientation change
-    window.addEventListener('resize', applySafeArea);
 
     // Check and auto-reset if new day
     try {
@@ -112,10 +74,6 @@
     await appStore.loadCategories();
     await appStore.loadItems();
 
-    // Show FAB with animation (no delay if intro already played)
-    if (sessionStorage.getItem('introPlayed')) {
-      fabDelay = 0;
-    }
     showFab = true;
   });
 </script>
@@ -174,19 +132,14 @@
     </div>
   </main>
 
-  <!-- Bottom Navigation Bar -->
-  <BottomNav
-    onReorder={modalStore.openReorderModal}
-    onHome={appStore.goToFirstCategory}
-  />
-
   <!-- Floating Action Buttons -->
   <FloatingActions
     show={showFab && !isEditingItem}
-    {safeAreaBottom}
-    delay={fabDelay}
     onAdd={modalStore.openAddItemModal}
     onReset={modalStore.openResetConfirm}
+    onReorder={modalStore.openReorderModal}
+    onHome={appStore.goToFirstCategory}
+    onSettings={() => goto('/settings')}
   />
 
   <!-- Add Item Modal -->

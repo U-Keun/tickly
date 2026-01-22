@@ -11,6 +11,7 @@ export const ko = {
   // FAB buttons
   addItem: '항목 추가',
   resetCheck: '체크 초기화',
+  menu: '메뉴',
 
   // AddItemModal
   addItemTitle: '항목 추가',

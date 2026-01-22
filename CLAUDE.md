@@ -4,13 +4,10 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-**Tickly** is a minimalist todo/task management app designed to help users remember items when going out. The core philosophy is **simplicity and speed** - get the app to users as quickly as possible with a clean, focused interface.
+**Tickly** is a minimalist checklist app for everyday use. The core philosophy is **simplicity and speed** - no complex features, just a clean and focused interface that lets users manage their tasks quickly.
 
 ### Primary Goal
 Deploy to iOS App Store as quickly as possible with a simple, functional design.
-
-### Original Motivation
-외출할 때 까먹는 물건이 없게 하기 위한 앱 (An app to prevent forgetting items when going out)
 
 ## Project Architecture
 

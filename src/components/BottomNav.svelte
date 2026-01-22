@@ -11,7 +11,7 @@
   } = $props();
 </script>
 
-<nav class="fixed bottom-0 left-0 right-0 z-20" style="background: var(--color-white); border-top: 1px solid var(--color-border);">
+<nav class="fixed bottom-0 left-0 right-0 z-20" style="background: var(--color-paper); border-top: 1px solid var(--color-border); padding-bottom: env(safe-area-inset-bottom, 0);">
   <div class="flex justify-around items-center h-14">
     <!-- Reorder Button -->
     <button

@@ -71,7 +71,7 @@ fn create_default_category(conn: &Connection) -> Result<(), rusqlite::Error> {
     if category_count == 0 {
         conn.execute(
             "INSERT INTO categories (name, display_order) VALUES (?1, 1000)",
-            params!["기본"],
+            params!["Home"],
         )?;
     }
 

@@ -87,7 +87,7 @@ html, body {
   overflow: hidden;
   width: 100%;
   height: 100%;
-  background-color: var(--color-paper);
+  background-color: var(--color-canvas);
   font-family: var(--font-family);
   font-size: var(--font-size-base);
 }
@@ -144,8 +144,8 @@ html, body {
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  /* Extra bottom padding for fixed bottom nav (56px) + FAB buttons (~150px) */
-  padding-bottom: 220px;
+  /* Extra bottom padding for FAB buttons (~200px) */
+  padding-bottom: 200px;
 }
 
 .item-wrapper {
