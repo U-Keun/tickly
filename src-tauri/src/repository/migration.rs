@@ -6,6 +6,7 @@ pub fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
     migrate_add_memo(conn)?;
     migrate_add_display_order_to_categories(conn)?;
     migrate_add_reminder_at(conn)?;
+    migrate_add_repeat_columns(conn)?;
     Ok(())
 }
 
@@ -86,6 +87,53 @@ fn migrate_add_reminder_at(conn: &Connection) -> Result<(), rusqlite::Error> {
 
     if let Ok(0) = reminder_column_exists {
         conn.execute("ALTER TABLE todos ADD COLUMN reminder_at TEXT", [])?;
+    }
+
+    Ok(())
+}
+
+fn migrate_add_repeat_columns(conn: &Connection) -> Result<(), rusqlite::Error> {
+    // Add repeat_type column (none/daily/weekly/monthly)
+    let repeat_type_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='repeat_type'",
+        [],
+        |row| row.get(0),
+    );
+    if let Ok(0) = repeat_type_exists {
+        conn.execute(
+            "ALTER TABLE todos ADD COLUMN repeat_type TEXT NOT NULL DEFAULT 'none'",
+            [],
+        )?;
+    }
+
+    // Add repeat_detail column (JSON: weekly [0,3,5], monthly [1,15])
+    let repeat_detail_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='repeat_detail'",
+        [],
+        |row| row.get(0),
+    );
+    if let Ok(0) = repeat_detail_exists {
+        conn.execute("ALTER TABLE todos ADD COLUMN repeat_detail TEXT", [])?;
+    }
+
+    // Add next_due_at column (YYYY-MM-DD format)
+    let next_due_at_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='next_due_at'",
+        [],
+        |row| row.get(0),
+    );
+    if let Ok(0) = next_due_at_exists {
+        conn.execute("ALTER TABLE todos ADD COLUMN next_due_at TEXT", [])?;
+    }
+
+    // Add last_completed_at column (YYYY-MM-DD format)
+    let last_completed_at_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='last_completed_at'",
+        [],
+        |row| row.get(0),
+    );
+    if let Ok(0) = last_completed_at_exists {
+        conn.execute("ALTER TABLE todos ADD COLUMN last_completed_at TEXT", [])?;
     }
 
     Ok(())

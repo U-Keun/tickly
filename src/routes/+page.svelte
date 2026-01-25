@@ -61,14 +61,14 @@
     await initializeFonts();
     await i18n.loadLocale();
 
-    // Check and auto-reset if new day
+    // Process repeating items that are due
     try {
-      const wasReset = await todoApi.checkAndAutoReset();
-      if (wasReset) {
-        console.log('Auto-reset performed for new day');
+      const reactivatedCount = await todoApi.processRepeats();
+      if (reactivatedCount > 0) {
+        console.log(`Reactivated ${reactivatedCount} repeating items`);
       }
     } catch (error) {
-      console.error('Failed to check auto-reset:', error);
+      console.error('Failed to process repeats:', error);
     }
 
     await appStore.loadCategories();
@@ -118,6 +118,7 @@
                         item={drawerItem}
                         onSaveMemo={appStore.updateMemo}
                         onEditText={appStore.editItem}
+                        onUpdateRepeat={appStore.updateRepeat}
                         onEditModeChange={(editing) => isEditingItem = editing}
                         {closeDrawer}
                       />

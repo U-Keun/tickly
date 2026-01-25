@@ -15,8 +15,8 @@ export const ko = {
 
   // AddItemModal
   addItemTitle: '항목 추가',
-  todoLabel: '할 일',
-  todoPlaceholder: '할 일을 입력하세요',
+  todoLabel: '항목',
+  todoPlaceholder: '항목을 입력하세요',
   memoLabel: '메모 (선택)',
   memoPlaceholder: '메모를 입력하세요',
   cancel: '취소',
@@ -113,6 +113,22 @@ export const ko = {
   fontPretendard: 'Pretendard',
   fontMonospace: '모노스페이스',
   fontPreviewText: '가나다라마바사 ABCDEFG 1234567890',
+
+  // Repeat settings
+  repeatLabel: '반복',
+  repeatNone: '안 함',
+  repeatDaily: '매일',
+  repeatWeekly: '매주',
+  repeatMonthly: '매월',
+  repeatDaysLabel: '반복 요일',
+  repeatDatesLabel: '반복 날짜',
+  sun: '일',
+  mon: '월',
+  tue: '화',
+  wed: '수',
+  thu: '목',
+  fri: '금',
+  sat: '토',
 };
 
 export type Translations = typeof ko;

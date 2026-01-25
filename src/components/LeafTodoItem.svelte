@@ -80,6 +80,15 @@
 
     <div class="main">
       <span class="text" class:done={item.done}>{item.text || '할 일을 입력해줘'}</span>
+      {#if item.repeat_type !== 'none'}
+        <span class="repeat-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 2.1l4 4-4 4"></path>
+            <path d="M3 12.2v-2a4 4 0 0 1 4-4h12.8M7 21.9l-4-4 4-4"></path>
+            <path d="M21 11.8v2a4 4 0 0 1-4 4H4.2"></path>
+          </svg>
+        </span>
+      {/if}
     </div>
   </div>
 
@@ -166,6 +175,17 @@
   .main {
     flex: 1;
     min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .repeat-badge {
+    flex-shrink: 0;
+    color: var(--color-accent-sky-strong);
+    display: flex;
+    align-items: center;
+    opacity: 0.8;
   }
 
   .text {

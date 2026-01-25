@@ -1,4 +1,4 @@
-import type { TodoItem, Category } from '../../types';
+import type { TodoItem, Category, RepeatType } from '../../types';
 import * as categoryApi from '../api/categoryApi';
 import * as todoApi from '../api/todoApi';
 
@@ -73,9 +73,14 @@ async function deleteCategory(id: number): Promise<boolean> {
   }
 }
 
-async function addItem(text: string, memo: string | null = null): Promise<void> {
+async function addItem(
+  text: string,
+  memo: string | null = null,
+  repeatType: RepeatType = 'none',
+  repeatDetail: string | null = null
+): Promise<void> {
   try {
-    const newItem = await todoApi.addItem(text, selectedCategoryId);
+    const newItem = await todoApi.addItem(text, selectedCategoryId, repeatType, repeatDetail);
     if (memo) {
       await todoApi.updateItemMemo(newItem.id, memo);
       newItem.memo = memo;
@@ -88,8 +93,17 @@ async function addItem(text: string, memo: string | null = null): Promise<void> 
 
 async function toggleItem(id: number): Promise<void> {
   try {
-    await todoApi.toggleItem(id);
-    await loadItems();
+    const updatedItem = await todoApi.toggleItem(id);
+    if (updatedItem) {
+      items = items.map(item =>
+        item.id === id ? updatedItem : item
+      );
+      // Re-sort items (done items go to bottom)
+      items = [...items].sort((a, b) => {
+        if (a.done !== b.done) return a.done ? 1 : -1;
+        return a.display_order - b.display_order;
+      });
+    }
   } catch (error) {
     console.error('Failed to toggle item:', error);
   }
@@ -123,6 +137,21 @@ async function updateMemo(id: number, memo: string | null): Promise<void> {
     );
   } catch (error) {
     console.error('Failed to update memo:', error);
+  }
+}
+
+async function updateRepeat(
+  id: number,
+  repeatType: RepeatType,
+  repeatDetail: string | null
+): Promise<void> {
+  try {
+    await todoApi.updateItemRepeat(id, repeatType, repeatDetail);
+    items = items.map(item =>
+      item.id === id ? { ...item, repeat_type: repeatType, repeat_detail: repeatDetail } : item
+    );
+  } catch (error) {
+    console.error('Failed to update repeat:', error);
   }
 }
 
@@ -174,6 +203,7 @@ export const appStore = {
   deleteItem,
   editItem,
   updateMemo,
+  updateRepeat,
   resetAllItems,
   setItems,
 };

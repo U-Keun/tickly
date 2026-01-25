@@ -3,6 +3,7 @@ import { en } from './en';
 import * as settingsApi from '../api/settingsApi';
 
 export type Locale = 'ko' | 'en';
+export type TranslationKey = keyof Translations;
 
 const translations: Record<Locale, Translations> = { ko, en };
 

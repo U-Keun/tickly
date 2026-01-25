@@ -1,10 +1,12 @@
 <script lang="ts">
   import { i18n } from '$lib/i18n';
+  import type { RepeatType } from '../types';
   import ModalWrapper from './ModalWrapper.svelte';
+  import RepeatSelector from './RepeatSelector.svelte';
 
   interface Props {
     show: boolean;
-    onAdd: (text: string, memo: string | null) => void;
+    onAdd: (text: string, memo: string | null, repeatType: RepeatType, repeatDetail: string | null) => void;
     onCancel: () => void;
   }
 
@@ -12,6 +14,8 @@
 
   let text = $state('');
   let memo = $state('');
+  let repeatType = $state<RepeatType>('none');
+  let repeatDetail = $state<number[]>([]);
   let textInputElement = $state<HTMLInputElement | null>(null);
 
   // Reset and focus when modal opens
@@ -19,6 +23,8 @@
     if (show) {
       text = '';
       memo = '';
+      repeatType = 'none';
+      repeatDetail = [];
       setTimeout(() => textInputElement?.focus(), 100);
     }
   });
@@ -28,7 +34,8 @@
     if (!trimmedText) return;
 
     const trimmedMemo = memo.trim() || null;
-    onAdd(trimmedText, trimmedMemo);
+    const repeatDetailJson = repeatDetail.length > 0 ? JSON.stringify(repeatDetail) : null;
+    onAdd(trimmedText, trimmedMemo, repeatType, repeatDetailJson);
     onCancel();
   }
 
@@ -37,6 +44,14 @@
       e.preventDefault();
       handleSubmit();
     }
+  }
+
+  function handleRepeatTypeChange(type: RepeatType) {
+    repeatType = type;
+  }
+
+  function handleRepeatDetailChange(detail: number[]) {
+    repeatDetail = detail;
   }
 </script>
 
@@ -67,6 +82,15 @@
       placeholder={i18n.t('memoPlaceholder')}
       rows="3"
     ></textarea>
+  </div>
+
+  <div class="form-group">
+    <RepeatSelector
+      {repeatType}
+      {repeatDetail}
+      onRepeatTypeChange={handleRepeatTypeChange}
+      onRepeatDetailChange={handleRepeatDetailChange}
+    />
   </div>
 
   <div class="button-group">

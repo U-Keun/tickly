@@ -32,9 +32,11 @@ pub fn run() {
             delete_item,
             edit_item,
             update_item_memo,
+            update_item_repeat,
             reorder_items,
             reset_all_items,
             check_and_auto_reset,
+            process_repeats,
             // Category commands
             get_categories,
             add_category,
