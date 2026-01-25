@@ -5,6 +5,7 @@ pub fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
     migrate_add_display_order_to_todos(conn)?;
     migrate_add_memo(conn)?;
     migrate_add_display_order_to_categories(conn)?;
+    migrate_add_reminder_at(conn)?;
     Ok(())
 }
 
@@ -71,6 +72,20 @@ fn migrate_add_display_order_to_categories(conn: &Connection) -> Result<(), rusq
 
         // Assign initial order based on id
         conn.execute("UPDATE categories SET display_order = id * 1000", [])?;
+    }
+
+    Ok(())
+}
+
+fn migrate_add_reminder_at(conn: &Connection) -> Result<(), rusqlite::Error> {
+    let reminder_column_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='reminder_at'",
+        [],
+        |row| row.get(0),
+    );
+
+    if let Ok(0) = reminder_column_exists {
+        conn.execute("ALTER TABLE todos ADD COLUMN reminder_at TEXT", [])?;
     }
 
     Ok(())

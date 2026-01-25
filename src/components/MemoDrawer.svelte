@@ -153,12 +153,6 @@
     gap: 6px;
   }
 
-  .label {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--color-ink);
-  }
-
   .text-input {
     width: 100%;
     padding: 10px;
