@@ -567,6 +567,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ### UI/UX
 - ✅ Theme customization (5 presets + custom colors)
+- ✅ Font customization
 - ✅ Internationalization (Korean/English)
 - ✅ iOS-optimized UI with safe area handling
 - ✅ Unified modal styles with slide-up animation
@@ -580,10 +581,21 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - ✅ Svelte 5 reactive stores (appStore, modalStore)
 - ✅ i18n system with reactive locale
 
-## Next Steps
+## Roadmap
 
+### Current Focus
 1. Prepare App Store assets (icon, screenshots, description)
 2. Submit to App Store
-3. Iterate based on user feedback
+
+### Planned Features (see `docs/roadmap.md` for details)
+- **v0.2.0**: Repeat rules (replace daily auto-reset with flexible scheduling)
+- **v0.3.0**: Streak heatmap (GitHub-style visualization)
+- **v0.4.0**: Cloud sync (multi-device support)
+- **v0.5.0**: Shared lists (family/team collaboration)
+- **v0.6.0**: iOS widgets
+
+### Notes
+- Notifications on hold due to Tauri compatibility issues
+- Daily auto-reset will be replaced by repeat rules in v0.2.0
 
 Keep it simple. Ship fast. Iterate based on real user feedback.
