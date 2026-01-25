@@ -563,7 +563,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - ✅ Item reordering (drag & drop)
 - ✅ Swipe to delete
 - ✅ Memo for each item
-- ✅ Auto daily reset
+- ✅ Repeat rules (daily/weekly/monthly scheduling)
 
 ### UI/UX
 - ✅ Theme customization (5 presets + custom colors)
@@ -587,8 +587,10 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 1. Prepare App Store assets (icon, screenshots, description)
 2. Submit to App Store
 
+### Completed Versions
+- **v0.2.0**: ✅ Repeat rules (daily/weekly/monthly scheduling)
+
 ### Planned Features (see `docs/roadmap.md` for details)
-- **v0.2.0**: Repeat rules (replace daily auto-reset with flexible scheduling)
 - **v0.3.0**: Streak heatmap (GitHub-style visualization)
 - **v0.4.0**: Cloud sync (multi-device support)
 - **v0.5.0**: Shared lists (family/team collaboration)
@@ -596,6 +598,5 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ### Notes
 - Notifications on hold due to Tauri compatibility issues
-- Daily auto-reset will be replaced by repeat rules in v0.2.0
 
 Keep it simple. Ship fast. Iterate based on real user feedback.
