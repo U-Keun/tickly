@@ -17,8 +17,8 @@ export const en: Translations = {
 
   // AddItemModal
   addItemTitle: 'Add Item',
-  todoLabel: 'To-do',
-  todoPlaceholder: 'Enter your task',
+  todoLabel: 'Item',
+  todoPlaceholder: 'Enter your item',
   memoLabel: 'Memo (optional)',
   memoPlaceholder: 'Enter a memo',
   cancel: 'Cancel',
@@ -115,4 +115,20 @@ export const en: Translations = {
   fontPretendard: 'Pretendard',
   fontMonospace: 'Monospace',
   fontPreviewText: 'The quick brown fox jumps over the lazy dog.',
+
+  // Repeat settings
+  repeatLabel: 'Repeat',
+  repeatNone: 'None',
+  repeatDaily: 'Daily',
+  repeatWeekly: 'Weekly',
+  repeatMonthly: 'Monthly',
+  repeatDaysLabel: 'Repeat Days',
+  repeatDatesLabel: 'Repeat Dates',
+  sun: 'Sun',
+  mon: 'Mon',
+  tue: 'Tue',
+  wed: 'Wed',
+  thu: 'Thu',
+  fri: 'Fri',
+  sat: 'Sat',
 };

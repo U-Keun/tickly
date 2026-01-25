@@ -1,26 +1,34 @@
 <script lang="ts">
-  import type { TodoItem } from '../types';
+  import { slide } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
+  import type { TodoItem, RepeatType } from '../types';
   import { i18n } from '$lib/i18n';
+  import RepeatSelector from './RepeatSelector.svelte';
 
   interface Props {
     item: TodoItem;
     onSaveMemo: (id: number, memo: string | null) => void;
     onEditText: (id: number, text: string) => void;
+    onUpdateRepeat: (id: number, repeatType: RepeatType, repeatDetail: string | null) => void;
     onEditModeChange?: (editing: boolean) => void;
     closeDrawer: () => void;
   }
 
-  let { item, onSaveMemo, onEditText, onEditModeChange, closeDrawer }: Props = $props();
+  let { item, onSaveMemo, onEditText, onUpdateRepeat, onEditModeChange, closeDrawer }: Props = $props();
 
   let isEditMode = $state(false);
   let editText = $state('');
   let memoText = $state('');
+  let repeatType = $state<RepeatType>('none');
+  let repeatDetail = $state<number[]>([]);
   let isSaving = $state(false);
 
   // Sync texts when item changes
   $effect(() => {
     editText = item.text;
     memoText = item.memo || '';
+    repeatType = item.repeat_type;
+    repeatDetail = item.repeat_detail ? JSON.parse(item.repeat_detail) : [];
   });
 
   function enterEditMode() {
@@ -31,6 +39,8 @@
   function cancelEdit() {
     editText = item.text;
     memoText = item.memo || '';
+    repeatType = item.repeat_type;
+    repeatDetail = item.repeat_detail ? JSON.parse(item.repeat_detail) : [];
     isEditMode = false;
     onEditModeChange?.(false);
   }
@@ -53,6 +63,12 @@
       onSaveMemo(item.id, newMemo);
     }
 
+    // Save repeat settings if changed
+    const newRepeatDetail = repeatDetail.length > 0 ? JSON.stringify(repeatDetail) : null;
+    if (repeatType !== item.repeat_type || newRepeatDetail !== item.repeat_detail) {
+      onUpdateRepeat(item.id, repeatType, newRepeatDetail);
+    }
+
     isSaving = false;
     isEditMode = false;
     onEditModeChange?.(false);
@@ -65,83 +81,146 @@
       cancelEdit();
     }
   }
+
+  function handleRepeatTypeChange(type: RepeatType) {
+    repeatType = type;
+  }
+
+  function handleRepeatDetailChange(detail: number[]) {
+    repeatDetail = detail;
+  }
+
+  // Helper to get repeat display text
+  function getRepeatDisplayText(): string {
+    if (item.repeat_type === 'none') return i18n.t('repeatNone');
+    if (item.repeat_type === 'daily') return i18n.t('repeatDaily');
+    if (item.repeat_type === 'weekly') {
+      const days = item.repeat_detail ? JSON.parse(item.repeat_detail) as number[] : [];
+      const dayNames: Array<'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat'> = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+      const dayLabels = days.map(d => i18n.t(dayNames[d])).join(', ');
+      return `${i18n.t('repeatWeekly')} (${dayLabels})`;
+    }
+    if (item.repeat_type === 'monthly') {
+      const dates = item.repeat_detail ? JSON.parse(item.repeat_detail) as number[] : [];
+      return `${i18n.t('repeatMonthly')} (${dates.join(', ')})`;
+    }
+    return '';
+  }
 </script>
 
 <div class="memo-drawer">
   {#if isEditMode}
     <!-- Edit Mode -->
-    <div class="edit-section">
-      <input
-        id="text-input"
-        bind:value={editText}
-        onkeydown={handleKeydown}
-        class="text-input"
-        type="text"
-        placeholder={i18n.t('todoPlaceholderAlt')}
-      />
-    </div>
-    <div class="edit-section">
-      <textarea
-        id="memo-input"
-        bind:value={memoText}
-        onkeydown={handleKeydown}
-        class="memo-textarea"
-        placeholder={i18n.t('memoPlaceholderAlt')}
-        rows="3"
-      ></textarea>
-    </div>
-    <div class="actions">
-      <button
-        type="button"
-        class="btn-cancel"
-        onclick={cancelEdit}
-        title={i18n.t('cancel')}
-      >
-        <!-- Lucide X icon -->
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-      <button
-        type="button"
-        class="btn-save"
-        onclick={saveChanges}
-        disabled={isSaving}
-        title={i18n.t('save')}
-      >
-        <!-- Lucide Check icon -->
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-      </button>
+    <div class="edit-container" transition:slide={{ duration: 300, easing: cubicOut }}>
+      <div class="edit-section">
+        <input
+          id="text-input"
+          bind:value={editText}
+          onkeydown={handleKeydown}
+          class="text-input"
+          type="text"
+          placeholder={i18n.t('todoPlaceholderAlt')}
+        />
+      </div>
+      <div class="edit-section">
+        <textarea
+          id="memo-input"
+          bind:value={memoText}
+          onkeydown={handleKeydown}
+          class="memo-textarea"
+          placeholder={i18n.t('memoPlaceholderAlt')}
+          rows="3"
+        ></textarea>
+      </div>
+      <div class="edit-section">
+        <RepeatSelector
+          {repeatType}
+          {repeatDetail}
+          onRepeatTypeChange={handleRepeatTypeChange}
+          onRepeatDetailChange={handleRepeatDetailChange}
+        />
+      </div>
+      <div class="actions">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick={cancelEdit}
+          title={i18n.t('cancel')}
+        >
+          <!-- Lucide X icon -->
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="btn-save"
+          onclick={saveChanges}
+          disabled={isSaving}
+          title={i18n.t('save')}
+        >
+          <!-- Lucide Check icon -->
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>
+      </div>
     </div>
   {:else}
     <!-- View Mode -->
-    {#if item.memo}
-      <div class="memo-display">
-        <p class="memo-text">{item.memo}</p>
+    <div class="view-container">
+      {#if item.memo || item.repeat_type !== 'none'}
+        <div class="memo-display">
+          {#if item.memo}
+            <p class="memo-text">{item.memo}</p>
+          {/if}
+          {#if item.repeat_type !== 'none'}
+            <p class="repeat-info">
+              <span class="repeat-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 2.1l4 4-4 4"></path>
+                  <path d="M3 12.2v-2a4 4 0 0 1 4-4h12.8M7 21.9l-4-4 4-4"></path>
+                  <path d="M21 11.8v2a4 4 0 0 1-4 4H4.2"></path>
+                </svg>
+              </span>
+              {getRepeatDisplayText()}
+            </p>
+          {/if}
+        </div>
+      {/if}
+      <div class="actions">
+        <button
+          type="button"
+          class="btn-edit"
+          onclick={enterEditMode}
+          title={i18n.t('edit')}
+        >
+          <!-- Lucide Pencil icon -->
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+            <path d="m15 5 4 4"></path>
+          </svg>
+        </button>
       </div>
-    {/if}
-    <div class="actions">
-      <button
-        type="button"
-        class="btn-edit"
-        onclick={enterEditMode}
-        title={i18n.t('edit')}
-      >
-        <!-- Lucide Pencil icon -->
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
-          <path d="m15 5 4 4"></path>
-        </svg>
-      </button>
     </div>
   {/if}
 </div>
 
 <style>
   .memo-drawer {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .edit-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .view-container {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -205,6 +284,21 @@
     color: var(--color-ink-muted);
     line-height: 1.4;
     white-space: pre-wrap;
+  }
+
+  .repeat-info {
+    margin: 6px 0 0 0;
+    font-size: 13px;
+    color: var(--color-ink-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .repeat-icon {
+    display: flex;
+    align-items: center;
+    color: var(--color-accent-sky-strong);
   }
 
   .actions {

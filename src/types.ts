@@ -4,6 +4,8 @@ export interface Category {
   display_order: number;
 }
 
+export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly';
+
 export interface TodoItem {
   id: number;
   text: string;
@@ -11,6 +13,10 @@ export interface TodoItem {
   category_id: number | null;
   display_order: number;
   memo: string | null;
+  repeat_type: RepeatType;
+  repeat_detail: string | null;
+  next_due_at: string | null;
+  last_completed_at: string | null;
 }
 
 export interface ThemeColors {
