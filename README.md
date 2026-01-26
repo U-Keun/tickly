@@ -1,5 +1,11 @@
 # Tickly
 
+<p align="center">
+  <a href="https://apps.apple.com/kr/app/tickly/id6757784860">
+    <img src="https://img.shields.io/badge/App_Store-0D96F6?style=for-the-badge&logo=app-store&logoColor=white" alt="App Store" />
+  </a>
+</p>
+
 ## 프로젝트 개요
 
 <p align="center">
@@ -14,13 +20,14 @@
 - ✅ 항목 추가/수정/삭제/완료 표시
 - 📝 항목별 메모 기능
 - 💾 SQLite 영구 저장 (앱 재시작 후에도 데이터 유지)
-- 🔄 자동 일일 초기화 (매일 체크가 자동으로 리셋)
 
 #### 고급 기능
 - 📁 **카테고리 관리** - 상황별 리스트 분리 (집, 여행, 운동 등)
 - 👆 **스와이프 삭제** - iOS 네이티브 스타일 제스처
 - 🔀 **드래그 정렬** - 항목/카테고리 순서를 자유롭게 변경
 - 📊 **자동 정렬** - 완료된 항목이 자동으로 아래로 이동
+- 🔄 **반복 규칙** - 매일/매주/매월 자동 재활성화 스케줄링
+- 🔥 **스트릭 히트맵** - 항목별 GitHub 스타일 달성 기록 시각화
 - 🎨 **테마 커스터마이징** - 5가지 프리셋 + 커스텀 색상 지원
 - 🔤 **폰트 커스터마이징** - 다양한 폰트 선택 가능
 - 🌐 **다국어 지원** - 한국어/영어 지원
@@ -142,17 +149,20 @@ Tickly/
 │   │   ├── ModalWrapper.svelte       # 공통 모달 레이아웃
 │   │   ├── SettingsLayout.svelte     # 공통 설정 페이지 레이아웃
 │   │   ├── BottomNav.svelte          # 하단 네비게이션 바
-│   │   ├── FloatingActions.svelte    # FAB 버튼 (추가, 리셋)
+│   │   ├── FloatingActions.svelte    # FAB 버튼 (추가, 리셋, 스트릭)
 │   │   ├── LeafTodoItem.svelte       # Todo 항목 컴포넌트
 │   │   ├── AddItemModal.svelte       # 항목 추가 모달
 │   │   ├── SwipeableItem.svelte      # 스와이프 삭제 래퍼
 │   │   ├── CategoryTabs.svelte       # 카테고리 탭
+│   │   ├── StreakModal.svelte        # 스트릭 히트맵 모달
+│   │   ├── StreakHeatmap.svelte      # 히트맵 그리드 컴포넌트
 │   │   └── ...
 │   ├── lib/
 │   │   ├── api/                      # API 레이어 (Tauri invoke 래퍼)
 │   │   │   ├── categoryApi.ts        # Category API
 │   │   │   ├── todoApi.ts            # Todo API
-│   │   │   └── settingsApi.ts        # Settings API
+│   │   │   ├── settingsApi.ts        # Settings API
+│   │   │   └── streakApi.ts          # Streak API
 │   │   ├── stores/                   # Svelte 5 reactive stores
 │   │   │   ├── appStore.svelte.ts    # 앱 상태 (카테고리, 항목)
 │   │   │   └── modalStore.svelte.ts  # 모달 상태 관리
@@ -168,21 +178,26 @@ Tickly/
 │   │   ├── lib.rs                    # 앱 진입점 및 모듈 등록
 │   │   ├── models/                   # 데이터 모델
 │   │   │   ├── category.rs           # Category 구조체
-│   │   │   └── todo_item.rs          # TodoItem 구조체
+│   │   │   ├── todo_item.rs          # TodoItem 구조체
+│   │   │   └── completion_log.rs     # CompletionLog 구조체
 │   │   ├── repository/               # 데이터 접근 레이어
 │   │   │   ├── database.rs           # DB 초기화
 │   │   │   ├── migration.rs          # 스키마 마이그레이션
 │   │   │   ├── category_repo.rs      # Category CRUD
 │   │   │   ├── todo_repo.rs          # Todo CRUD
-│   │   │   └── settings_repo.rs      # Settings CRUD
+│   │   │   ├── settings_repo.rs      # Settings CRUD
+│   │   │   └── completion_log_repo.rs # CompletionLog CRUD
 │   │   ├── service/                  # 비즈니스 로직 레이어
 │   │   │   ├── category_service.rs   # Category 비즈니스 로직
 │   │   │   ├── todo_service.rs       # Todo 비즈니스 로직
-│   │   │   └── reset_service.rs      # 리셋 로직
+│   │   │   ├── reset_service.rs      # 리셋 로직
+│   │   │   ├── repeat_service.rs     # 반복 규칙 로직
+│   │   │   └── streak_service.rs     # 스트릭 추적 로직
 │   │   └── commands/                 # Tauri 커맨드 핸들러
 │   │       ├── category_commands.rs  # Category 커맨드
 │   │       ├── todo_commands.rs      # Todo 커맨드
-│   │       └── settings_commands.rs  # Settings 커맨드
+│   │       ├── settings_commands.rs  # Settings 커맨드
+│   │       └── streak_commands.rs    # Streak 커맨드
 │   └── tauri.conf.json               # Tauri 설정
 ├── CLAUDE.md                         # 프로젝트 가이드
 └── README.md                         # 이 파일
@@ -269,6 +284,12 @@ yarn tauri ios build --open
 ## 배포
 
 ### iOS App Store
+
+**Tickly**는 iOS App Store에 배포되어 있습니다.
+
+[![App Store에서 다운로드](https://img.shields.io/badge/App_Store-다운로드-0D96F6?style=flat&logo=app-store&logoColor=white)](https://apps.apple.com/kr/app/tickly/id6757784860)
+
+#### 직접 빌드하려면
 
 1. Apple Developer Program 가입 ($99/년)
 2. App Store Connect에서 앱 등록
