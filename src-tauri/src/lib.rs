@@ -45,7 +45,11 @@ pub fn run() {
             reorder_categories,
             // Settings commands
             get_setting,
-            set_setting
+            set_setting,
+            // Streak commands
+            get_tracked_items,
+            get_item_heatmap_data,
+            update_track_streak
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

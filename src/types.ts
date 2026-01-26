@@ -17,6 +17,7 @@ export interface TodoItem {
   repeat_detail: string | null;
   next_due_at: string | null;
   last_completed_at: string | null;
+  track_streak: boolean;
 }
 
 export interface ThemeColors {
@@ -53,4 +54,25 @@ export interface FontPreset {
 export interface FontSettings {
   presetId: string;
   size: FontSize;
+}
+
+export interface CompletionLog {
+  item_id: number;
+  completed_on: string;
+  completed_count: number;
+}
+
+export interface HeatmapData {
+  item_id: number;
+  item_text: string;
+  logs: CompletionLog[];
+  total_days: number;
+  current_streak: number;
+  longest_streak: number;
+}
+
+export interface TrackedItem {
+  id: number;
+  text: string;
+  category_id: number | null;
 }

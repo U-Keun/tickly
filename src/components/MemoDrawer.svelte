@@ -10,17 +10,19 @@
     onSaveMemo: (id: number, memo: string | null) => void;
     onEditText: (id: number, text: string) => void;
     onUpdateRepeat: (id: number, repeatType: RepeatType, repeatDetail: string | null) => void;
+    onUpdateTrackStreak: (id: number, trackStreak: boolean) => void;
     onEditModeChange?: (editing: boolean) => void;
     closeDrawer: () => void;
   }
 
-  let { item, onSaveMemo, onEditText, onUpdateRepeat, onEditModeChange, closeDrawer }: Props = $props();
+  let { item, onSaveMemo, onEditText, onUpdateRepeat, onUpdateTrackStreak, onEditModeChange, closeDrawer }: Props = $props();
 
   let isEditMode = $state(false);
   let editText = $state('');
   let memoText = $state('');
   let repeatType = $state<RepeatType>('none');
   let repeatDetail = $state<number[]>([]);
+  let trackStreak = $state(false);
   let isSaving = $state(false);
 
   // Sync texts when item changes
@@ -29,6 +31,7 @@
     memoText = item.memo || '';
     repeatType = item.repeat_type;
     repeatDetail = item.repeat_detail ? JSON.parse(item.repeat_detail) : [];
+    trackStreak = item.track_streak;
   });
 
   function enterEditMode() {
@@ -41,6 +44,7 @@
     memoText = item.memo || '';
     repeatType = item.repeat_type;
     repeatDetail = item.repeat_detail ? JSON.parse(item.repeat_detail) : [];
+    trackStreak = item.track_streak;
     isEditMode = false;
     onEditModeChange?.(false);
   }
@@ -67,6 +71,11 @@
     const newRepeatDetail = repeatDetail.length > 0 ? JSON.stringify(repeatDetail) : null;
     if (repeatType !== item.repeat_type || newRepeatDetail !== item.repeat_detail) {
       onUpdateRepeat(item.id, repeatType, newRepeatDetail);
+    }
+
+    // Save track_streak if changed
+    if (trackStreak !== item.track_streak) {
+      onUpdateTrackStreak(item.id, trackStreak);
     }
 
     isSaving = false;
@@ -140,6 +149,22 @@
           onRepeatDetailChange={handleRepeatDetailChange}
         />
       </div>
+      <div class="edit-section streak-toggle-section">
+        <label class="streak-toggle-label">
+          <span class="streak-label-text">{i18n.t('trackStreak')}</span>
+          <button
+            type="button"
+            class="streak-toggle"
+            class:active={trackStreak}
+            onclick={() => trackStreak = !trackStreak}
+            aria-pressed={trackStreak}
+          >
+            <span class="toggle-track">
+              <span class="toggle-thumb"></span>
+            </span>
+          </button>
+        </label>
+      </div>
       <div class="actions">
         <button
           type="button"
@@ -170,7 +195,7 @@
   {:else}
     <!-- View Mode -->
     <div class="view-container">
-      {#if item.memo || item.repeat_type !== 'none'}
+      {#if item.memo || item.repeat_type !== 'none' || item.track_streak}
         <div class="memo-display">
           {#if item.memo}
             <p class="memo-text">{item.memo}</p>
@@ -185,6 +210,17 @@
                 </svg>
               </span>
               {getRepeatDisplayText()}
+            </p>
+          {/if}
+          {#if item.track_streak}
+            <p class="streak-info">
+              <span class="streak-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                  <path d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+                </svg>
+              </span>
+              {i18n.t('trackingStreak')}
             </p>
           {/if}
         </div>
@@ -357,5 +393,73 @@
 
   .btn-edit:hover {
     background: var(--color-accent-sky-strong);
+  }
+
+  .streak-toggle-section {
+    padding-top: 4px;
+  }
+
+  .streak-toggle-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+
+  .streak-label-text {
+    font-size: 14px;
+    color: var(--color-ink);
+  }
+
+  .streak-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .toggle-track {
+    display: block;
+    width: 44px;
+    height: 24px;
+    background: var(--color-mist);
+    border-radius: 12px;
+    position: relative;
+    transition: background-color 0.2s;
+  }
+
+  .streak-toggle.active .toggle-track {
+    background: var(--color-accent-mint-strong);
+  }
+
+  .toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: var(--color-white);
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .streak-toggle.active .toggle-thumb {
+    transform: translateX(20px);
+  }
+
+  .streak-info {
+    margin: 6px 0 0 0;
+    font-size: 13px;
+    color: var(--color-ink-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .streak-icon {
+    display: flex;
+    align-items: center;
+    color: var(--color-accent-peach-strong);
   }
 </style>

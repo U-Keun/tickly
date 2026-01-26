@@ -7,6 +7,7 @@ let showDeleteCategoryConfirm = $state(false);
 let showAddItemModal = $state(false);
 let showReorderModal = $state(false);
 let showReorderCategoriesModal = $state(false);
+let showStreakModal = $state(false);
 let selectedCategoryForMenu = $state<Category | null>(null);
 
 // Reset confirm modal actions
@@ -45,6 +46,15 @@ function closeReorderCategoriesModal(): void {
   showReorderCategoriesModal = false;
 }
 
+// Streak modal actions
+function openStreakModal(): void {
+  showStreakModal = true;
+}
+
+function closeStreakModal(): void {
+  showStreakModal = false;
+}
+
 // Category menu modal actions
 function openCategoryMenu(category: Category): void {
   selectedCategoryForMenu = category;
@@ -75,6 +85,7 @@ function closeAllModals(): void {
   showAddItemModal = false;
   showReorderModal = false;
   showReorderCategoriesModal = false;
+  showStreakModal = false;
   selectedCategoryForMenu = null;
 }
 
@@ -87,6 +98,7 @@ export const modalStore = {
   get showAddItemModal() { return showAddItemModal; },
   get showReorderModal() { return showReorderModal; },
   get showReorderCategoriesModal() { return showReorderCategoriesModal; },
+  get showStreakModal() { return showStreakModal; },
   get selectedCategoryForMenu() { return selectedCategoryForMenu; },
 
   // Reset confirm modal
@@ -104,6 +116,10 @@ export const modalStore = {
   // Reorder categories modal
   openReorderCategoriesModal,
   closeReorderCategoriesModal,
+
+  // Streak modal
+  openStreakModal,
+  closeStreakModal,
 
   // Category menu modal
   openCategoryMenu,

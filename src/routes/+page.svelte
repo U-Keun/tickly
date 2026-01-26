@@ -14,6 +14,7 @@
   import ReorderCategoriesModal from '../components/ReorderCategoriesModal.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
   import FloatingActions from '../components/FloatingActions.svelte';
+  import StreakModal from '../components/StreakModal.svelte';
   import { initializeTheme } from '../lib/themes';
   import { initializeFonts } from '../lib/fonts';
   import { appStore, modalStore } from '../lib/stores';
@@ -119,6 +120,7 @@
                         onSaveMemo={appStore.updateMemo}
                         onEditText={appStore.editItem}
                         onUpdateRepeat={appStore.updateRepeat}
+                        onUpdateTrackStreak={appStore.updateTrackStreak}
                         onEditModeChange={(editing) => isEditingItem = editing}
                         {closeDrawer}
                       />
@@ -139,7 +141,7 @@
     onAdd={modalStore.openAddItemModal}
     onReset={modalStore.openResetConfirm}
     onReorder={modalStore.openReorderModal}
-    onHome={appStore.goToFirstCategory}
+    onStreak={modalStore.openStreakModal}
     onSettings={() => goto('/settings')}
   />
 
@@ -197,6 +199,12 @@
     confirmStyle="danger"
     onConfirm={confirmDeleteCategory}
     onCancel={modalStore.closeDeleteCategoryConfirm}
+  />
+
+  <!-- Streak Heatmap Modal -->
+  <StreakModal
+    show={modalStore.showStreakModal}
+    onClose={modalStore.closeStreakModal}
   />
 
   <!-- Intro Animation Component -->

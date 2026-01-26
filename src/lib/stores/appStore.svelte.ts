@@ -1,6 +1,7 @@
 import type { TodoItem, Category, RepeatType } from '../../types';
 import * as categoryApi from '../api/categoryApi';
 import * as todoApi from '../api/todoApi';
+import * as streakApi from '../api/streakApi';
 
 // Core app state
 let items = $state<TodoItem[]>([]);
@@ -155,6 +156,17 @@ async function updateRepeat(
   }
 }
 
+async function updateTrackStreak(id: number, trackStreak: boolean): Promise<void> {
+  try {
+    await streakApi.updateTrackStreak(id, trackStreak);
+    items = items.map(item =>
+      item.id === id ? { ...item, track_streak: trackStreak } : item
+    );
+  } catch (error) {
+    console.error('Failed to update track_streak:', error);
+  }
+}
+
 async function resetAllItems(): Promise<void> {
   try {
     await todoApi.resetAllItems(selectedCategoryId);
@@ -204,6 +216,7 @@ export const appStore = {
   editItem,
   updateMemo,
   updateRepeat,
+  updateTrackStreak,
   resetAllItems,
   setItems,
 };

@@ -1,12 +1,13 @@
 use rusqlite::{params, Connection};
 
-use crate::models::{RepeatType, TodoItem};
+use crate::models::{RepeatType, TodoItem, TrackedItem};
 
 pub struct TodoRepository;
 
 impl TodoRepository {
     fn row_to_item(row: &rusqlite::Row) -> Result<TodoItem, rusqlite::Error> {
         let repeat_type_str: String = row.get(6)?;
+        let track_streak_int: i32 = row.get(10)?;
         Ok(TodoItem {
             id: row.get(0)?,
             text: row.get(1)?,
@@ -18,6 +19,7 @@ impl TodoRepository {
             repeat_detail: row.get(7)?,
             next_due_at: row.get(8)?,
             last_completed_at: row.get(9)?,
+            track_streak: track_streak_int != 0,
         })
     }
 
@@ -29,7 +31,7 @@ impl TodoRepository {
 
         if let Some(id) = category_id {
             let mut stmt = conn.prepare(
-                "SELECT id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at FROM todos WHERE category_id = ?1 ORDER BY done ASC, display_order ASC",
+                "SELECT id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at, track_streak FROM todos WHERE category_id = ?1 ORDER BY done ASC, display_order ASC",
             )?;
 
             let rows = stmt.query_map(params![id], Self::row_to_item)?;
@@ -39,7 +41,7 @@ impl TodoRepository {
             }
         } else {
             let mut stmt = conn.prepare(
-                "SELECT id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at FROM todos ORDER BY done ASC, display_order ASC",
+                "SELECT id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at, track_streak FROM todos ORDER BY done ASC, display_order ASC",
             )?;
 
             let rows = stmt.query_map([], Self::row_to_item)?;
@@ -54,7 +56,7 @@ impl TodoRepository {
 
     pub fn get_by_id(conn: &Connection, id: i64) -> Result<Option<TodoItem>, rusqlite::Error> {
         let mut stmt = conn.prepare(
-            "SELECT id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at FROM todos WHERE id = ?1",
+            "SELECT id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at, track_streak FROM todos WHERE id = ?1",
         )?;
 
         let mut rows = stmt.query_map(params![id], Self::row_to_item)?;
@@ -68,10 +70,30 @@ impl TodoRepository {
 
     pub fn get_all(conn: &Connection) -> Result<Vec<TodoItem>, rusqlite::Error> {
         let mut stmt = conn.prepare(
-            "SELECT id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at FROM todos ORDER BY display_order ASC",
+            "SELECT id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at, track_streak FROM todos ORDER BY display_order ASC",
         )?;
 
         let rows = stmt.query_map([], Self::row_to_item)?;
+        let mut items = Vec::new();
+        for item in rows {
+            items.push(item?);
+        }
+        Ok(items)
+    }
+
+    pub fn get_tracked_items(conn: &Connection) -> Result<Vec<TrackedItem>, rusqlite::Error> {
+        let mut stmt = conn.prepare(
+            "SELECT id, text, category_id FROM todos WHERE track_streak = 1 ORDER BY display_order ASC",
+        )?;
+
+        let rows = stmt.query_map([], |row| {
+            Ok(TrackedItem {
+                id: row.get(0)?,
+                text: row.get(1)?,
+                category_id: row.get(2)?,
+            })
+        })?;
+
         let mut items = Vec::new();
         for item in rows {
             items.push(item?);
@@ -124,7 +146,20 @@ impl TodoRepository {
             repeat_detail: repeat_detail.map(|s| s.to_string()),
             next_due_at: next_due_at.map(|s| s.to_string()),
             last_completed_at: None,
+            track_streak: false,
         })
+    }
+
+    pub fn update_track_streak(
+        conn: &Connection,
+        id: i64,
+        track_streak: bool,
+    ) -> Result<(), rusqlite::Error> {
+        conn.execute(
+            "UPDATE todos SET track_streak = ?1 WHERE id = ?2",
+            params![track_streak as i32, id],
+        )?;
+        Ok(())
     }
 
     pub fn toggle(conn: &Connection, id: i64) -> Result<(), rusqlite::Error> {

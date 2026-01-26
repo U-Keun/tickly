@@ -74,7 +74,8 @@ Tickly/
 │   │   │   ├── client.ts             # Base invoke wrapper
 │   │   │   ├── categoryApi.ts        # Category API functions
 │   │   │   ├── todoApi.ts            # Todo API functions
-│   │   │   └── settingsApi.ts        # Settings API functions
+│   │   │   ├── settingsApi.ts        # Settings API functions
+│   │   │   └── streakApi.ts          # Streak tracking API functions
 │   │   ├── stores/                   # Svelte 5 reactive stores
 │   │   │   ├── index.ts              # Re-exports
 │   │   │   ├── appStore.svelte.ts    # App state (categories, items)
@@ -96,24 +97,29 @@ Tickly/
 │   │   ├── models/                   # Data models
 │   │   │   ├── mod.rs
 │   │   │   ├── category.rs           # Category struct
-│   │   │   └── todo_item.rs          # TodoItem struct
+│   │   │   ├── todo_item.rs          # TodoItem struct
+│   │   │   └── completion_log.rs     # CompletionLog, HeatmapData structs
 │   │   ├── repository/               # Data access layer
 │   │   │   ├── mod.rs
 │   │   │   ├── database.rs           # DB initialization
 │   │   │   ├── migration.rs          # Schema migrations
 │   │   │   ├── category_repo.rs      # Category CRUD
 │   │   │   ├── todo_repo.rs          # Todo CRUD
-│   │   │   └── settings_repo.rs      # Settings CRUD
+│   │   │   ├── settings_repo.rs      # Settings CRUD
+│   │   │   └── completion_log_repo.rs # Completion log CRUD
 │   │   ├── service/                  # Business logic layer
 │   │   │   ├── mod.rs
 │   │   │   ├── category_service.rs   # Category business logic
 │   │   │   ├── todo_service.rs       # Todo business logic
-│   │   │   └── reset_service.rs      # Reset/auto-reset logic
+│   │   │   ├── reset_service.rs      # Reset/auto-reset logic
+│   │   │   ├── repeat_service.rs     # Repeat rules logic
+│   │   │   └── streak_service.rs     # Streak tracking logic
 │   │   └── commands/                 # Tauri command handlers
 │   │       ├── mod.rs
 │   │       ├── category_commands.rs  # Category Tauri commands
 │   │       ├── todo_commands.rs      # Todo Tauri commands
-│   │       └── settings_commands.rs  # Settings Tauri commands
+│   │       ├── settings_commands.rs  # Settings Tauri commands
+│   │       └── streak_commands.rs    # Streak Tauri commands
 │   └── tauri.conf.json               # Tauri configuration
 ├── static/                           # Static assets (IMPORTANT: use for iOS)
 └── tailwind.config.ts                # TailwindCSS configuration
@@ -220,6 +226,11 @@ const items = await invoke('get_items', { categoryId });
 **settingsApi.ts**:
 - `getSetting(key)` - Get a setting value
 - `setSetting(key, value)` - Set a setting value
+
+**streakApi.ts**:
+- `getTrackedItems()` - Get all items with streak tracking enabled
+- `getItemHeatmapData(itemId)` - Get heatmap data for a specific item
+- `updateTrackStreak(id, trackStreak)` - Enable/disable streak tracking for an item
 
 ## Rust Backend Architecture
 
@@ -564,6 +575,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - ✅ Swipe to delete
 - ✅ Memo for each item
 - ✅ Repeat rules (daily/weekly/monthly scheduling)
+- ✅ Streak tracking per item with heatmap visualization
 
 ### UI/UX
 - ✅ Theme customization (5 presets + custom colors)
@@ -589,9 +601,9 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ### Completed Versions
 - **v0.2.0**: ✅ Repeat rules (daily/weekly/monthly scheduling)
+- **v0.3.0**: ✅ Streak heatmap (per-item tracking with GitHub-style visualization)
 
 ### Planned Features (see `docs/roadmap.md` for details)
-- **v0.3.0**: Streak heatmap (GitHub-style visualization)
 - **v0.4.0**: Cloud sync (multi-device support)
 - **v0.5.0**: Shared lists (family/team collaboration)
 - **v0.6.0**: iOS widgets
