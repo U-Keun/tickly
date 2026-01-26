@@ -131,4 +131,19 @@ export const en: Translations = {
   thu: 'Thu',
   fri: 'Fri',
   sat: 'Sat',
+
+  // Streak heatmap
+  streak: 'Streak',
+  streakHeatmapTitle: 'Streak Heatmap',
+  totalDays: 'Total Days',
+  currentStreak: 'Current Streak',
+  longestStreak: 'Longest Streak',
+  completions: 'completions',
+  less: 'Less',
+  more: 'More',
+  loading: 'Loading...',
+  trackStreak: 'Track Streak',
+  trackingStreak: 'Tracking streak',
+  noTrackedItems: 'No tracked items yet',
+  addStreakHint: 'Enable streak tracking in item details!',
 };

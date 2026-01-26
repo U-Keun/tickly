@@ -129,6 +129,21 @@ export const ko = {
   thu: '목',
   fri: '금',
   sat: '토',
+
+  // Streak heatmap
+  streak: '스트릭',
+  streakHeatmapTitle: '스트릭 히트맵',
+  totalDays: '총 완료 일수',
+  currentStreak: '현재 스트릭',
+  longestStreak: '최장 스트릭',
+  completions: '개 완료',
+  less: '적음',
+  more: '많음',
+  loading: '로딩 중...',
+  trackStreak: '스트릭 추적',
+  trackingStreak: '스트릭 추적 중',
+  noTrackedItems: '추적 중인 항목이 없습니다',
+  addStreakHint: '항목의 메모에서 스트릭 추적을 켜보세요!',
 };
 
 export type Translations = typeof ko;

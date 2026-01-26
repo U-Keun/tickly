@@ -7,6 +7,9 @@ pub fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
     migrate_add_display_order_to_categories(conn)?;
     migrate_add_reminder_at(conn)?;
     migrate_add_repeat_columns(conn)?;
+    migrate_create_completion_logs(conn)?;
+    migrate_add_track_streak(conn)?;
+    migrate_completion_logs_add_item_id(conn)?;
     Ok(())
 }
 
@@ -134,6 +137,60 @@ fn migrate_add_repeat_columns(conn: &Connection) -> Result<(), rusqlite::Error> 
     );
     if let Ok(0) = last_completed_at_exists {
         conn.execute("ALTER TABLE todos ADD COLUMN last_completed_at TEXT", [])?;
+    }
+
+    Ok(())
+}
+
+fn migrate_create_completion_logs(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS completion_logs (
+            completed_on TEXT PRIMARY KEY,
+            completed_count INTEGER NOT NULL DEFAULT 0
+        )",
+        [],
+    )?;
+    Ok(())
+}
+
+fn migrate_add_track_streak(conn: &Connection) -> Result<(), rusqlite::Error> {
+    let track_streak_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='track_streak'",
+        [],
+        |row| row.get(0),
+    );
+
+    if let Ok(0) = track_streak_exists {
+        conn.execute(
+            "ALTER TABLE todos ADD COLUMN track_streak INTEGER NOT NULL DEFAULT 0",
+            [],
+        )?;
+    }
+
+    Ok(())
+}
+
+fn migrate_completion_logs_add_item_id(conn: &Connection) -> Result<(), rusqlite::Error> {
+    // Check if item_id column already exists
+    let item_id_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('completion_logs') WHERE name='item_id'",
+        [],
+        |row| row.get(0),
+    );
+
+    if let Ok(0) = item_id_exists {
+        // Drop old table and create new one with item_id
+        // (We don't need to preserve old data since we're switching to per-item tracking)
+        conn.execute("DROP TABLE IF EXISTS completion_logs", [])?;
+        conn.execute(
+            "CREATE TABLE completion_logs (
+                item_id INTEGER NOT NULL,
+                completed_on TEXT NOT NULL,
+                completed_count INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (item_id, completed_on)
+            )",
+            [],
+        )?;
     }
 
     Ok(())

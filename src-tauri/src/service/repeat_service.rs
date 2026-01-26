@@ -3,6 +3,7 @@ use rusqlite::Connection;
 
 use crate::models::{RepeatType, TodoItem};
 use crate::repository::TodoRepository;
+use crate::service::StreakService;
 
 pub struct RepeatService;
 
@@ -108,6 +109,10 @@ impl RepeatService {
             // Unchecking: just toggle done to false
             TodoRepository::set_done(conn, id, false, None, item.next_due_at.as_deref())?;
             item.done = false;
+            // Remove completion from streak log if tracking
+            if item.track_streak {
+                let _ = StreakService::remove_completion(conn, id);
+            }
         } else {
             // Checking: handle based on repeat type
             let today = Local::now().format("%Y-%m-%d").to_string();
@@ -130,6 +135,10 @@ impl RepeatService {
                 item.done = true;
                 item.last_completed_at = Some(today);
                 item.next_due_at = next_due;
+            }
+            // Log completion for streak if tracking
+            if item.track_streak {
+                let _ = StreakService::log_completion(conn, id);
             }
         }
 

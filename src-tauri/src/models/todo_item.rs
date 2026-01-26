@@ -50,4 +50,5 @@ pub struct TodoItem {
     pub repeat_detail: Option<String>,
     pub next_due_at: Option<String>,
     pub last_completed_at: Option<String>,
+    pub track_streak: bool,
 }
