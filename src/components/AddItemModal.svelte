@@ -96,19 +96,13 @@
   </div>
 
   <div class="form-group streak-section">
-    <label class="streak-toggle-label">
+    <label class="streak-checkbox-label">
+      <input
+        type="checkbox"
+        class="streak-checkbox"
+        bind:checked={trackStreak}
+      />
       <span class="streak-label-text">{i18n.t('trackStreak')}</span>
-      <button
-        type="button"
-        class="streak-toggle"
-        class:active={trackStreak}
-        onclick={() => trackStreak = !trackStreak}
-        aria-pressed={trackStreak}
-      >
-        <span class="toggle-track">
-          <span class="toggle-thumb"></span>
-        </span>
-      </button>
     </label>
   </div>
 
@@ -220,52 +214,24 @@
     padding-top: 4px;
   }
 
-  .streak-toggle-label {
+  .streak-checkbox-label {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 10px;
     cursor: pointer;
+  }
+
+  .streak-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--color-stroke);
+    border-radius: 4px;
+    cursor: pointer;
+    accent-color: var(--color-accent-mint-strong);
   }
 
   .streak-label-text {
     font-size: 14px;
     color: var(--color-ink);
-  }
-
-  .streak-toggle {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-  }
-
-  .toggle-track {
-    display: block;
-    width: 44px;
-    height: 24px;
-    background: var(--color-stroke);
-    border-radius: 12px;
-    position: relative;
-    transition: background 0.2s;
-  }
-
-  .streak-toggle.active .toggle-track {
-    background: var(--color-accent-mint-strong);
-  }
-
-  .toggle-thumb {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 20px;
-    height: 20px;
-    background: var(--color-white);
-    border-radius: 50%;
-    transition: transform 0.2s;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  }
-
-  .streak-toggle.active .toggle-thumb {
-    transform: translateX(20px);
   }
 </style>

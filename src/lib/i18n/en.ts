@@ -134,7 +134,7 @@ export const en: Translations = {
 
   // Streak heatmap
   streak: 'Streak',
-  streakHeatmapTitle: 'Streak Heatmap',
+  streakHeatmapTitle: 'Streak',
   totalDays: 'Total Days',
   currentStreak: 'Current Streak',
   longestStreak: 'Longest Streak',

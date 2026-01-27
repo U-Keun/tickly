@@ -132,7 +132,7 @@ export const ko = {
 
   // Streak heatmap
   streak: '스트릭',
-  streakHeatmapTitle: '스트릭 히트맵',
+  streakHeatmapTitle: '스트릭',
   totalDays: '총 완료 일수',
   currentStreak: '현재 스트릭',
   longestStreak: '최장 스트릭',
