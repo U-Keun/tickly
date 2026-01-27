@@ -1,5 +1,5 @@
 mod category_service;
-mod repeat_service;
+pub mod repeat_service;
 mod reset_service;
 mod streak_service;
 mod todo_service;

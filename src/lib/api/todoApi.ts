@@ -9,13 +9,15 @@ export async function addItem(
   text: string,
   categoryId: number | null,
   repeatType?: RepeatType,
-  repeatDetail?: string | null
+  repeatDetail?: string | null,
+  trackStreak?: boolean
 ): Promise<TodoItem> {
   return invoke<TodoItem>('add_item', {
     text,
     categoryId,
     repeatType: repeatType || null,
     repeatDetail: repeatDetail || null,
+    trackStreak: trackStreak || false,
   });
 }
 

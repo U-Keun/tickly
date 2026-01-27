@@ -108,6 +108,7 @@ impl TodoRepository {
         repeat_type: &RepeatType,
         repeat_detail: Option<&str>,
         next_due_at: Option<&str>,
+        track_streak: bool,
     ) -> Result<TodoItem, rusqlite::Error> {
         let max_order: i64 = if let Some(cat_id) = category_id {
             conn.query_row(
@@ -129,8 +130,8 @@ impl TodoRepository {
         let repeat_type_str = repeat_type.to_str();
 
         conn.execute(
-            "INSERT INTO todos (text, done, category_id, display_order, repeat_type, repeat_detail, next_due_at) VALUES (?1, 0, ?2, ?3, ?4, ?5, ?6)",
-            params![text, category_id, display_order, repeat_type_str, repeat_detail, next_due_at],
+            "INSERT INTO todos (text, done, category_id, display_order, repeat_type, repeat_detail, next_due_at, track_streak) VALUES (?1, 0, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![text, category_id, display_order, repeat_type_str, repeat_detail, next_due_at, track_streak],
         )?;
 
         let id = conn.last_insert_rowid();
@@ -146,7 +147,7 @@ impl TodoRepository {
             repeat_detail: repeat_detail.map(|s| s.to_string()),
             next_due_at: next_due_at.map(|s| s.to_string()),
             last_completed_at: None,
-            track_streak: false,
+            track_streak,
         })
     }
 

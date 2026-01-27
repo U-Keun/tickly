@@ -146,4 +146,9 @@ export const en: Translations = {
   trackingStreak: 'Tracking streak',
   noTrackedItems: 'No tracked items yet',
   addStreakHint: 'Enable streak tracking in item details!',
+
+  // Reset time settings
+  resetTimeChange: 'Reset Time',
+  resetTimeTitle: 'Reset Time',
+  resetTimeDescription: 'Time when daily tasks reset',
 };

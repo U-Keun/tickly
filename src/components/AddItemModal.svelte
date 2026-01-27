@@ -6,7 +6,7 @@
 
   interface Props {
     show: boolean;
-    onAdd: (text: string, memo: string | null, repeatType: RepeatType, repeatDetail: string | null) => void;
+    onAdd: (text: string, memo: string | null, repeatType: RepeatType, repeatDetail: string | null, trackStreak: boolean) => void;
     onCancel: () => void;
   }
 
@@ -16,6 +16,7 @@
   let memo = $state('');
   let repeatType = $state<RepeatType>('none');
   let repeatDetail = $state<number[]>([]);
+  let trackStreak = $state(false);
   let textInputElement = $state<HTMLInputElement | null>(null);
 
   // Reset and focus when modal opens
@@ -25,6 +26,7 @@
       memo = '';
       repeatType = 'none';
       repeatDetail = [];
+      trackStreak = false;
       setTimeout(() => textInputElement?.focus(), 100);
     }
   });
@@ -35,7 +37,7 @@
 
     const trimmedMemo = memo.trim() || null;
     const repeatDetailJson = repeatDetail.length > 0 ? JSON.stringify(repeatDetail) : null;
-    onAdd(trimmedText, trimmedMemo, repeatType, repeatDetailJson);
+    onAdd(trimmedText, trimmedMemo, repeatType, repeatDetailJson, trackStreak);
     onCancel();
   }
 
@@ -91,6 +93,23 @@
       onRepeatTypeChange={handleRepeatTypeChange}
       onRepeatDetailChange={handleRepeatDetailChange}
     />
+  </div>
+
+  <div class="form-group streak-section">
+    <label class="streak-toggle-label">
+      <span class="streak-label-text">{i18n.t('trackStreak')}</span>
+      <button
+        type="button"
+        class="streak-toggle"
+        class:active={trackStreak}
+        onclick={() => trackStreak = !trackStreak}
+        aria-pressed={trackStreak}
+      >
+        <span class="toggle-track">
+          <span class="toggle-thumb"></span>
+        </span>
+      </button>
+    </label>
   </div>
 
   <div class="button-group">
@@ -195,5 +214,58 @@
   .btn-primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  .streak-section {
+    padding-top: 4px;
+  }
+
+  .streak-toggle-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+
+  .streak-label-text {
+    font-size: 14px;
+    color: var(--color-ink);
+  }
+
+  .streak-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .toggle-track {
+    display: block;
+    width: 44px;
+    height: 24px;
+    background: var(--color-stroke);
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.2s;
+  }
+
+  .streak-toggle.active .toggle-track {
+    background: var(--color-accent-mint-strong);
+  }
+
+  .toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: var(--color-white);
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .streak-toggle.active .toggle-thumb {
+    transform: translateX(20px);
   }
 </style>

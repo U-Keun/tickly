@@ -78,10 +78,11 @@ async function addItem(
   text: string,
   memo: string | null = null,
   repeatType: RepeatType = 'none',
-  repeatDetail: string | null = null
+  repeatDetail: string | null = null,
+  trackStreak: boolean = false
 ): Promise<void> {
   try {
-    const newItem = await todoApi.addItem(text, selectedCategoryId, repeatType, repeatDetail);
+    const newItem = await todoApi.addItem(text, selectedCategoryId, repeatType, repeatDetail, trackStreak);
     if (memo) {
       await todoApi.updateItemMemo(newItem.id, memo);
       newItem.memo = memo;
