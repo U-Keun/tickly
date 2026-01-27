@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { flip } from 'svelte/animate';
   import { goto } from '$app/navigation';
   import type { Category } from '../types';
@@ -24,6 +24,9 @@
   // Local UI state only
   let isEditingItem = $state(false);
   let showFab = $state(false);
+
+  // Track last processed date to avoid duplicate processing
+  let lastProcessedDate = '';
 
   // Reference to CategoryTabs component
   let categoryTabsComponent: any;
@@ -56,6 +59,36 @@
     modalStore.closeResetConfirm();
   }
 
+  // Process repeating items and reload if any were reactivated
+  async function processRepeatsAndReload() {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Skip if already processed today
+    if (lastProcessedDate === today) {
+      return;
+    }
+
+    try {
+      const reactivatedCount = await todoApi.processRepeats();
+      lastProcessedDate = today;
+
+      if (reactivatedCount > 0) {
+        console.log(`Reactivated ${reactivatedCount} repeating items`);
+        // Reload items to reflect changes
+        await appStore.loadItems();
+      }
+    } catch (error) {
+      console.error('Failed to process repeats:', error);
+    }
+  }
+
+  // Handle visibility change (app coming to foreground)
+  function handleVisibilityChange() {
+    if (document.visibilityState === 'visible') {
+      processRepeatsAndReload();
+    }
+  }
+
   onMount(async () => {
     // Initialize theme, fonts, and locale from saved settings
     await initializeTheme();
@@ -63,19 +96,19 @@
     await i18n.loadLocale();
 
     // Process repeating items that are due
-    try {
-      const reactivatedCount = await todoApi.processRepeats();
-      if (reactivatedCount > 0) {
-        console.log(`Reactivated ${reactivatedCount} repeating items`);
-      }
-    } catch (error) {
-      console.error('Failed to process repeats:', error);
-    }
+    await processRepeatsAndReload();
 
     await appStore.loadCategories();
     await appStore.loadItems();
 
     showFab = true;
+
+    // Listen for visibility changes (app coming back to foreground)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+  });
+
+  onDestroy(() => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
   });
 </script>
 
