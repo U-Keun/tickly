@@ -1,6 +1,7 @@
 use rusqlite::Connection;
 
 use crate::repository::{SettingsRepository, TodoRepository};
+use crate::service::repeat_service::get_logical_date;
 
 pub struct ResetService;
 
@@ -13,7 +14,12 @@ impl ResetService {
     ) -> Result<(), rusqlite::Error> {
         TodoRepository::reset_all(conn, category_id)?;
 
-        let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+        // Get reset time from settings and use logical date
+        let reset_time = SettingsRepository::get(conn, "reset_time")?
+            .unwrap_or_else(|| "00:00".to_string());
+        let logical_date = get_logical_date(&reset_time);
+        let today = logical_date.format("%Y-%m-%d").to_string();
+
         SettingsRepository::set(conn, "last_reset_date", &today)?;
 
         Ok(())
@@ -22,7 +28,12 @@ impl ResetService {
     /// Check if a new day has started and auto-reset if needed
     /// Returns true if reset was performed, false otherwise
     pub fn check_and_auto_reset(conn: &Connection) -> Result<bool, rusqlite::Error> {
-        let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+        // Get reset time from settings and use logical date
+        let reset_time = SettingsRepository::get(conn, "reset_time")?
+            .unwrap_or_else(|| "00:00".to_string());
+        let logical_date = get_logical_date(&reset_time);
+        let today = logical_date.format("%Y-%m-%d").to_string();
+
         let last_reset = SettingsRepository::get(conn, "last_reset_date")?;
 
         match last_reset {

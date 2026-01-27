@@ -1,11 +1,34 @@
-use chrono::{Datelike, Local, NaiveDate};
+use chrono::{Datelike, Local, NaiveDate, NaiveTime};
 use rusqlite::Connection;
 
 use crate::models::{RepeatType, TodoItem};
-use crate::repository::TodoRepository;
+use crate::repository::{SettingsRepository, TodoRepository};
 use crate::service::StreakService;
 
 pub struct RepeatService;
+
+/// Calculate the "logical date" based on reset time setting.
+/// If current time is before the reset time, return yesterday.
+/// Otherwise, return today.
+pub fn get_logical_date(reset_time: &str) -> NaiveDate {
+    let now = Local::now();
+    let today = now.date_naive();
+
+    // Parse "HH:MM" format
+    let parts: Vec<&str> = reset_time.split(':').collect();
+    let hour: u32 = parts.get(0).and_then(|s| s.parse().ok()).unwrap_or(0);
+    let min: u32 = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+
+    let reset_time_today = NaiveTime::from_hms_opt(hour, min, 0).unwrap_or(NaiveTime::MIN);
+    let current_time = now.time();
+
+    if current_time < reset_time_today {
+        // Before reset time → still "yesterday" logically
+        today - chrono::Duration::days(1)
+    } else {
+        today
+    }
+}
 
 impl RepeatService {
     /// Calculate the next due date based on repeat type and detail
@@ -148,7 +171,13 @@ impl RepeatService {
     /// Process all repeating items and reactivate those whose due date has arrived
     /// Returns the number of items reactivated
     pub fn process_repeats(conn: &Connection) -> Result<i32, rusqlite::Error> {
-        let today = Local::now().format("%Y-%m-%d").to_string();
+        // Get reset time from settings (default: "00:00")
+        let reset_time = SettingsRepository::get(conn, "reset_time")?
+            .unwrap_or_else(|| "00:00".to_string());
+
+        let logical_date = get_logical_date(&reset_time);
+        let today = logical_date.format("%Y-%m-%d").to_string();
+
         let all_items = TodoRepository::get_all(conn)?;
 
         let mut reactivated = 0;

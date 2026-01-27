@@ -47,7 +47,7 @@
   <!-- Checkbox -->
   <button
     onclick={() => onToggle(item.id)}
-    class="flex-shrink-0 w-6 h-6 rounded border-2 border-stroke flex items-center justify-center {item.done ? 'bg-accent-sky-strong border-accent-sky-strong' : 'bg-paper'}"
+    class="flex-shrink-0 w-6 h-6 rounded-sm border-2 border-stroke flex items-center justify-center {item.done ? 'bg-accent-sky-strong border-accent-sky-strong' : 'bg-paper'}"
     aria-label={item.done ? 'Mark as incomplete' : 'Mark as complete'}
   >
     {#if item.done}

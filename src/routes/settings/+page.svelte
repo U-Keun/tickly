@@ -50,6 +50,21 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
       </svg>
     </button>
+
+    <!-- Reset Time Setting -->
+    <button class="settings-item" onclick={() => goto('/settings/reset-time')}>
+      <div class="item-left">
+        <div class="item-icon reset-time-icon">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <span class="item-label">{i18n.t('resetTimeChange')}</span>
+      </div>
+      <svg class="w-5 h-5 chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
   </div>
 </SettingsLayout>
 
@@ -103,6 +118,10 @@
 
   .language-icon {
     background: var(--color-accent-mint);
+  }
+
+  .reset-time-icon {
+    background: var(--color-accent-peach);
   }
 
   .item-label {

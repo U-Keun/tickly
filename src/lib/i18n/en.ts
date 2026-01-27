@@ -134,7 +134,7 @@ export const en: Translations = {
 
   // Streak heatmap
   streak: 'Streak',
-  streakHeatmapTitle: 'Streak Heatmap',
+  streakHeatmapTitle: 'Streak',
   totalDays: 'Total Days',
   currentStreak: 'Current Streak',
   longestStreak: 'Longest Streak',
@@ -146,4 +146,9 @@ export const en: Translations = {
   trackingStreak: 'Tracking streak',
   noTrackedItems: 'No tracked items yet',
   addStreakHint: 'Enable streak tracking in item details!',
+
+  // Reset time settings
+  resetTimeChange: 'Reset Time',
+  resetTimeTitle: 'Reset Time',
+  resetTimeDescription: 'Time when daily tasks reset',
 };

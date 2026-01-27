@@ -141,7 +141,7 @@
     gap: 12px;
   }
 
-  /* leaf checkbox */
+  /* checkbox */
   .leafBox {
     width: 30px;
     height: 30px;
@@ -149,7 +149,7 @@
 
     background: transparent;
     border: 2px solid var(--color-ink);
-    border-radius: 0 10px 0 10px;
+    border-radius: 4px;
 
     display: grid;
     place-items: center;

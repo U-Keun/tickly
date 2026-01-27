@@ -24,6 +24,7 @@ impl TodoService {
         category_id: Option<i64>,
         repeat_type: &RepeatType,
         repeat_detail: Option<&str>,
+        track_streak: bool,
     ) -> Result<TodoItem, rusqlite::Error> {
         // Calculate initial next_due_at for repeating items
         let next_due_at = if *repeat_type != RepeatType::None {
@@ -40,6 +41,7 @@ impl TodoService {
             repeat_type,
             repeat_detail,
             next_due_at.as_deref(),
+            track_streak,
         )
     }
 

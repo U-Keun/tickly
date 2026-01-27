@@ -132,7 +132,7 @@ export const ko = {
 
   // Streak heatmap
   streak: '스트릭',
-  streakHeatmapTitle: '스트릭 히트맵',
+  streakHeatmapTitle: '스트릭',
   totalDays: '총 완료 일수',
   currentStreak: '현재 스트릭',
   longestStreak: '최장 스트릭',
@@ -144,6 +144,11 @@ export const ko = {
   trackingStreak: '스트릭 추적 중',
   noTrackedItems: '추적 중인 항목이 없습니다',
   addStreakHint: '항목의 메모에서 스트릭 추적을 켜보세요!',
+
+  // Reset time settings
+  resetTimeChange: '초기화 시간',
+  resetTimeTitle: '초기화 시간',
+  resetTimeDescription: '매일 할 일이 초기화되는 시간',
 };
 
 export type Translations = typeof ko;

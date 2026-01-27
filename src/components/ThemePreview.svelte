@@ -104,7 +104,7 @@
     width: 18px;
     height: 18px;
     border: 1.5px solid var(--preview-ink);
-    border-radius: 0 6px 0 6px;
+    border-radius: 3px;
     display: flex;
     align-items: center;
     justify-content: center;

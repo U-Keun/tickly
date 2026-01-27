@@ -6,7 +6,7 @@
 
   interface Props {
     show: boolean;
-    onAdd: (text: string, memo: string | null, repeatType: RepeatType, repeatDetail: string | null) => void;
+    onAdd: (text: string, memo: string | null, repeatType: RepeatType, repeatDetail: string | null, trackStreak: boolean) => void;
     onCancel: () => void;
   }
 
@@ -16,6 +16,7 @@
   let memo = $state('');
   let repeatType = $state<RepeatType>('none');
   let repeatDetail = $state<number[]>([]);
+  let trackStreak = $state(false);
   let textInputElement = $state<HTMLInputElement | null>(null);
 
   // Reset and focus when modal opens
@@ -25,6 +26,7 @@
       memo = '';
       repeatType = 'none';
       repeatDetail = [];
+      trackStreak = false;
       setTimeout(() => textInputElement?.focus(), 100);
     }
   });
@@ -35,7 +37,7 @@
 
     const trimmedMemo = memo.trim() || null;
     const repeatDetailJson = repeatDetail.length > 0 ? JSON.stringify(repeatDetail) : null;
-    onAdd(trimmedText, trimmedMemo, repeatType, repeatDetailJson);
+    onAdd(trimmedText, trimmedMemo, repeatType, repeatDetailJson, trackStreak);
     onCancel();
   }
 
@@ -91,6 +93,17 @@
       onRepeatTypeChange={handleRepeatTypeChange}
       onRepeatDetailChange={handleRepeatDetailChange}
     />
+  </div>
+
+  <div class="form-group streak-section">
+    <label class="streak-checkbox-label">
+      <input
+        type="checkbox"
+        class="streak-checkbox"
+        bind:checked={trackStreak}
+      />
+      <span class="streak-label-text">{i18n.t('trackStreak')}</span>
+    </label>
   </div>
 
   <div class="button-group">
@@ -195,5 +208,30 @@
   .btn-primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  .streak-section {
+    padding-top: 4px;
+  }
+
+  .streak-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+
+  .streak-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--color-stroke);
+    border-radius: 4px;
+    cursor: pointer;
+    accent-color: var(--color-accent-mint-strong);
+  }
+
+  .streak-label-text {
+    font-size: 14px;
+    color: var(--color-ink);
   }
 </style>
