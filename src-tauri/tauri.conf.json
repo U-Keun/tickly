@@ -29,5 +29,15 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "deep-link": {
+      "mobile": [
+        { "host": "auth", "pathPrefix": ["/callback"] }
+      ],
+      "desktop": {
+        "schemes": ["tickly"]
+      }
+    }
   }
 }

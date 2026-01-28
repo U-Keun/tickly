@@ -191,6 +191,20 @@ function goToFirstCategory(): void {
   }
 }
 
+async function refreshAll(): Promise<void> {
+  await loadCategories();
+
+  // If no category selected or selected category doesn't exist, select the first one
+  if (categories.length > 0) {
+    const selectedExists = categories.some(c => c.id === selectedCategoryId);
+    if (!selectedExists) {
+      selectedCategoryId = categories[0].id;
+    }
+  }
+
+  await loadItems();
+}
+
 // Export store with getters and actions
 export const appStore = {
   // Getters (reactive)
@@ -201,6 +215,7 @@ export const appStore = {
   // Data loading
   loadCategories,
   loadItems,
+  refreshAll,
 
   // Category actions
   selectCategory,

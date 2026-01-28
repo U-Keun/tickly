@@ -28,6 +28,7 @@
 - 📊 **자동 정렬** - 완료된 항목이 자동으로 아래로 이동
 - 🔄 **반복 규칙** - 매일/매주/매월 자동 재활성화 스케줄링
 - 🔥 **스트릭 히트맵** - 항목별 GitHub 스타일 달성 기록 시각화
+- ☁️ **클라우드 동기화** - Apple 로그인으로 멀티 디바이스 연동 (iOS)
 - 🎨 **테마 커스터마이징** - 5가지 프리셋 + 커스텀 색상 지원
 - 🔤 **폰트 커스터마이징** - 다양한 폰트 선택 가능
 - 🌐 **다국어 지원** - 한국어/영어 지원
@@ -42,7 +43,8 @@
 
 - **Frontend**: SvelteKit (Svelte 5 + TypeScript)
 - **Backend**: Rust (Tauri v2)
-- **Database**: SQLite (rusqlite)
+- **Database**: SQLite (rusqlite) + Supabase (PostgreSQL)
+- **Cloud**: Supabase (인증, 데이터 동기화)
 - **Styling**: TailwindCSS
 - **Platform**: iOS, macOS, Windows, Linux
 
@@ -162,10 +164,14 @@ Tickly/
 │   │   │   ├── categoryApi.ts        # Category API
 │   │   │   ├── todoApi.ts            # Todo API
 │   │   │   ├── settingsApi.ts        # Settings API
-│   │   │   └── streakApi.ts          # Streak API
+│   │   │   ├── streakApi.ts          # Streak API
+│   │   │   ├── authApi.ts            # Auth API (로그인/로그아웃)
+│   │   │   └── syncApi.ts            # Sync API (동기화)
 │   │   ├── stores/                   # Svelte 5 reactive stores
 │   │   │   ├── appStore.svelte.ts    # 앱 상태 (카테고리, 항목)
-│   │   │   └── modalStore.svelte.ts  # 모달 상태 관리
+│   │   │   ├── modalStore.svelte.ts  # 모달 상태 관리
+│   │   │   ├── authStore.svelte.ts   # 인증 상태 관리
+│   │   │   └── syncStore.svelte.ts   # 동기화 상태 관리
 │   │   ├── i18n/                     # 다국어 지원
 │   │   │   ├── i18nStore.svelte.ts   # i18n 스토어
 │   │   │   ├── ko.ts                 # 한국어 번역
@@ -179,25 +185,33 @@ Tickly/
 │   │   ├── models/                   # 데이터 모델
 │   │   │   ├── category.rs           # Category 구조체
 │   │   │   ├── todo_item.rs          # TodoItem 구조체
-│   │   │   └── completion_log.rs     # CompletionLog 구조체
+│   │   │   ├── completion_log.rs     # CompletionLog 구조체
+│   │   │   └── sync.rs               # Sync 관련 구조체 (AuthSession, SyncResult 등)
 │   │   ├── repository/               # 데이터 접근 레이어
 │   │   │   ├── database.rs           # DB 초기화
 │   │   │   ├── migration.rs          # 스키마 마이그레이션
 │   │   │   ├── category_repo.rs      # Category CRUD
 │   │   │   ├── todo_repo.rs          # Todo CRUD
 │   │   │   ├── settings_repo.rs      # Settings CRUD
-│   │   │   └── completion_log_repo.rs # CompletionLog CRUD
+│   │   │   ├── completion_log_repo.rs # CompletionLog CRUD
+│   │   │   ├── auth_repo.rs          # Auth 세션 CRUD
+│   │   │   └── sync_repo.rs          # Sync 메타데이터 CRUD
 │   │   ├── service/                  # 비즈니스 로직 레이어
 │   │   │   ├── category_service.rs   # Category 비즈니스 로직
 │   │   │   ├── todo_service.rs       # Todo 비즈니스 로직
 │   │   │   ├── reset_service.rs      # 리셋 로직
 │   │   │   ├── repeat_service.rs     # 반복 규칙 로직
-│   │   │   └── streak_service.rs     # 스트릭 추적 로직
+│   │   │   ├── streak_service.rs     # 스트릭 추적 로직
+│   │   │   ├── auth_service.rs       # 인증 서비스
+│   │   │   ├── sync_service.rs       # 동기화 서비스
+│   │   │   └── supabase_client.rs    # Supabase REST API 클라이언트
 │   │   └── commands/                 # Tauri 커맨드 핸들러
 │   │       ├── category_commands.rs  # Category 커맨드
 │   │       ├── todo_commands.rs      # Todo 커맨드
 │   │       ├── settings_commands.rs  # Settings 커맨드
-│   │       └── streak_commands.rs    # Streak 커맨드
+│   │       ├── streak_commands.rs    # Streak 커맨드
+│   │       ├── auth_commands.rs      # Auth 커맨드
+│   │       └── sync_commands.rs      # Sync 커맨드
 │   └── tauri.conf.json               # Tauri 설정
 ├── CLAUDE.md                         # 프로젝트 가이드
 └── README.md                         # 이 파일

@@ -1,7 +1,14 @@
+export type SyncStatus = 'pending' | 'synced' | 'conflict' | 'deleted';
+
 export interface Category {
   id: number;
   name: string;
   display_order: number;
+  // Sync fields (optional for dnd library compatibility)
+  sync_id?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  sync_status?: SyncStatus;
 }
 
 export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly';
@@ -18,6 +25,11 @@ export interface TodoItem {
   next_due_at: string | null;
   last_completed_at: string | null;
   track_streak: boolean;
+  // Sync fields (optional for dnd library compatibility)
+  sync_id?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  sync_status?: SyncStatus;
 }
 
 export interface ThemeColors {
@@ -75,4 +87,52 @@ export interface TrackedItem {
   id: number;
   text: string;
   category_id: number | null;
+}
+
+// Auth types
+export type AuthProvider = 'apple' | 'google';
+
+export interface AuthSession {
+  user_id: string;
+  access_token: string;
+  refresh_token: string;
+  expires_at: string;
+  provider: AuthProvider;
+}
+
+export interface UserProfile {
+  id: string;
+  email?: string;
+  full_name?: string;
+  avatar_url?: string;
+}
+
+// Sync types
+export interface SyncResult {
+  pushed: number;
+  pulled: number;
+  conflicts: number;
+  last_synced_at: string | null;
+}
+
+export interface SyncStatusInfo {
+  is_enabled: boolean;
+  is_syncing: boolean;
+  is_online: boolean;
+  pending_count: number;
+  last_synced_at: string | null;
+}
+
+export interface ConflictItem {
+  local_id: number;
+  sync_id: string;
+  local_text: string;
+  remote_text: string;
+  local_updated_at: string;
+  remote_updated_at: string;
+}
+
+export interface Template {
+  id: number;
+  text: string;
 }

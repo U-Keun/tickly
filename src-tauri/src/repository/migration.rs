@@ -10,6 +10,9 @@ pub fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
     migrate_create_completion_logs(conn)?;
     migrate_add_track_streak(conn)?;
     migrate_completion_logs_add_item_id(conn)?;
+    migrate_add_sync_fields(conn)?;
+    migrate_create_auth_session(conn)?;
+    migrate_create_sync_metadata(conn)?;
     Ok(())
 }
 
@@ -193,5 +196,142 @@ fn migrate_completion_logs_add_item_id(conn: &Connection) -> Result<(), rusqlite
         )?;
     }
 
+    Ok(())
+}
+
+fn migrate_add_sync_fields(conn: &Connection) -> Result<(), rusqlite::Error> {
+    // Add sync fields to todos table
+    let sync_id_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='sync_id'",
+        [],
+        |row| row.get(0),
+    );
+    if let Ok(0) = sync_id_exists {
+        conn.execute("ALTER TABLE todos ADD COLUMN sync_id TEXT", [])?;
+    }
+
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_todos_sync_id ON todos(sync_id)",
+        [],
+    )?;
+
+    let created_at_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='created_at'",
+        [],
+        |row| row.get(0),
+    );
+    if let Ok(0) = created_at_exists {
+        conn.execute("ALTER TABLE todos ADD COLUMN created_at TEXT", [])?;
+        conn.execute(
+            "UPDATE todos SET created_at = datetime('now') WHERE created_at IS NULL",
+            [],
+        )?;
+    }
+
+    let updated_at_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='updated_at'",
+        [],
+        |row| row.get(0),
+    );
+    if let Ok(0) = updated_at_exists {
+        conn.execute("ALTER TABLE todos ADD COLUMN updated_at TEXT", [])?;
+        conn.execute(
+            "UPDATE todos SET updated_at = datetime('now') WHERE updated_at IS NULL",
+            [],
+        )?;
+    }
+
+    let sync_status_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='sync_status'",
+        [],
+        |row| row.get(0),
+    );
+    if let Ok(0) = sync_status_exists {
+        conn.execute(
+            "ALTER TABLE todos ADD COLUMN sync_status TEXT DEFAULT 'pending'",
+            [],
+        )?;
+    }
+
+    // Add sync fields to categories table
+    let cat_sync_id_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('categories') WHERE name='sync_id'",
+        [],
+        |row| row.get(0),
+    );
+    if let Ok(0) = cat_sync_id_exists {
+        conn.execute("ALTER TABLE categories ADD COLUMN sync_id TEXT", [])?;
+    }
+
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_sync_id ON categories(sync_id)",
+        [],
+    )?;
+
+    let cat_created_at_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('categories') WHERE name='created_at'",
+        [],
+        |row| row.get(0),
+    );
+    if let Ok(0) = cat_created_at_exists {
+        conn.execute("ALTER TABLE categories ADD COLUMN created_at TEXT", [])?;
+        conn.execute(
+            "UPDATE categories SET created_at = datetime('now') WHERE created_at IS NULL",
+            [],
+        )?;
+    }
+
+    let cat_updated_at_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('categories') WHERE name='updated_at'",
+        [],
+        |row| row.get(0),
+    );
+    if let Ok(0) = cat_updated_at_exists {
+        conn.execute("ALTER TABLE categories ADD COLUMN updated_at TEXT", [])?;
+        conn.execute(
+            "UPDATE categories SET updated_at = datetime('now') WHERE updated_at IS NULL",
+            [],
+        )?;
+
+    }
+
+    let cat_sync_status_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('categories') WHERE name='sync_status'",
+        [],
+        |row| row.get(0),
+    );
+    if let Ok(0) = cat_sync_status_exists {
+        conn.execute(
+            "ALTER TABLE categories ADD COLUMN sync_status TEXT DEFAULT 'pending'",
+            [],
+        )?;
+    }
+
+    Ok(())
+}
+
+fn migrate_create_auth_session(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS auth_session (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            user_id TEXT NOT NULL,
+            access_token TEXT NOT NULL,
+            refresh_token TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            provider TEXT NOT NULL
+        )",
+        [],
+    )?;
+    Ok(())
+}
+
+fn migrate_create_sync_metadata(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS sync_metadata (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )",
+        [],
+    )?;
     Ok(())
 }

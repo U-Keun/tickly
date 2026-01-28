@@ -1,6 +1,8 @@
 // Re-export all API modules
+export * from './authApi';
 export * from './categoryApi';
-export * from './todoApi';
 export * from './settingsApi';
 export * from './streakApi';
+export * from './syncApi';
+export * from './todoApi';
 export { invoke } from './client';

@@ -50,7 +50,18 @@ impl TodoService {
     }
 
     pub fn delete_item(conn: &Connection, id: i64) -> Result<(), rusqlite::Error> {
-        TodoRepository::delete(conn, id)
+        // Check if item has been synced (has sync_id)
+        if let Some(item) = TodoRepository::get_by_id(conn, id)? {
+            if item.sync_id.is_some() {
+                // Item was synced - mark as deleted so it can be synced to server
+                TodoRepository::mark_deleted(conn, id)
+            } else {
+                // Item was never synced - delete immediately
+                TodoRepository::delete(conn, id)
+            }
+        } else {
+            Ok(())
+        }
     }
 
     pub fn update_text(conn: &Connection, id: i64, text: &str) -> Result<(), rusqlite::Error> {
