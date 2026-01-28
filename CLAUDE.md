@@ -14,7 +14,8 @@ Deploy to iOS App Store as quickly as possible with a simple, functional design.
 ### Tech Stack
 - **Frontend**: SvelteKit with TypeScript, Svelte 5 (runes syntax)
 - **Backend**: Rust with Tauri v2 framework
-- **Database**: SQLite (rusqlite)
+- **Database**: SQLite (rusqlite) + Supabase (PostgreSQL)
+- **Cloud**: Supabase (authentication, data sync)
 - **Styling**: TailwindCSS (utility-first, minimal custom CSS)
 - **Build System**: Vite + Cargo
 - **Target Platform**: iOS (primary), Desktop (secondary)
@@ -60,8 +61,10 @@ Tickly/
 │   │       ├── +page.svelte          # Settings main page
 │   │       ├── theme/
 │   │       │   └── +page.svelte      # Theme customization page
-│   │       └── language/
-│   │           └── +page.svelte      # Language settings page
+│   │       ├── language/
+│   │       │   └── +page.svelte      # Language settings page
+│   │       └── account/
+│   │           └── +page.svelte      # Cloud sync & account page
 │   ├── components/                   # Reusable Svelte components
 │   │   ├── ModalWrapper.svelte       # Common modal layout
 │   │   ├── SettingsLayout.svelte     # Common settings page layout
@@ -75,11 +78,15 @@ Tickly/
 │   │   │   ├── categoryApi.ts        # Category API functions
 │   │   │   ├── todoApi.ts            # Todo API functions
 │   │   │   ├── settingsApi.ts        # Settings API functions
-│   │   │   └── streakApi.ts          # Streak tracking API functions
+│   │   │   ├── streakApi.ts          # Streak tracking API functions
+│   │   │   ├── authApi.ts            # Auth API functions
+│   │   │   └── syncApi.ts            # Sync API functions
 │   │   ├── stores/                   # Svelte 5 reactive stores
 │   │   │   ├── index.ts              # Re-exports
 │   │   │   ├── appStore.svelte.ts    # App state (categories, items)
-│   │   │   └── modalStore.svelte.ts  # Modal visibility state
+│   │   │   ├── modalStore.svelte.ts  # Modal visibility state
+│   │   │   ├── authStore.svelte.ts   # Auth state (login, user)
+│   │   │   └── syncStore.svelte.ts   # Sync state (status, pending)
 │   │   ├── i18n/                     # Internationalization
 │   │   │   ├── index.ts              # Re-exports
 │   │   │   ├── i18nStore.svelte.ts   # i18n store with locale state
@@ -113,13 +120,19 @@ Tickly/
 │   │   │   ├── todo_service.rs       # Todo business logic
 │   │   │   ├── reset_service.rs      # Reset/auto-reset logic
 │   │   │   ├── repeat_service.rs     # Repeat rules logic
-│   │   │   └── streak_service.rs     # Streak tracking logic
+│   │   │   ├── streak_service.rs     # Streak tracking logic
+│   │   │   ├── auth_service.rs       # Auth (Apple/Google sign in)
+│   │   │   ├── oauth_service.rs      # OAuth PKCE flow
+│   │   │   ├── sync_service.rs       # Cloud sync (push/pull)
+│   │   │   └── supabase_client.rs    # Supabase REST API client
 │   │   └── commands/                 # Tauri command handlers
 │   │       ├── mod.rs
 │   │       ├── category_commands.rs  # Category Tauri commands
 │   │       ├── todo_commands.rs      # Todo Tauri commands
 │   │       ├── settings_commands.rs  # Settings Tauri commands
-│   │       └── streak_commands.rs    # Streak Tauri commands
+│   │       ├── streak_commands.rs    # Streak Tauri commands
+│   │       ├── auth_commands.rs      # Auth Tauri commands
+│   │       └── sync_commands.rs      # Sync Tauri commands
 │   └── tauri.conf.json               # Tauri configuration
 ├── static/                           # Static assets (IMPORTANT: use for iOS)
 └── tailwind.config.ts                # TailwindCSS configuration
@@ -548,6 +561,104 @@ The app uses CSS variables for theming, allowing users to customize colors.
 3. Add to `ThemeColors` interface in `src/types.ts`
 4. Update theme presets in `src/lib/themes.ts`
 
+## Cloud Sync Architecture
+
+### Overview
+
+Cloud sync uses Supabase (PostgreSQL + REST API) with the following flow:
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Local     │ --> │    Sync     │ --> │  Supabase   │
+│   SQLite    │ <-- │   Service   │ <-- │  PostgreSQL │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
+
+### Sync Fields
+
+All syncable entities (todos, categories) have:
+- `sync_id`: Supabase UUID (NULL if not yet synced)
+- `created_at`, `updated_at`: ISO 8601 timestamps
+- `sync_status`: 'pending' | 'synced' | 'deleted'
+
+### Sync Flow
+
+1. **Push Phase**: Local changes → Supabase
+   - Items with `sync_status = 'pending'` are upserted
+   - Items with `sync_status = 'deleted'` are deleted from server
+
+2. **Pull Phase**: Supabase → Local
+   - Compare `updated_at` timestamps
+   - Newer remote data overwrites local
+
+3. **Delete Handling** (Soft Delete Pattern):
+   - Delete in UI → `sync_status = 'deleted'` (not actually deleted)
+   - Query filters exclude `sync_status = 'deleted'`
+   - After sync push → permanent local delete
+
+### Authentication
+
+**Apple Sign In (iOS)**:
+- `tauri-plugin-sign-in-with-apple` → native iOS 다이얼로그
+- identity token → Supabase `sign_in_with_apple` API
+
+**Google Sign In (Desktop)**:
+- `tauri-plugin-oauth` → localhost 콜백 서버 시작
+- OAuth PKCE flow (code_verifier + code_challenge)
+- 브라우저에서 Google 로그인 → localhost 리다이렉트 → code 수신
+
+**Google Sign In (iOS/Android)**:
+- `tauri-plugin-deep-link` → `tickly://auth/callback` 딥 링크
+- OAuth PKCE flow (동일)
+- 브라우저에서 Google 로그인 → 딥 링크 리다이렉트 → code 수신
+- `+layout.svelte`의 `onOpenUrl` 리스너에서 콜백 처리
+
+**플랫폼 감지**:
+- `navigator.userAgent` 기반 (`@tauri-apps/plugin-os` 사용하지 않음)
+- iOS: `signInWithGoogleMobile()` (딥 링크)
+- Desktop: `signInWithGoogleDesktop()` (localhost)
+
+### Key Services
+
+**`auth_service.rs`**: Apple Sign In, Google OAuth, session management
+**`oauth_service.rs`**: OAuth PKCE flow, code exchange
+**`sync_service.rs`**: Push/pull logic, conflict resolution
+**`supabase_client.rs`**: REST API calls (reqwest)
+
+### Environment Variables
+
+Required in `.env` (loaded at build time for iOS):
+```
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_ANON_KEY=eyJ...
+```
+
+### iOS Build Note
+
+iOS cannot read `.env` at runtime. Environment variables are injected at build time via `build.rs`:
+
+```rust
+// build.rs
+if let Ok(url) = std::env::var("SUPABASE_URL") {
+    println!("cargo:rustc-env=SUPABASE_URL={}", url);
+}
+```
+
+### Stores (Frontend)
+
+**`authStore.svelte.ts`**: Login state, user profile
+**`syncStore.svelte.ts`**: Sync status, last synced time, pending count
+
+### Troubleshooting
+
+See `docs/troubleshooting.md` for common issues:
+- Apple Sign In permissions
+- iOS environment variables
+- Deleted items reappearing
+- Category ID mapping on first sync
+- Google OAuth plugin import errors (`plugin-os`, `plugin-opener`)
+- iOS deep link configuration for OAuth callback
+
 ## Git Workflow
 
 ### Commit Messages
@@ -576,6 +687,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - ✅ Memo for each item
 - ✅ Repeat rules (daily/weekly/monthly scheduling)
 - ✅ Streak tracking per item with heatmap visualization
+- 🚧 Cloud sync (Supabase) - Apple Sign In, Google Sign In, manual sync 완료
 
 ### UI/UX
 - ✅ Theme customization (5 presets + custom colors)
@@ -590,8 +702,9 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### Architecture
 - ✅ Layered backend (Repository → Service → Commands)
 - ✅ Frontend API layer
-- ✅ Svelte 5 reactive stores (appStore, modalStore)
+- ✅ Svelte 5 reactive stores (appStore, modalStore, authStore, syncStore)
 - ✅ i18n system with reactive locale
+- ✅ Supabase integration (auth, sync)
 
 ## Roadmap
 
@@ -603,8 +716,14 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - **v0.2.0**: ✅ Repeat rules (daily/weekly/monthly scheduling)
 - **v0.3.0**: ✅ Streak heatmap (per-item tracking with GitHub-style visualization)
 
+### In Progress
+- **v0.4.0**: 🚧 Cloud sync
+  - ✅ Apple Sign In (iOS)
+  - ✅ Google Sign In (Desktop + iOS/Android)
+  - ✅ Manual sync (push/pull)
+  - ⬜ Realtime sync (WebSocket)
+
 ### Planned Features (see `docs/roadmap.md` for details)
-- **v0.4.0**: Cloud sync (multi-device support)
 - **v0.5.0**: Shared lists (family/team collaboration)
 - **v0.6.0**: iOS widgets
 

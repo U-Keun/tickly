@@ -54,20 +54,92 @@
 - 항목 탭 선택 → 해당 항목의 히트맵과 통계 표시
 - MemoDrawer에서 **"스트릭 추적" 토글** 제공
 
-## 0.4.0 — 클라우드 동기화
+## 0.4.0 — 클라우드 동기화 🚧 진행 중
 **목표:** 멀티 디바이스 연동의 최소 기능 제공.
 
-### MVP 범위
-- 로그인 방식 1개만 지원 (예: Apple ID / 이메일 중 택1)
-- 동기화 대상: 카테고리, 항목, 완료 상태, 반복 규칙, 히트맵 로그
-- 충돌 해결: **최신 수정 시간 우선**
+### 구현 완료
+- ✅ **인증**: Apple Sign In (iOS)
+- ✅ **동기화 대상**: 카테고리, 항목, 완료 상태, 반복 규칙
+- ✅ **충돌 해결**: 최신 수정 시간(`updated_at`) 우선
+- ✅ **삭제 동기화**: Soft delete 후 서버 삭제 → 로컬 영구 삭제
+- ✅ **수동 동기화**: 설정 화면에서 동기화 버튼 제공
+- ✅ **강제 풀**: 로컬 데이터 초기화 후 서버에서 다시 가져오기
+
+- ✅ **Google Sign In**: OAuth PKCE 로그인 (Desktop + iOS/Android)
+  - Desktop: localhost 콜백 서버 (`tauri-plugin-oauth`)
+  - Mobile: 딥 링크 콜백 (`tickly://auth/callback`)
+
+### 미구현
+- ⬜ **Realtime 동기화**: WebSocket 기반 실시간 변경 감지
+
+### 기술 스택
+- **Backend**: Supabase (PostgreSQL + REST API)
+- **인증**: `tauri-plugin-sign-in-with-apple` (iOS), Google OAuth PKCE
+- **딥 링크**: `tauri-plugin-deep-link` (iOS/Android OAuth 콜백)
+- **HTTP Client**: `reqwest` (Rust)
+- **환경변수**: 빌드 타임 주입 (`build.rs` + `cargo:rustc-env`)
 
 ### 데이터 모델 변경
-- 모든 엔티티에 `updated_at` 추가
-- 클라우드 ID 매핑 필드 추가
+- `todos` 테이블 확장:
+  - `sync_id` (Supabase UUID)
+  - `created_at`, `updated_at` (ISO 8601)
+  - `sync_status` (pending | synced | deleted)
+- `categories` 테이블 확장:
+  - `sync_id`, `created_at`, `updated_at`, `sync_status`
+- 새 테이블:
+  - `auth_session` (로컬 인증 세션 저장)
+  - `sync_metadata` (마지막 동기화 시간 등)
+
+### Supabase 테이블 구조
+```sql
+-- categories
+CREATE TABLE categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    display_order INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- todos
+CREATE TABLE todos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    category_id UUID REFERENCES categories(id) ON DELETE CASCADE,
+    text TEXT NOT NULL,
+    done BOOLEAN DEFAULT FALSE,
+    display_order INTEGER DEFAULT 0,
+    memo TEXT,
+    repeat_type TEXT DEFAULT 'none',
+    repeat_detail TEXT,
+    next_due_at TIMESTAMPTZ,
+    last_completed_at TIMESTAMPTZ,
+    track_streak BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS 정책
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can CRUD own categories" ON categories FOR ALL USING (auth.uid() = user_id);
+
+ALTER TABLE todos ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can CRUD own todos" ON todos FOR ALL USING (auth.uid() = user_id);
+```
+
+### 동기화 흐름
+1. **Push**: 로컬 변경사항(pending/deleted) → Supabase
+2. **Pull**: Supabase 최신 데이터 → 로컬 (updated_at 비교)
+3. **삭제 처리**:
+   - 동기화된 항목 삭제 → `sync_status = 'deleted'`
+   - 동기화 시 서버에서 삭제 → 로컬 영구 삭제
 
 ### UX 요약
-- 설정 화면에 동기화 상태/수동 동기화 버튼 제공
+- 설정 > 클라우드 동기화 메뉴
+- 로그인 상태, 동기화 활성화 토글
+- 마지막 동기화 시간, 대기 중인 변경사항 수 표시
+- "지금 동기화" 버튼, "서버에서 다시 가져오기" 버튼
 
 ## 0.5.0 — 공유 리스트
 **목표:** 가족/팀 단위 체크리스트 공유.
