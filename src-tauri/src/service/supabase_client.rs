@@ -81,7 +81,8 @@ pub struct RemoteCompletionLog {
     pub id: String,
     pub user_id: String,
     pub todo_id: String,
-    pub completed_at: String,
+    pub completed_on: String,
+    pub completed_count: i32,
 }
 
 #[derive(Debug, Serialize)]
@@ -487,6 +488,58 @@ impl SupabaseClient {
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(format!("Upsert completion log failed: {}", error_text));
+        }
+
+        Ok(())
+    }
+
+    // Fetch all completion logs for the current user
+    pub async fn fetch_all_completion_logs(
+        &self,
+        access_token: &str,
+    ) -> Result<Vec<RemoteCompletionLog>, String> {
+        let url = format!("{}/completion_logs?select=*", self.rest_url());
+
+        let response = self
+            .client
+            .get(&url)
+            .header("apikey", &self.config.anon_key)
+            .header("Authorization", format!("Bearer {}", access_token))
+            .send()
+            .await
+            .map_err(|e| format!("Request failed: {}", e))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(format!("Fetch all completion logs failed: {}", error_text));
+        }
+
+        response
+            .json::<Vec<RemoteCompletionLog>>()
+            .await
+            .map_err(|e| format!("Failed to parse response: {}", e))
+    }
+
+    // Delete a completion log
+    pub async fn delete_completion_log(
+        &self,
+        access_token: &str,
+        log_id: &str,
+    ) -> Result<(), String> {
+        let url = format!("{}/completion_logs?id=eq.{}", self.rest_url(), log_id);
+
+        let response = self
+            .client
+            .delete(&url)
+            .header("apikey", &self.config.anon_key)
+            .header("Authorization", format!("Bearer {}", access_token))
+            .send()
+            .await
+            .map_err(|e| format!("Request failed: {}", e))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(format!("Delete completion log failed: {}", error_text));
         }
 
         Ok(())

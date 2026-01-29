@@ -5,13 +5,16 @@
   import { beforeNavigate } from '$app/navigation';
   import { cubicOut } from 'svelte/easing';
   import { onMount } from 'svelte';
-  import { handleOAuthCallback } from '$lib/stores/authStore.svelte';
+  import { authStore, handleOAuthCallback } from '$lib/stores/authStore.svelte';
 
   let direction = $state(1); // 1: 오른쪽에서, -1: 왼쪽에서
   let hasNavigated = $state(false); // 네비게이션 발생 여부
 
-  // Set up deep link listener for OAuth callbacks
+  // Check session and set up deep link listener
   onMount(async () => {
+    // Restore login state from saved session
+    authStore.checkSession();
+
     try {
       const { onOpenUrl } = await import('@tauri-apps/plugin-deep-link');
 

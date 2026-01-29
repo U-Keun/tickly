@@ -180,11 +180,38 @@ pub async fn get_user_profile(state: State<'_, AppState>) -> Result<Option<UserP
 }
 
 #[tauri::command]
-pub fn is_logged_in(state: State<'_, AppState>) -> Result<bool, String> {
-    let conn = state.db.lock().map_err(|e| e.to_string())?;
+pub async fn is_logged_in(state: State<'_, AppState>) -> Result<bool, String> {
+    let (session_opt, client_opt) = {
+        let conn = state.db.lock().map_err(|e| e.to_string())?;
+        let session = AuthService::get_current_session(&conn)?;
+        let client = state.supabase.clone();
+        (session, client)
+    };
 
-    match AuthService::get_current_session(&conn)? {
-        Some(session) => Ok(!AuthService::is_session_expired(&session)),
+    match session_opt {
+        Some(session) => {
+            if AuthService::is_session_expired(&session) {
+                // Try to refresh the session
+                if let Some(client) = client_opt {
+                    match AuthService::refresh_token(&client, &session.refresh_token, session.provider.clone()).await {
+                        Ok(new_session) => {
+                            // Save the refreshed session
+                            let conn = state.db.lock().map_err(|e| e.to_string())?;
+                            AuthService::save_session(&conn, &new_session)?;
+                            Ok(true)
+                        }
+                        Err(_) => {
+                            // Refresh failed, session is invalid
+                            Ok(false)
+                        }
+                    }
+                } else {
+                    Ok(false)
+                }
+            } else {
+                Ok(true)
+            }
+        }
         None => Ok(false),
     }
 }
