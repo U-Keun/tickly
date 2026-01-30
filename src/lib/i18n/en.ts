@@ -180,4 +180,7 @@ export const en: Translations = {
   cloudSyncDescription: 'Sync your data across devices',
   notConfigured: 'Not configured',
   supabaseNotConfigured: 'Supabase is not configured',
+
+  // Common
+  saving: 'Saving...',
 };

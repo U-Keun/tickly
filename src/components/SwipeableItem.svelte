@@ -15,6 +15,7 @@
   let startY = $state(0);
   let currentX = $state(0);
   let isDraggingHorizontally = $state(false);
+  let shouldBlockPointer = $state(false);
   let containerElement: HTMLDivElement;
 
   const SWIPE_THRESHOLD = 36; // pixels to trigger reveal
@@ -48,6 +49,9 @@
         swipeState = 'idle';
         return;
       }
+
+      // Horizontal swipe detected - block pointer events to prevent long-press
+      shouldBlockPointer = true;
     }
 
     // Only handle horizontal swipes
@@ -75,12 +79,18 @@
     }
 
     isDraggingHorizontally = false;
+
+    // Delay restoring pointer events to prevent accidental long-press
+    setTimeout(() => {
+      shouldBlockPointer = false;
+    }, 500);
   }
 
   function handleTouchCancel() {
     translateX = 0;
     swipeState = 'idle';
     isDraggingHorizontally = false;
+    shouldBlockPointer = false;
   }
 
   function handleDelete(e: Event) {
@@ -118,7 +128,7 @@
     class="swipe-content"
     style="transform: translateX({translateX}px); transition: {swipeState === 'idle'
       ? 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-      : 'none'};"
+      : 'none'}; pointer-events: {shouldBlockPointer ? 'none' : 'auto'};"
   >
     {@render children()}
   </div>
