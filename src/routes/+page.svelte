@@ -19,6 +19,7 @@
   import { initializeFonts } from '../lib/fonts';
   import { appStore, modalStore } from '../lib/stores';
   import * as todoApi from '../lib/api/todoApi';
+  import * as settingsApi from '../lib/api/settingsApi';
   import { i18n } from '$lib/i18n';
 
   // Local UI state only
@@ -27,6 +28,9 @@
 
   // Track last processed date to avoid duplicate processing
   let lastProcessedDate = '';
+
+  // Timer for auto-reset
+  let resetTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Reference to CategoryTabs component
   let categoryTabsComponent: any;
@@ -83,9 +87,64 @@
   }
 
   // Handle visibility change (app coming to foreground)
-  function handleVisibilityChange() {
+  async function handleVisibilityChange() {
     if (document.visibilityState === 'visible') {
-      processRepeatsAndReload();
+      await checkAndPerformAutoReset();
+      await processRepeatsAndReload();
+    }
+  }
+
+  // Check and perform auto-reset, then reload items if reset occurred
+  async function checkAndPerformAutoReset() {
+    try {
+      const didReset = await todoApi.checkAndAutoReset();
+      if (didReset) {
+        console.log('Auto-reset performed');
+        await appStore.loadItems();
+      }
+    } catch (error) {
+      console.error('Failed to check auto-reset:', error);
+    }
+  }
+
+  // Calculate milliseconds until next reset time
+  function getMsUntilResetTime(resetTime: string): number {
+    const [hours, minutes] = resetTime.split(':').map(Number);
+    const now = new Date();
+    const resetDate = new Date();
+    resetDate.setHours(hours, minutes, 0, 0);
+
+    // If reset time has passed today, schedule for tomorrow
+    if (resetDate <= now) {
+      resetDate.setDate(resetDate.getDate() + 1);
+    }
+
+    return resetDate.getTime() - now.getTime();
+  }
+
+  // Schedule timer for next reset time
+  async function scheduleResetTimer() {
+    // Clear existing timer
+    if (resetTimer) {
+      clearTimeout(resetTimer);
+      resetTimer = null;
+    }
+
+    try {
+      const resetTime = await settingsApi.getSetting('reset_time');
+      if (!resetTime) return;
+
+      const msUntilReset = getMsUntilResetTime(resetTime);
+      console.log(`Next reset scheduled in ${Math.round(msUntilReset / 1000 / 60)} minutes`);
+
+      resetTimer = setTimeout(async () => {
+        console.log('Reset time reached, performing auto-reset...');
+        await checkAndPerformAutoReset();
+        // Schedule next reset (for tomorrow)
+        await scheduleResetTimer();
+      }, msUntilReset);
+    } catch (error) {
+      console.error('Failed to schedule reset timer:', error);
     }
   }
 
@@ -101,6 +160,9 @@
     await appStore.loadCategories();
     await appStore.loadItems();
 
+    // Schedule auto-reset timer
+    await scheduleResetTimer();
+
     showFab = true;
 
     // Listen for visibility changes (app coming back to foreground)
@@ -109,6 +171,11 @@
 
   onDestroy(() => {
     document.removeEventListener('visibilitychange', handleVisibilityChange);
+    // Clear reset timer
+    if (resetTimer) {
+      clearTimeout(resetTimer);
+      resetTimer = null;
+    }
   });
 </script>
 

@@ -22,6 +22,11 @@ async function loadCategories(): Promise<void> {
 
 async function loadItems(): Promise<void> {
   try {
+    // Check and perform auto-reset if needed before loading items
+    const didReset = await todoApi.checkAndAutoReset();
+    if (didReset) {
+      console.log('Auto-reset performed');
+    }
     items = await todoApi.getItems(selectedCategoryId);
   } catch (error) {
     console.error('Failed to load items:', error);
