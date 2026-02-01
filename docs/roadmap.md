@@ -54,22 +54,24 @@
 - 항목 탭 선택 → 해당 항목의 히트맵과 통계 표시
 - MemoDrawer에서 **"스트릭 추적" 토글** 제공
 
-## 0.4.0 — 클라우드 동기화 🚧 진행 중
+## 0.4.0 — 클라우드 동기화 ✅ 완료
 **목표:** 멀티 디바이스 연동의 최소 기능 제공.
 
 ### 구현 완료
 - ✅ **인증**: Apple Sign In (iOS)
-- ✅ **동기화 대상**: 카테고리, 항목, 완료 상태, 반복 규칙
+- ✅ **동기화 대상**: 카테고리, 항목, 완료 상태, 반복 규칙, **스트릭 기록(completion_logs)**
 - ✅ **충돌 해결**: 최신 수정 시간(`updated_at`) 우선
 - ✅ **삭제 동기화**: Soft delete 후 서버 삭제 → 로컬 영구 삭제
 - ✅ **수동 동기화**: 설정 화면에서 동기화 버튼 제공
 - ✅ **강제 풀**: 로컬 데이터 초기화 후 서버에서 다시 가져오기
+- ✅ **로그인 상태 유지**: 앱 시작 시 세션 복원 + 만료 시 자동 refresh
+- ✅ **실시간 자동 초기화**: 초기화 시간에 타이머로 즉시 적용
 
 - ✅ **Google Sign In**: OAuth PKCE 로그인 (Desktop + iOS/Android)
   - Desktop: localhost 콜백 서버 (`tauri-plugin-oauth`)
   - Mobile: 딥 링크 콜백 (`tickly://auth/callback`)
 
-### 미구현
+### 미구현 (향후 개선)
 - ⬜ **Realtime 동기화**: WebSocket 기반 실시간 변경 감지
 
 ### 기술 스택
@@ -120,12 +122,24 @@ CREATE TABLE todos (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- completion_logs (스트릭 기록)
+CREATE TABLE completion_logs (
+    id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    todo_id UUID REFERENCES todos(id) ON DELETE CASCADE,
+    completed_on TEXT NOT NULL,
+    completed_count INTEGER NOT NULL DEFAULT 1
+);
+
 -- RLS 정책
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can CRUD own categories" ON categories FOR ALL USING (auth.uid() = user_id);
 
 ALTER TABLE todos ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can CRUD own todos" ON todos FOR ALL USING (auth.uid() = user_id);
+
+ALTER TABLE completion_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can CRUD own completion_logs" ON completion_logs FOR ALL USING (auth.uid() = user_id);
 ```
 
 ### 동기화 흐름

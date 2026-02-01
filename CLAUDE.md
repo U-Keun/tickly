@@ -687,7 +687,8 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - ✅ Memo for each item
 - ✅ Repeat rules (daily/weekly/monthly scheduling)
 - ✅ Streak tracking per item with heatmap visualization
-- 🚧 Cloud sync (Supabase) - Apple Sign In, Google Sign In, manual sync 완료
+- ✅ Cloud sync (Supabase) - 인증, 수동 동기화, 스트릭 동기화 완료
+- ✅ Auto-reset timer (설정된 시간에 실시간 초기화)
 
 ### UI/UX
 - ✅ Theme customization (5 presets + custom colors)
@@ -715,13 +716,11 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### Completed Versions
 - **v0.2.0**: ✅ Repeat rules (daily/weekly/monthly scheduling)
 - **v0.3.0**: ✅ Streak heatmap (per-item tracking with GitHub-style visualization)
-
-### In Progress
-- **v0.4.0**: 🚧 Cloud sync
-  - ✅ Apple Sign In (iOS)
-  - ✅ Google Sign In (Desktop + iOS/Android)
-  - ✅ Manual sync (push/pull)
-  - ⬜ Realtime sync (WebSocket)
+- **v0.4.0**: ✅ Cloud sync
+  - Apple Sign In (iOS), Google Sign In (Desktop + iOS/Android)
+  - Manual sync (push/pull), streak data sync
+  - Login persistence (auto refresh on session expiry)
+  - Real-time auto-reset timer
 
 ### Planned Features (see `docs/roadmap.md` for details)
 - **v0.5.0**: Shared lists (family/team collaboration)
