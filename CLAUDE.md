@@ -716,7 +716,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### Completed Versions
 - **v0.2.0**: ✅ Repeat rules (daily/weekly/monthly scheduling)
 - **v0.3.0**: ✅ Streak heatmap (per-item tracking with GitHub-style visualization)
-- **v0.4.0**: ✅ Cloud sync
+- **v0.4.1**: ✅ Cloud sync
   - Apple Sign In (iOS), Google Sign In (Desktop + iOS/Android)
   - Manual sync (push/pull), streak data sync
   - Login persistence (auto refresh on session expiry)
