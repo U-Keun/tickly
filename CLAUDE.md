@@ -624,6 +624,26 @@ All syncable entities (todos, categories) have:
 **`oauth_service.rs`**: OAuth PKCE flow, code exchange
 **`sync_service.rs`**: Push/pull logic, conflict resolution
 **`supabase_client.rs`**: REST API calls (reqwest)
+**`realtime_service.rs`**: Supabase Realtime WebSocket connection
+**`realtime_messages.rs`**: Phoenix Channel message parsing
+
+### Realtime Sync
+
+멀티 디바이스 간 실시간 동기화를 위해 Supabase Realtime (WebSocket/Phoenix Channels)을 사용합니다.
+
+**동작 방식:**
+1. 로그인 시 WebSocket 연결 (`wss://xxx.supabase.co/realtime/v1/websocket`)
+2. `postgres_changes` 구독 (todos, categories, completion_logs 테이블)
+3. 원격 변경 수신 시 자동 sync() 호출 → 로컬 DB 갱신 → UI 업데이트
+4. 로컬 변경 시 2초 디바운스 후 자동 sync() 호출 → 서버에 push
+
+**주요 이벤트:**
+- `realtime-event`: 연결 상태 변경 (connected, disconnected, reconnecting)
+- `data-changed`: 데이터 변경 알림 (table, change_type)
+
+**재연결 전략:**
+- Exponential backoff: 1초 → 2초 → 4초 → ... → 최대 30초
+- 최대 10회 시도 후 중단
 
 ### Environment Variables
 
@@ -687,8 +707,9 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - ✅ Memo for each item
 - ✅ Repeat rules (daily/weekly/monthly scheduling)
 - ✅ Streak tracking per item with heatmap visualization
-- ✅ Cloud sync (Supabase) - 인증, 수동 동기화, 스트릭 동기화 완료
+- ✅ Cloud sync (Supabase) - 인증, 실시간 동기화, 스트릭 동기화 완료
 - ✅ Auto-reset timer (설정된 시간에 실시간 초기화)
+- ✅ Realtime sync (Supabase Realtime WebSocket) - 멀티 디바이스 실시간 동기화
 
 ### UI/UX
 - ✅ Theme customization (5 presets + custom colors)
@@ -716,9 +737,10 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### Completed Versions
 - **v0.2.0**: ✅ Repeat rules (daily/weekly/monthly scheduling)
 - **v0.3.0**: ✅ Streak heatmap (per-item tracking with GitHub-style visualization)
-- **v0.4.1**: ✅ Cloud sync
+- **v0.4.2**: ✅ Cloud sync + Realtime
   - Apple Sign In (iOS), Google Sign In (Desktop + iOS/Android)
-  - Manual sync (push/pull), streak data sync
+  - Realtime sync (Supabase WebSocket) - 멀티 디바이스 즉시 동기화
+  - Auto-sync on local changes (2초 디바운스)
   - Login persistence (auto refresh on session expiry)
   - Real-time auto-reset timer
 

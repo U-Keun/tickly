@@ -54,25 +54,23 @@
 - 항목 탭 선택 → 해당 항목의 히트맵과 통계 표시
 - MemoDrawer에서 **"스트릭 추적" 토글** 제공
 
-## 0.4.1 — 클라우드 동기화 ✅ 완료
-**목표:** 멀티 디바이스 연동의 최소 기능 제공.
+## 0.4.2 — 클라우드 동기화 + 실시간 동기화 ✅ 완료
+**목표:** 멀티 디바이스 연동 및 실시간 동기화.
 
 ### 구현 완료
-- ✅ **인증**: Apple Sign In (iOS)
+- ✅ **인증**: Apple Sign In (iOS), Google Sign In (Desktop + iOS/Android)
 - ✅ **동기화 대상**: 카테고리, 항목, 완료 상태, 반복 규칙, **스트릭 기록(completion_logs)**
 - ✅ **충돌 해결**: 최신 수정 시간(`updated_at`) 우선
 - ✅ **삭제 동기화**: Soft delete 후 서버 삭제 → 로컬 영구 삭제
-- ✅ **수동 동기화**: 설정 화면에서 동기화 버튼 제공
-- ✅ **강제 풀**: 로컬 데이터 초기화 후 서버에서 다시 가져오기
 - ✅ **로그인 상태 유지**: 앱 시작 시 세션 복원 + 만료 시 자동 refresh
 - ✅ **실시간 자동 초기화**: 초기화 시간에 타이머로 즉시 적용
 
-- ✅ **Google Sign In**: OAuth PKCE 로그인 (Desktop + iOS/Android)
-  - Desktop: localhost 콜백 서버 (`tauri-plugin-oauth`)
-  - Mobile: 딥 링크 콜백 (`tickly://auth/callback`)
-
-### 미구현 (향후 개선)
-- ⬜ **Realtime 동기화**: WebSocket 기반 실시간 변경 감지
+- ✅ **Realtime 동기화**: Supabase Realtime (WebSocket/Phoenix Channels)
+  - 로그인 시 자동 WebSocket 연결
+  - `postgres_changes` 구독 (todos, categories, completion_logs)
+  - 원격 변경 수신 시 자동 pull → UI 즉시 갱신
+  - 로컬 변경 시 2초 디바운스 후 자동 push
+  - 자동 재연결 (exponential backoff, 최대 10회)
 
 ### 기술 스택
 - **Backend**: Supabase (PostgreSQL + REST API)
@@ -152,8 +150,9 @@ CREATE POLICY "Users can CRUD own completion_logs" ON completion_logs FOR ALL US
 ### UX 요약
 - 설정 > 클라우드 동기화 메뉴
 - 로그인 상태, 동기화 활성화 토글
+- 실시간 연결 상태 표시 (연결됨/연결 중/연결 안됨)
 - 마지막 동기화 시간, 대기 중인 변경사항 수 표시
-- "지금 동기화" 버튼, "서버에서 다시 가져오기" 버튼
+- "지금 동기화" 버튼 (수동 동기화 옵션)
 
 ## 0.5.0 — 공유 리스트
 **목표:** 가족/팀 단위 체크리스트 공유.
