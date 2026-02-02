@@ -180,4 +180,14 @@ export const en: Translations = {
   cloudSyncDescription: 'Sync your data across devices',
   notConfigured: 'Not configured',
   supabaseNotConfigured: 'Supabase is not configured',
+
+  // Realtime sync
+  realtimeSync: 'Realtime Sync',
+  realtimeConnected: 'Connected',
+  realtimeConnecting: 'Connecting...',
+  realtimeReconnecting: 'Reconnecting...',
+  realtimeDisconnected: 'Disconnected',
+
+  // Common
+  saving: 'Saving...',
 };

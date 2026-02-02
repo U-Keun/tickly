@@ -89,4 +89,43 @@ impl CompletionLogRepository {
         )?;
         Ok(())
     }
+
+    /// Get all completion logs (for sync push)
+    pub fn get_all(conn: &Connection) -> Result<Vec<CompletionLog>, rusqlite::Error> {
+        let mut stmt = conn.prepare(
+            "SELECT item_id, completed_on, completed_count FROM completion_logs
+             WHERE completed_count > 0
+             ORDER BY item_id, completed_on",
+        )?;
+
+        let logs = stmt
+            .query_map([], |row| {
+                Ok(CompletionLog {
+                    item_id: row.get(0)?,
+                    completed_on: row.get(1)?,
+                    completed_count: row.get(2)?,
+                })
+            })?
+            .filter_map(Result::ok)
+            .collect();
+
+        Ok(logs)
+    }
+
+    /// Upsert a completion log (for sync pull)
+    pub fn upsert(
+        conn: &Connection,
+        item_id: i64,
+        completed_on: &str,
+        completed_count: i32,
+    ) -> Result<(), rusqlite::Error> {
+        conn.execute(
+            "INSERT INTO completion_logs (item_id, completed_on, completed_count)
+             VALUES (?1, ?2, ?3)
+             ON CONFLICT(item_id, completed_on) DO UPDATE SET
+                completed_count = MAX(completion_logs.completed_count, excluded.completed_count)",
+            params![item_id, completed_on, completed_count],
+        )?;
+        Ok(())
+    }
 }

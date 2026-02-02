@@ -13,6 +13,7 @@
   import ColorPicker from '../../../components/ColorPicker.svelte';
   import ThemePreview from '../../../components/ThemePreview.svelte';
   import SettingsLayout from '../../../components/SettingsLayout.svelte';
+  import SaveFooter from '../../../components/SaveFooter.svelte';
   import { i18n } from '$lib/i18n';
 
   type ColorKey = keyof ThemeColors;
@@ -123,7 +124,7 @@
   }
 </script>
 
-<SettingsLayout title={i18n.t('themeTitle')} onBack={handleBack} contentClass="pb-24">
+<SettingsLayout title={i18n.t('themeTitle')} onBack={handleBack} contentClass="pb-32">
   <!-- Preset Selection -->
   <section class="section">
     <h2 class="section-title">{i18n.t('presetTheme')}</h2>
@@ -179,11 +180,7 @@
   {/if}
 
   {#snippet footer()}
-    <div class="save-section">
-      <button class="save-btn" onclick={handleSave}>
-        {i18n.t('save')}
-      </button>
-    </div>
+    <SaveFooter onSave={handleSave} />
   {/snippet}
 </SettingsLayout>
 
@@ -253,33 +250,5 @@
     background: var(--color-canvas);
     border-radius: 12px;
     padding: 4px 12px;
-  }
-
-  .save-section {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 16px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
-    background: var(--color-paper);
-    border-top: 1px solid var(--color-stroke);
-  }
-
-  .save-btn {
-    width: 100%;
-    padding: 14px;
-    background: var(--color-accent-sky-strong);
-    color: var(--color-white);
-    font-size: 16px;
-    font-weight: 600;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .save-btn:hover {
-    background: var(--color-accent-sky);
   }
 </style>

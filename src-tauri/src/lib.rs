@@ -3,7 +3,7 @@ mod models;
 mod repository;
 mod service;
 
-use commands::{OAuthStateStore, *};
+use commands::{OAuthStateStore, RealtimeState, *};
 use repository::init_database;
 use rusqlite::Connection;
 use service::{SupabaseClient, SupabaseConfig};
@@ -49,6 +49,9 @@ pub fn run() {
                 code_verifier: Mutex::new(None),
                 port: Mutex::new(None),
             });
+
+            // Initialize Realtime state
+            app.manage(RealtimeState::new());
 
             Ok(())
         })
@@ -98,7 +101,12 @@ pub fn run() {
             get_pending_count,
             set_sync_enabled,
             is_sync_enabled,
-            force_pull
+            force_pull,
+            // Realtime commands
+            connect_realtime,
+            disconnect_realtime,
+            get_realtime_status,
+            is_realtime_connected
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

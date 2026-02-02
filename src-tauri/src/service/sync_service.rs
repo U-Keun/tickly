@@ -4,9 +4,9 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::models::{Category, SyncResult, SyncStatus, TodoItem};
-use crate::repository::{CategoryRepository, SyncRepository, TodoRepository};
+use crate::repository::{CategoryRepository, CompletionLogRepository, SyncRepository, TodoRepository};
 
-use super::supabase_client::{RemoteCategory, RemoteTodo, SupabaseClient};
+use super::supabase_client::{RemoteCategory, RemoteCompletionLog, RemoteTodo, SupabaseClient};
 
 pub struct SyncService;
 
@@ -39,6 +39,14 @@ struct PendingTodoSync {
     created_at: Option<String>,
     updated_at: Option<String>,
     sync_status: SyncStatus,
+}
+
+#[derive(Debug, Clone)]
+struct LocalCompletionLogSync {
+    item_id: i64,
+    todo_sync_id: String,
+    completed_on: String,
+    completed_count: i32,
 }
 
 impl SyncService {
@@ -82,6 +90,24 @@ impl SyncService {
         // Now collect pending todos with correct category sync_ids
         let pending_todos = Self::collect_pending_todos_with_map(conn, &cat_id_to_sync_id)?;
 
+        // Build todo id to sync_id map for completion logs
+        let all_todos = TodoRepository::get_all(conn).map_err(|e| e.to_string())?;
+        let mut todo_id_to_sync_id: HashMap<i64, String> = HashMap::new();
+        for todo in &all_todos {
+            if let Some(sync_id) = &todo.sync_id {
+                todo_id_to_sync_id.insert(todo.id, sync_id.clone());
+            }
+        }
+        // Also include pending todos' pre-generated sync_ids
+        for todo in &pending_todos {
+            if let Some(sync_id) = &todo.sync_id {
+                todo_id_to_sync_id.insert(todo.id, sync_id.clone());
+            }
+        }
+
+        // Collect completion logs
+        let local_completion_logs = Self::collect_completion_logs(conn, &todo_id_to_sync_id)?;
+
         // Run async operations
         let result = rt.block_on(async {
             let mut result = SyncResult::default();
@@ -95,16 +121,22 @@ impl SyncService {
             let pushed_todos =
                 Self::push_todos_async(client, access_token, user_id, &pending_todos).await?;
 
-            result.pushed = pushed_cats.len() + pushed_todos.len();
+            // Push completion logs
+            let pushed_logs =
+                Self::push_completion_logs_async(client, access_token, user_id, &local_completion_logs)
+                    .await?;
+
+            result.pushed = pushed_cats.len() + pushed_todos.len() + pushed_logs;
 
             // Pull remote data
             let remote_categories = client.fetch_categories(access_token).await?;
             let remote_todos = client.fetch_todos(access_token).await?;
+            let remote_completion_logs = client.fetch_all_completion_logs(access_token).await?;
 
-            Ok::<_, String>((result, pushed_cats, pushed_todos, remote_categories, remote_todos))
+            Ok::<_, String>((result, pushed_cats, pushed_todos, remote_categories, remote_todos, remote_completion_logs))
         })?;
 
-        let (mut sync_result, pushed_cats, pushed_todos, remote_categories, remote_todos) = result;
+        let (mut sync_result, pushed_cats, pushed_todos, remote_categories, remote_todos, remote_completion_logs) = result;
 
         // Update local database with push results
         for (local_id, sync_id) in pushed_cats {
@@ -147,7 +179,10 @@ impl SyncService {
             remote_categories,
             remote_todos,
         )?;
-        sync_result.pulled = pulled;
+
+        // Apply remote completion logs
+        let pulled_logs = Self::apply_remote_completion_logs(conn, &updated_local_todos, remote_completion_logs)?;
+        sync_result.pulled = pulled + pulled_logs;
 
         // Update last synced timestamp
         let now = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
@@ -511,5 +546,80 @@ impl SyncService {
 
     pub fn set_sync_enabled(conn: &Connection, enabled: bool) -> Result<(), String> {
         SyncRepository::set_sync_enabled(conn, enabled).map_err(|e| e.to_string())
+    }
+
+    fn collect_completion_logs(
+        conn: &Connection,
+        todo_id_to_sync_id: &HashMap<i64, String>,
+    ) -> Result<Vec<LocalCompletionLogSync>, String> {
+        let logs = CompletionLogRepository::get_all(conn).map_err(|e| e.to_string())?;
+
+        Ok(logs
+            .into_iter()
+            .filter_map(|log| {
+                todo_id_to_sync_id.get(&log.item_id).map(|sync_id| LocalCompletionLogSync {
+                    item_id: log.item_id,
+                    todo_sync_id: sync_id.clone(),
+                    completed_on: log.completed_on,
+                    completed_count: log.completed_count,
+                })
+            })
+            .collect())
+    }
+
+    async fn push_completion_logs_async(
+        client: &SupabaseClient,
+        access_token: &str,
+        user_id: &str,
+        logs: &[LocalCompletionLogSync],
+    ) -> Result<usize, String> {
+        let mut count = 0;
+
+        for log in logs {
+            // Generate a deterministic ID based on todo_id + date
+            let log_id = format!("{}_{}", log.todo_sync_id, log.completed_on);
+
+            let remote = RemoteCompletionLog {
+                id: log_id,
+                user_id: user_id.to_string(),
+                todo_id: log.todo_sync_id.clone(),
+                completed_on: log.completed_on.clone(),
+                completed_count: log.completed_count as i32,
+            };
+
+            client.upsert_completion_log(access_token, &remote).await?;
+            count += 1;
+        }
+
+        Ok(count)
+    }
+
+    fn apply_remote_completion_logs(
+        conn: &Connection,
+        local_todos: &[TodoItem],
+        remote_logs: Vec<RemoteCompletionLog>,
+    ) -> Result<usize, String> {
+        let mut count = 0;
+
+        // Build sync_id to local_id map
+        let sync_id_to_local_id: HashMap<String, i64> = local_todos
+            .iter()
+            .filter_map(|t| t.sync_id.as_ref().map(|s| (s.clone(), t.id)))
+            .collect();
+
+        for remote in remote_logs {
+            if let Some(&local_id) = sync_id_to_local_id.get(&remote.todo_id) {
+                CompletionLogRepository::upsert(
+                    conn,
+                    local_id,
+                    &remote.completed_on,
+                    remote.completed_count,
+                )
+                .map_err(|e| e.to_string())?;
+                count += 1;
+            }
+        }
+
+        Ok(count)
     }
 }
