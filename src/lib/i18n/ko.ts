@@ -179,6 +179,13 @@ export const ko = {
   notConfigured: '설정되지 않음',
   supabaseNotConfigured: 'Supabase가 설정되지 않았습니다',
 
+  // Realtime sync
+  realtimeSync: '실시간 동기화',
+  realtimeConnected: '연결됨',
+  realtimeConnecting: '연결 중...',
+  realtimeReconnecting: '재연결 중...',
+  realtimeDisconnected: '연결 안됨',
+
   // Common
   saving: '저장 중...',
 };

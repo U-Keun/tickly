@@ -4,22 +4,34 @@
   import { fly, fade } from 'svelte/transition';
   import { beforeNavigate } from '$app/navigation';
   import { cubicOut } from 'svelte/easing';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { authStore, handleOAuthCallback } from '$lib/stores/authStore.svelte';
+  import { syncStore } from '$lib/stores/syncStore.svelte';
 
   let direction = $state(1); // 1: 오른쪽에서, -1: 왼쪽에서
   let hasNavigated = $state(false); // 네비게이션 발생 여부
 
+  // Connect realtime when logged in
+  async function connectRealtimeIfLoggedIn() {
+    if (authStore.isLoggedIn && authStore.session) {
+      const { access_token, user_id } = authStore.session;
+      await syncStore.connectRealtime(access_token, user_id);
+    }
+  }
+
   // Check session and set up deep link listener
   onMount(async () => {
     // Restore login state from saved session
-    authStore.checkSession();
+    await authStore.checkSession();
+
+    // Connect to realtime if logged in
+    await connectRealtimeIfLoggedIn();
 
     try {
       const { onOpenUrl } = await import('@tauri-apps/plugin-deep-link');
 
       // Listen for deep link events
-      await onOpenUrl((urls) => {
+      await onOpenUrl(async (urls) => {
         for (const url of urls) {
           console.log('Deep link received:', url);
 
@@ -39,7 +51,9 @@
 
               if (code) {
                 console.log('OAuth code received, completing sign in...');
-                handleOAuthCallback(code);
+                await handleOAuthCallback(code);
+                // Connect to realtime after successful OAuth
+                await connectRealtimeIfLoggedIn();
               }
             }
           } catch (e) {
@@ -51,6 +65,11 @@
       // Deep link plugin might not be available on all platforms
       console.log('Deep link plugin not available:', e);
     }
+  });
+
+  // Disconnect realtime on component destroy
+  onDestroy(() => {
+    syncStore.disconnectRealtime();
   });
 
   // 경로 깊이 계산

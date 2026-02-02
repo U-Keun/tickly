@@ -181,6 +181,13 @@ export const en: Translations = {
   notConfigured: 'Not configured',
   supabaseNotConfigured: 'Supabase is not configured',
 
+  // Realtime sync
+  realtimeSync: 'Realtime Sync',
+  realtimeConnected: 'Connected',
+  realtimeConnecting: 'Connecting...',
+  realtimeReconnecting: 'Reconnecting...',
+  realtimeDisconnected: 'Disconnected',
+
   // Common
   saving: 'Saving...',
 };

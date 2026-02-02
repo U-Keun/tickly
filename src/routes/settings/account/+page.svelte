@@ -2,16 +2,13 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { i18n } from '$lib/i18n';
-  import { authStore, syncStore, appStore } from '$lib/stores';
-  import * as syncApi from '$lib/api/syncApi';
+  import { authStore, syncStore } from '$lib/stores';
   import SettingsLayout from '../../../components/SettingsLayout.svelte';
   import ModalWrapper from '../../../components/ModalWrapper.svelte';
   let showLogoutConfirm = $state(false);
-  let showForcePullConfirm = $state(false);
   let syncError = $state<string | null>(null);
   let loginError = $state<string | null>(null);
   let isSigningIn = $state(false);
-  let isForcePulling = $state(false);
   let isDesktop = $state(false);
 
   onMount(async () => {
@@ -31,6 +28,10 @@
     try {
       await authStore.signInWithApple();
       await syncStore.loadStatus();
+      // Connect to realtime after successful login
+      if (authStore.session) {
+        await syncStore.connectRealtime(authStore.session.access_token, authStore.session.user_id);
+      }
     } catch (error) {
       console.error('Apple Sign In failed:', error);
       loginError = error instanceof Error ? error.message : String(error);
@@ -50,6 +51,10 @@
         await authStore.signInWithGoogleMobile();
       }
       await syncStore.loadStatus();
+      // Connect to realtime after successful login
+      if (authStore.session) {
+        await syncStore.connectRealtime(authStore.session.access_token, authStore.session.user_id);
+      }
     } catch (error) {
       console.error('Google Sign In failed:', error);
       loginError = error instanceof Error ? error.message : String(error);
@@ -74,25 +79,6 @@
 
   async function handleToggleSync() {
     await syncStore.setEnabled(!syncStore.isEnabled);
-  }
-
-  async function handleForcePull() {
-    showForcePullConfirm = false;
-    isForcePulling = true;
-    syncError = null;
-    try {
-      // Delete all local data
-      await syncApi.forcePull();
-      // Sync to pull from server
-      await syncStore.sync();
-      // Refresh app data
-      await appStore.refreshAll();
-    } catch (error) {
-      console.error('Force pull failed:', error);
-      syncError = error instanceof Error ? error.message : String(error);
-    } finally {
-      isForcePulling = false;
-    }
   }
 </script>
 
@@ -204,12 +190,26 @@
               <span class="status-label">{i18n.t('pendingChanges')}</span>
               <span class="status-value">{syncStore.pendingCount}</span>
             </div>
+            <div class="status-row">
+              <span class="status-label">{i18n.t('realtimeSync')}</span>
+              <span class="status-value realtime-status" class:connected={syncStore.realtimeState === 'connected'} class:connecting={syncStore.realtimeState === 'connecting' || syncStore.realtimeState === 'reconnecting'}>
+                {#if syncStore.realtimeState === 'connected'}
+                  <span class="realtime-dot connected"></span> {i18n.t('realtimeConnected')}
+                {:else if syncStore.realtimeState === 'connecting'}
+                  <span class="realtime-dot connecting"></span> {i18n.t('realtimeConnecting')}
+                {:else if syncStore.realtimeState === 'reconnecting'}
+                  <span class="realtime-dot connecting"></span> {i18n.t('realtimeReconnecting')}
+                {:else}
+                  <span class="realtime-dot disconnected"></span> {i18n.t('realtimeDisconnected')}
+                {/if}
+              </span>
+            </div>
           </div>
 
           <button
             class="sync-btn"
             onclick={handleSync}
-            disabled={syncStore.isSyncing || isForcePulling}
+            disabled={syncStore.isSyncing}
           >
             {#if syncStore.isSyncing}
               <span class="sync-spinner"></span>
@@ -222,30 +222,8 @@
             {/if}
           </button>
 
-          <button
-            class="force-pull-btn"
-            onclick={() => showForcePullConfirm = true}
-            disabled={syncStore.isSyncing || isForcePulling}
-          >
-            {#if isForcePulling}
-              <span class="sync-spinner"></span>
-              서버에서 다시 가져오는 중...
-            {:else}
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              서버에서 다시 가져오기
-            {/if}
-          </button>
-
           {#if syncError}
             <p class="sync-error">{syncError}</p>
-          {/if}
-
-          {#if syncStore.lastSyncResult}
-            <div class="sync-result">
-              <p>{i18n.t('syncSuccess')}: {syncStore.lastSyncResult.pushed} pushed, {syncStore.lastSyncResult.pulled} pulled</p>
-            </div>
           {/if}
         {/if}
       </div>
@@ -264,22 +242,6 @@
       </button>
       <button class="confirm-btn" onclick={handleLogout}>
         {i18n.t('logout')}
-      </button>
-    </div>
-  </div>
-</ModalWrapper>
-
-<!-- Force Pull confirmation modal -->
-<ModalWrapper show={showForcePullConfirm} onClose={() => showForcePullConfirm = false}>
-  <div class="confirm-modal">
-    <h3>서버에서 다시 가져오기</h3>
-    <p>로컬 데이터를 삭제하고 서버의 데이터로 대체합니다. 이 작업은 되돌릴 수 없습니다.</p>
-    <div class="modal-buttons">
-      <button class="cancel-btn" onclick={() => showForcePullConfirm = false}>
-        {i18n.t('cancel')}
-      </button>
-      <button class="confirm-btn" onclick={handleForcePull}>
-        확인
       </button>
     </div>
   </div>
@@ -553,6 +515,36 @@
     font-weight: 500;
   }
 
+  .realtime-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .realtime-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .realtime-dot.connected {
+    background: var(--color-accent-mint-strong);
+  }
+
+  .realtime-dot.connecting {
+    background: var(--color-accent-sky-strong);
+    animation: pulse 1s infinite;
+  }
+
+  .realtime-dot.disconnected {
+    background: var(--color-ink-muted);
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
   .sync-btn {
     width: 100%;
     display: flex;
@@ -571,29 +563,6 @@
   }
 
   .sync-btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  .force-pull-btn {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 14px;
-    margin-top: 8px;
-    background: var(--color-mist);
-    border: 1px solid var(--color-stroke);
-    border-radius: 10px;
-    color: var(--color-ink-muted);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-
-  .force-pull-btn:disabled {
     opacity: 0.7;
     cursor: not-allowed;
   }
@@ -618,17 +587,6 @@
     border-radius: 8px;
     color: var(--color-accent-peach-strong);
     font-size: 14px;
-  }
-
-  .sync-result {
-    margin-top: 12px;
-    font-size: 14px;
-    color: var(--color-accent-mint-strong);
-    text-align: center;
-  }
-
-  .sync-result p {
-    margin: 4px 0;
   }
 
   /* Modal */

@@ -1,4 +1,5 @@
 import * as authApi from '$lib/api/authApi';
+import { syncStore } from './syncStore.svelte';
 import type { AuthSession, UserProfile } from '../../types';
 
 // Pending OAuth callback resolver
@@ -137,6 +138,9 @@ class AuthStore {
   async signOut(): Promise<void> {
     this.isLoading = true;
     try {
+      // Disconnect realtime before signing out
+      await syncStore.disconnectRealtime();
+
       await authApi.signOut();
       this.session = null;
       this.user = null;

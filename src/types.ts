@@ -136,3 +136,31 @@ export interface Template {
   id: number;
   text: string;
 }
+
+// Realtime types
+export type RealtimeConnectionState =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting';
+
+export interface RealtimeStatus {
+  state: RealtimeConnectionState;
+  reconnect_attempts: number;
+  last_error: string | null;
+}
+
+export type RealtimeEventType = 'connected' | 'disconnected' | 'reconnecting' | 'error';
+
+export interface RealtimeEvent {
+  event_type: RealtimeEventType;
+  message: string | null;
+}
+
+export type DataChangeType = 'INSERT' | 'UPDATE' | 'DELETE';
+
+export interface DataChangedEvent {
+  table: string;
+  change_type: DataChangeType;
+  sync_id: string | null;
+}

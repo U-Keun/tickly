@@ -2,6 +2,7 @@ import type { TodoItem, Category, RepeatType } from '../../types';
 import * as categoryApi from '../api/categoryApi';
 import * as todoApi from '../api/todoApi';
 import * as streakApi from '../api/streakApi';
+import { syncStore } from './syncStore.svelte';
 
 // Core app state
 let items = $state<TodoItem[]>([]);
@@ -43,6 +44,7 @@ async function addCategory(name: string): Promise<void> {
     const newCategory = await categoryApi.addCategory(name);
     categories = [...categories, newCategory];
     await selectCategory(newCategory.id);
+    syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to add category:', error);
   }
@@ -54,6 +56,7 @@ async function editCategory(id: number, name: string): Promise<void> {
     categories = categories.map(cat =>
       cat.id === id ? { ...cat, name } : cat
     );
+    syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to edit category:', error);
   }
@@ -71,6 +74,7 @@ async function deleteCategory(id: number): Promise<boolean> {
     if (selectedCategoryId === id) {
       await selectCategory(categories[0].id);
     }
+    syncStore.scheduleSync();
     return true;
   } catch (error) {
     console.error('Failed to delete category:', error);
@@ -93,6 +97,7 @@ async function addItem(
       newItem.memo = memo;
     }
     items = [...items, newItem];
+    syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to add item:', error);
   }
@@ -110,6 +115,7 @@ async function toggleItem(id: number): Promise<void> {
         if (a.done !== b.done) return a.done ? 1 : -1;
         return a.display_order - b.display_order;
       });
+      syncStore.scheduleSync();
     }
   } catch (error) {
     console.error('Failed to toggle item:', error);
@@ -120,6 +126,7 @@ async function deleteItem(id: number): Promise<void> {
   try {
     await todoApi.deleteItem(id);
     items = items.filter(item => item.id !== id);
+    syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to delete item:', error);
   }
@@ -131,6 +138,7 @@ async function editItem(id: number, text: string): Promise<void> {
     items = items.map(item =>
       item.id === id ? { ...item, text } : item
     );
+    syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to edit item:', error);
   }
@@ -142,6 +150,7 @@ async function updateMemo(id: number, memo: string | null): Promise<void> {
     items = items.map(item =>
       item.id === id ? { ...item, memo } : item
     );
+    syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to update memo:', error);
   }
@@ -157,6 +166,7 @@ async function updateRepeat(
     items = items.map(item =>
       item.id === id ? { ...item, repeat_type: repeatType, repeat_detail: repeatDetail } : item
     );
+    syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to update repeat:', error);
   }
@@ -168,6 +178,7 @@ async function updateTrackStreak(id: number, trackStreak: boolean): Promise<void
     items = items.map(item =>
       item.id === id ? { ...item, track_streak: trackStreak } : item
     );
+    syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to update track_streak:', error);
   }
@@ -177,6 +188,7 @@ async function resetAllItems(): Promise<void> {
   try {
     await todoApi.resetAllItems(selectedCategoryId);
     items = items.map(item => ({ ...item, done: false }));
+    syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to reset items:', error);
   }
