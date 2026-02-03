@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/ios-schema.json",
+  "identifier": "ios",
+  "description": "iOS-specific capabilities",
+  "platforms": ["iOS"],
+  "windows": ["main"],
+  "permissions": [
+    "sign-in-with-apple:default",
+    "os:default",
+    "deep-link:default"
+  ]
+}

@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::SyncStatus;
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum RepeatType {
     #[serde(rename = "none")]
@@ -51,4 +53,9 @@ pub struct TodoItem {
     pub next_due_at: Option<String>,
     pub last_completed_at: Option<String>,
     pub track_streak: bool,
+    // Sync fields
+    pub sync_id: Option<String>,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
+    pub sync_status: SyncStatus,
 }

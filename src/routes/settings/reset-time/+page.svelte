@@ -4,6 +4,7 @@
   import { i18n } from '$lib/i18n';
   import * as settingsApi from '$lib/api/settingsApi';
   import SettingsLayout from '../../../components/SettingsLayout.svelte';
+  import SaveFooter from '../../../components/SaveFooter.svelte';
 
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
   const minutes = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0'));
@@ -50,16 +51,7 @@
   </div>
 
   {#snippet footer()}
-    <div class="save-section">
-      <button
-        class="save-button"
-        class:disabled={!hasChanges}
-        disabled={!hasChanges}
-        onclick={saveResetTime}
-      >
-        {i18n.t('save')}
-      </button>
-    </div>
+    <SaveFooter onSave={saveResetTime} disabled={!hasChanges} />
   {/snippet}
 </SettingsLayout>
 
@@ -105,34 +97,5 @@
     font-size: 20px;
     font-weight: 600;
     color: var(--color-ink);
-  }
-
-  .save-section {
-    padding: 16px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
-    background: var(--color-paper);
-    border-top: 1px solid var(--color-stroke);
-  }
-
-  .save-button {
-    width: 100%;
-    padding: 14px;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--color-white);
-    background: var(--color-accent-sky-strong);
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .save-button:hover {
-    background: var(--color-accent-sky);
-  }
-
-  .save-button.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 </style>

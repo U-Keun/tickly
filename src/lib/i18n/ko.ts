@@ -149,6 +149,45 @@ export const ko = {
   resetTimeChange: '초기화 시간',
   resetTimeTitle: '초기화 시간',
   resetTimeDescription: '매일 할 일이 초기화되는 시간',
+
+  // Account & Sync settings
+  account: '계정',
+  accountTitle: '계정 설정',
+  syncTitle: '동기화',
+  syncChange: '동기화',
+  loginRequired: '로그인이 필요합니다',
+  loginDescription: '클라우드 동기화를 사용하려면 로그인하세요',
+  signInWithApple: 'Apple로 로그인',
+  signInWithGoogle: 'Google로 로그인',
+  logout: '로그아웃',
+  logoutConfirm: '정말 로그아웃하시겠습니까?',
+  loggedInAs: '로그인됨',
+  syncEnabled: '동기화 사용',
+  syncDisabled: '동기화 안 함',
+  lastSynced: '마지막 동기화',
+  pendingChanges: '대기 중인 변경사항',
+  syncNow: '지금 동기화',
+  syncing: '동기화 중...',
+  syncSuccess: '동기화 완료',
+  syncFailed: '동기화 실패',
+  justNow: '방금 전',
+  minutesAgo: (n: number) => `${n}분 전`,
+  hoursAgo: (n: number) => `${n}시간 전`,
+  never: '없음',
+  cloudSync: '클라우드 동기화',
+  cloudSyncDescription: '여러 기기에서 데이터를 동기화합니다',
+  notConfigured: '설정되지 않음',
+  supabaseNotConfigured: 'Supabase가 설정되지 않았습니다',
+
+  // Realtime sync
+  realtimeSync: '실시간 동기화',
+  realtimeConnected: '연결됨',
+  realtimeConnecting: '연결 중...',
+  realtimeReconnecting: '재연결 중...',
+  realtimeDisconnected: '연결 안됨',
+
+  // Common
+  saving: '저장 중...',
 };
 
 export type Translations = typeof ko;

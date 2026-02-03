@@ -151,4 +151,43 @@ export const en: Translations = {
   resetTimeChange: 'Reset Time',
   resetTimeTitle: 'Reset Time',
   resetTimeDescription: 'Time when daily tasks reset',
+
+  // Account & Sync settings
+  account: 'Account',
+  accountTitle: 'Account Settings',
+  syncTitle: 'Sync',
+  syncChange: 'Sync',
+  loginRequired: 'Login required',
+  loginDescription: 'Sign in to use cloud sync',
+  signInWithApple: 'Sign in with Apple',
+  signInWithGoogle: 'Sign in with Google',
+  logout: 'Log out',
+  logoutConfirm: 'Are you sure you want to log out?',
+  loggedInAs: 'Logged in as',
+  syncEnabled: 'Sync enabled',
+  syncDisabled: 'Sync disabled',
+  lastSynced: 'Last synced',
+  pendingChanges: 'Pending changes',
+  syncNow: 'Sync now',
+  syncing: 'Syncing...',
+  syncSuccess: 'Sync complete',
+  syncFailed: 'Sync failed',
+  justNow: 'Just now',
+  minutesAgo: (n: number) => `${n} minutes ago`,
+  hoursAgo: (n: number) => `${n} hours ago`,
+  never: 'Never',
+  cloudSync: 'Cloud Sync',
+  cloudSyncDescription: 'Sync your data across devices',
+  notConfigured: 'Not configured',
+  supabaseNotConfigured: 'Supabase is not configured',
+
+  // Realtime sync
+  realtimeSync: 'Realtime Sync',
+  realtimeConnected: 'Connected',
+  realtimeConnecting: 'Connecting...',
+  realtimeReconnecting: 'Reconnecting...',
+  realtimeDisconnected: 'Disconnected',
+
+  // Common
+  saving: 'Saving...',
 };

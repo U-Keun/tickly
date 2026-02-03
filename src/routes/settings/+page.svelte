@@ -65,6 +65,21 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
       </svg>
     </button>
+
+    <!-- Account / Sync Setting -->
+    <button class="settings-item" onclick={() => goto('/settings/account')}>
+      <div class="item-left">
+        <div class="item-icon account-icon">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+          </svg>
+        </div>
+        <span class="item-label">{i18n.t('cloudSync')}</span>
+      </div>
+      <svg class="w-5 h-5 chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
   </div>
 </SettingsLayout>
 
@@ -122,6 +137,10 @@
 
   .reset-time-icon {
     background: var(--color-accent-peach);
+  }
+
+  .account-icon {
+    background: var(--color-accent-sky);
   }
 
   .item-label {

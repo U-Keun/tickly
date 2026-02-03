@@ -12,6 +12,7 @@
   } from '../../../lib/fonts';
   import FontPreview from '../../../components/FontPreview.svelte';
   import SettingsLayout from '../../../components/SettingsLayout.svelte';
+  import SaveFooter from '../../../components/SaveFooter.svelte';
   import { i18n } from '$lib/i18n';
 
   // Preset ID to i18n key mapping
@@ -140,11 +141,7 @@
   </section>
 
   {#snippet footer()}
-    <div class="save-section">
-      <button class="save-btn" onclick={handleSave}>
-        {i18n.t('save')}
-      </button>
-    </div>
+    <SaveFooter onSave={handleSave} />
   {/snippet}
 </SettingsLayout>
 
@@ -250,33 +247,5 @@
   .size-label {
     font-size: 12px;
     color: var(--color-ink-muted);
-  }
-
-  .save-section {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 16px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
-    background: var(--color-paper);
-    border-top: 1px solid var(--color-stroke);
-  }
-
-  .save-btn {
-    width: 100%;
-    padding: 14px;
-    background: var(--color-accent-sky-strong);
-    color: var(--color-white);
-    font-size: 16px;
-    font-weight: 600;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .save-btn:hover {
-    background: var(--color-accent-sky);
   }
 </style>
