@@ -1,4 +1,4 @@
-export type SyncStatus = 'pending' | 'synced' | 'conflict' | 'deleted';
+export type SyncStatus = 'pending' | 'synced' | 'deleted';
 
 export interface Category {
   id: number;
@@ -111,7 +111,6 @@ export interface UserProfile {
 export interface SyncResult {
   pushed: number;
   pulled: number;
-  conflicts: number;
   last_synced_at: string | null;
 }
 
@@ -121,20 +120,6 @@ export interface SyncStatusInfo {
   is_online: boolean;
   pending_count: number;
   last_synced_at: string | null;
-}
-
-export interface ConflictItem {
-  local_id: number;
-  sync_id: string;
-  local_text: string;
-  remote_text: string;
-  local_updated_at: string;
-  remote_updated_at: string;
-}
-
-export interface Template {
-  id: number;
-  text: string;
 }
 
 // Realtime types

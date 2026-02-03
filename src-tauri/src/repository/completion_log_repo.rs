@@ -81,15 +81,6 @@ impl CompletionLogRepository {
         Ok(logs)
     }
 
-    /// Delete all logs for a specific item (when item is deleted)
-    pub fn delete_logs_for_item(conn: &Connection, item_id: i64) -> Result<(), rusqlite::Error> {
-        conn.execute(
-            "DELETE FROM completion_logs WHERE item_id = ?1",
-            params![item_id],
-        )?;
-        Ok(())
-    }
-
     /// Get all completion logs (for sync push)
     pub fn get_all(conn: &Connection) -> Result<Vec<CompletionLog>, rusqlite::Error> {
         let mut stmt = conn.prepare(

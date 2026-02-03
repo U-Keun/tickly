@@ -59,11 +59,6 @@ impl StreakService {
     ) -> Result<(), rusqlite::Error> {
         TodoRepository::update_track_streak(conn, item_id, track_streak)?;
 
-        // If disabling tracking, optionally delete logs (keeping them for now)
-        // if !track_streak {
-        //     CompletionLogRepository::delete_logs_for_item(conn, item_id)?;
-        // }
-
         Ok(())
     }
 

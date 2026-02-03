@@ -47,16 +47,4 @@ impl AuthRepository {
         Ok(())
     }
 
-    pub fn update_tokens(
-        conn: &Connection,
-        access_token: &str,
-        refresh_token: &str,
-        expires_at: &str,
-    ) -> Result<(), rusqlite::Error> {
-        conn.execute(
-            "UPDATE auth_session SET access_token = ?1, refresh_token = ?2, expires_at = ?3 WHERE id = 1",
-            params![access_token, refresh_token, expires_at],
-        )?;
-        Ok(())
-    }
 }

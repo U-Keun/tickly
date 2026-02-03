@@ -21,7 +21,6 @@ export const ko = {
   memoPlaceholder: '메모를 입력하세요',
   cancel: '취소',
   add: '추가',
-  confirm: '확인',
 
   // Reset confirm
   resetConfirmTitle: '체크 초기화',
@@ -30,7 +29,6 @@ export const ko = {
 
   // Category
   categoryDelete: '카테고리 삭제',
-  categoryDeleteConfirm: '카테고리를 삭제하시겠습니까?\n항목들도 함께 삭제됩니다.',
   categoryDeleteConfirmTemplate: (name: string) =>
     `"${name}" 카테고리를 삭제하시겠습니까?\n항목들도 함께 삭제됩니다.`,
   delete: '삭제',
@@ -49,8 +47,6 @@ export const ko = {
 
   // Language settings
   languageTitle: '언어',
-  korean: '한국어',
-  english: 'English',
 
   // Reorder items modal
   reorderItemsTitle: '항목 순서 정렬',
@@ -65,7 +61,6 @@ export const ko = {
   noCategoriesToReorder: '정렬할 카테고리가 없습니다.',
 
   // MemoDrawer
-  itemLabel: '항목',
   todoPlaceholderAlt: '할 일을 입력하세요...',
   memoPlaceholderAlt: '메모를 입력하세요...',
   save: '저장',
@@ -136,9 +131,6 @@ export const ko = {
   totalDays: '총 완료 일수',
   currentStreak: '현재 스트릭',
   longestStreak: '최장 스트릭',
-  completions: '개 완료',
-  less: '적음',
-  more: '많음',
   loading: '로딩 중...',
   trackStreak: '스트릭 추적',
   trackingStreak: '스트릭 추적 중',
@@ -151,33 +143,20 @@ export const ko = {
   resetTimeDescription: '매일 할 일이 초기화되는 시간',
 
   // Account & Sync settings
-  account: '계정',
-  accountTitle: '계정 설정',
   syncTitle: '동기화',
-  syncChange: '동기화',
   loginRequired: '로그인이 필요합니다',
   loginDescription: '클라우드 동기화를 사용하려면 로그인하세요',
   signInWithApple: 'Apple로 로그인',
   signInWithGoogle: 'Google로 로그인',
   logout: '로그아웃',
   logoutConfirm: '정말 로그아웃하시겠습니까?',
-  loggedInAs: '로그인됨',
   syncEnabled: '동기화 사용',
-  syncDisabled: '동기화 안 함',
   lastSynced: '마지막 동기화',
   pendingChanges: '대기 중인 변경사항',
   syncNow: '지금 동기화',
   syncing: '동기화 중...',
-  syncSuccess: '동기화 완료',
-  syncFailed: '동기화 실패',
-  justNow: '방금 전',
-  minutesAgo: (n: number) => `${n}분 전`,
-  hoursAgo: (n: number) => `${n}시간 전`,
   never: '없음',
   cloudSync: '클라우드 동기화',
-  cloudSyncDescription: '여러 기기에서 데이터를 동기화합니다',
-  notConfigured: '설정되지 않음',
-  supabaseNotConfigured: 'Supabase가 설정되지 않았습니다',
 
   // Realtime sync
   realtimeSync: '실시간 동기화',

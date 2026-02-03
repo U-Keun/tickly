@@ -1,7 +1,7 @@
 use chrono::{Duration, Utc};
 use rusqlite::Connection;
 
-use crate::models::{AuthProvider, AuthSession, UserProfile};
+use crate::models::{AuthProvider, AuthSession};
 use crate::repository::AuthRepository;
 
 use super::supabase_client::{SupabaseAuthResponse, SupabaseClient};
@@ -97,14 +97,5 @@ impl AuthService {
 
     pub fn delete_session(conn: &Connection) -> Result<(), String> {
         AuthRepository::delete_session(conn).map_err(|e| e.to_string())
-    }
-
-    pub fn get_user_profile(session: &AuthSession) -> UserProfile {
-        UserProfile {
-            id: session.user_id.clone(),
-            email: None,
-            full_name: None,
-            avatar_url: None,
-        }
     }
 }

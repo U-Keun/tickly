@@ -125,11 +125,6 @@ html, body {
   overflow-y: hidden;
 }
 
-.fixed-header {
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
 .todo-list-scroll {
   flex: 1;
   overflow-y: auto;

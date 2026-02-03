@@ -7,8 +7,6 @@ pub enum SyncStatus {
     Pending,
     #[serde(rename = "synced")]
     Synced,
-    #[serde(rename = "conflict")]
-    Conflict,
     #[serde(rename = "deleted")]
     Deleted,
 }
@@ -17,7 +15,6 @@ impl SyncStatus {
     pub fn from_str(s: &str) -> Self {
         match s {
             "synced" => SyncStatus::Synced,
-            "conflict" => SyncStatus::Conflict,
             "deleted" => SyncStatus::Deleted,
             _ => SyncStatus::Pending,
         }
@@ -27,7 +24,6 @@ impl SyncStatus {
         match self {
             SyncStatus::Pending => "pending",
             SyncStatus::Synced => "synced",
-            SyncStatus::Conflict => "conflict",
             SyncStatus::Deleted => "deleted",
         }
     }
@@ -78,7 +74,6 @@ pub struct UserProfile {
 pub struct SyncResult {
     pub pushed: usize,
     pub pulled: usize,
-    pub conflicts: usize,
     pub last_synced_at: Option<String>,
 }
 

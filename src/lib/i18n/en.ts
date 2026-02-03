@@ -23,7 +23,6 @@ export const en: Translations = {
   memoPlaceholder: 'Enter a memo',
   cancel: 'Cancel',
   add: 'Add',
-  confirm: 'OK',
 
   // Reset confirm
   resetConfirmTitle: 'Reset Checks',
@@ -32,7 +31,6 @@ export const en: Translations = {
 
   // Category
   categoryDelete: 'Delete Category',
-  categoryDeleteConfirm: 'Delete this category?\nAll items will be removed.',
   categoryDeleteConfirmTemplate: (name: string) =>
     `Delete "${name}" category?\nAll items will be removed.`,
   delete: 'Delete',
@@ -51,8 +49,6 @@ export const en: Translations = {
 
   // Language settings
   languageTitle: 'Language',
-  korean: '한국어',
-  english: 'English',
 
   // Reorder items modal
   reorderItemsTitle: 'Reorder Items',
@@ -67,7 +63,6 @@ export const en: Translations = {
   noCategoriesToReorder: 'No categories to reorder.',
 
   // MemoDrawer
-  itemLabel: 'Item',
   todoPlaceholderAlt: 'Enter your task...',
   memoPlaceholderAlt: 'Enter a memo...',
   save: 'Save',
@@ -138,9 +133,6 @@ export const en: Translations = {
   totalDays: 'Total Days',
   currentStreak: 'Current Streak',
   longestStreak: 'Longest Streak',
-  completions: 'completions',
-  less: 'Less',
-  more: 'More',
   loading: 'Loading...',
   trackStreak: 'Track Streak',
   trackingStreak: 'Tracking streak',
@@ -153,33 +145,20 @@ export const en: Translations = {
   resetTimeDescription: 'Time when daily tasks reset',
 
   // Account & Sync settings
-  account: 'Account',
-  accountTitle: 'Account Settings',
   syncTitle: 'Sync',
-  syncChange: 'Sync',
   loginRequired: 'Login required',
   loginDescription: 'Sign in to use cloud sync',
   signInWithApple: 'Sign in with Apple',
   signInWithGoogle: 'Sign in with Google',
   logout: 'Log out',
   logoutConfirm: 'Are you sure you want to log out?',
-  loggedInAs: 'Logged in as',
   syncEnabled: 'Sync enabled',
-  syncDisabled: 'Sync disabled',
   lastSynced: 'Last synced',
   pendingChanges: 'Pending changes',
   syncNow: 'Sync now',
   syncing: 'Syncing...',
-  syncSuccess: 'Sync complete',
-  syncFailed: 'Sync failed',
-  justNow: 'Just now',
-  minutesAgo: (n: number) => `${n} minutes ago`,
-  hoursAgo: (n: number) => `${n} hours ago`,
   never: 'Never',
   cloudSync: 'Cloud Sync',
-  cloudSyncDescription: 'Sync your data across devices',
-  notConfigured: 'Not configured',
-  supabaseNotConfigured: 'Supabase is not configured',
 
   // Realtime sync
   realtimeSync: 'Realtime Sync',

@@ -17,10 +17,3 @@ export async function setSyncEnabled(enabled: boolean): Promise<void> {
   return invoke<void>('set_sync_enabled', { enabled });
 }
 
-export async function isSyncEnabled(): Promise<boolean> {
-  return invoke<boolean>('is_sync_enabled');
-}
-
-export async function forcePull(): Promise<void> {
-  return invoke<void>('force_pull');
-}

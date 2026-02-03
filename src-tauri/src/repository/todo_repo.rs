@@ -242,15 +242,6 @@ impl TodoRepository {
         Ok(())
     }
 
-    pub fn toggle(conn: &Connection, id: i64) -> Result<(), rusqlite::Error> {
-        conn.execute(
-            "UPDATE todos SET done = NOT done WHERE id = ?1",
-            params![id],
-        )?;
-        Self::mark_updated(conn, id)?;
-        Ok(())
-    }
-
     pub fn set_done(
         conn: &Connection,
         id: i64,
