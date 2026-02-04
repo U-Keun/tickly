@@ -1,6 +1,6 @@
-# Tickly 0.2.0 ~ 0.6.0 상세 스펙 초안
+# Tickly 0.2.0 ~ 0.9.0 상세 스펙 초안
 
-이 문서는 0.2.0부터 0.6.0까지의 MVP 범위와 화면/데이터 변경을 요약합니다.
+이 문서는 0.2.0부터 0.9.0까지의 MVP 범위와 화면/데이터 변경을 요약합니다.
 
 ## 공통 방향
 - **일일 자동 초기화는 제거**하고, 반복 규칙으로 대체합니다.
@@ -154,7 +154,87 @@ CREATE POLICY "Users can CRUD own completion_logs" ON completion_logs FOR ALL US
 - 마지막 동기화 시간, 대기 중인 변경사항 수 표시
 - "지금 동기화" 버튼 (수동 동기화 옵션)
 
-## 0.5.0 — 공유 리스트
+## 0.5.0 — 태그
+**목표:** 항목에 태그를 붙여 분류하고, 향후 그래프 뷰의 기반 데이터로 활용.
+
+### MVP 범위
+- 태그 대상: 할 일 항목(todo)에만 적용
+- 태그 형식: 텍스트 전용 (색상 없음)
+- 태그 관리: 생성, 삭제
+- 항목당 복수 태그 가능
+- 태그 기반 필터링: 특정 태그가 붙은 항목만 카테고리 횡단 조회
+- 클라우드 동기화 지원
+
+### 데이터 모델 변경
+- 새 테이블 `tags`:
+  - `id` INTEGER PRIMARY KEY
+  - `name` TEXT NOT NULL UNIQUE
+  - `sync_id` UUID (Supabase)
+  - `created_at`, `updated_at`, `sync_status`
+- 새 테이블 `todo_tags` (다대다 관계):
+  - `todo_id` INTEGER REFERENCES todos(id) ON DELETE CASCADE
+  - `tag_id` INTEGER REFERENCES tags(id) ON DELETE CASCADE
+  - PRIMARY KEY (todo_id, tag_id)
+  - `sync_id` UUID (Supabase)
+  - `created_at`, `sync_status`
+
+### Supabase 테이블 구조
+```sql
+CREATE TABLE tags (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, name)
+);
+
+CREATE TABLE todo_tags (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    todo_id UUID REFERENCES todos(id) ON DELETE CASCADE,
+    tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(todo_id, tag_id)
+);
+
+ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can CRUD own tags" ON tags FOR ALL USING (auth.uid() = user_id);
+
+ALTER TABLE todo_tags ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can CRUD own todo_tags" ON todo_tags FOR ALL USING (auth.uid() = user_id);
+```
+
+### UX 요약
+- MemoDrawer에서 태그 추가/제거 (기존 태그 선택 또는 새 태그 입력)
+- 항목 목록에서 태그 칩 표시 (항목명 아래 또는 옆)
+- 태그 필터: 상단 또는 FloatingActions에서 태그 선택 → 해당 태그 항목만 표시
+- 태그 관리: 설정에서 전체 태그 목록 확인/삭제
+
+### 향후 확장
+- **그래프 뷰**: v0.6.0에서 태그 기반 노드 그래프 시각화 구현 예정
+- 태그 색상 추가 가능성
+
+## 0.6.0 — 그래프 뷰
+**목표:** 태그 간 관계와 항목 분포를 그래프로 시각화하여 전체 할 일의 구조를 파악.
+
+### MVP 범위
+- 태그 노드 + 항목 노드로 구성된 그래프
+- 태그 노드 크기: 해당 태그가 붙은 항목 수에 비례
+- 태그 노드와 항목 노드 사이에 엣지 표시 (태그-항목 관계)
+- 태그 노드 탭: 아무 동작 없음
+- 항목 노드 탭: 해당 항목이 속한 카테고리 화면으로 이동
+- 간단한 줌/패닝 지원
+
+### 데이터 모델 변경
+- 추가 테이블 없음 (v0.5.0의 `tags`, `todo_tags` 데이터 활용)
+
+### UX 요약
+- 하단 네비게이션 또는 FloatingActions에서 그래프 뷰 진입
+- 인터랙티브 그래프 (터치 드래그, 핀치 줌)
+- 항목 노드 탭 → 해당 카테고리 화면으로 이동
+
+## 0.7.0 — 공유 리스트
 **목표:** 가족/팀 단위 체크리스트 공유.
 
 ### MVP 범위
@@ -169,9 +249,9 @@ CREATE POLICY "Users can CRUD own completion_logs" ON completion_logs FOR ALL US
 - `category_members` (공유 멤버 관리)
 
 ### UX 요약
-- 카테고리 메뉴에서 “공유” 버튼 제공
+- 카테고리 메뉴에서 "공유" 버튼 제공
 
-## 0.6.0 — 위젯
+## 0.8.0 — 위젯
 **목표:** 앱을 열지 않고 빠르게 체크.
 
 ### MVP 범위
@@ -184,3 +264,24 @@ CREATE POLICY "Users can CRUD own completion_logs" ON completion_logs FOR ALL US
 
 ### UX 요약
 - 위젯에서 체크 → 앱 내 상태 즉시 반영
+
+## 0.9.0 — 항목 알림
+**목표:** 특정 항목에 알림을 설정하여 잊지 않고 실행.
+
+### MVP 범위
+- 항목별 알림 시간 설정 (날짜 + 시간)
+- 반복 항목과 연동: 반복 규칙에 맞춰 알림 자동 생성
+- 로컬 알림 (iOS push notification)
+
+### 데이터 모델 변경
+- `todos` 테이블 확장:
+  - `reminder_at` (알림 시간, TIMESTAMPTZ / nullable)
+- 클라우드 동기화 지원
+
+### UX 요약
+- MemoDrawer에서 알림 시간 설정 (날짜/시간 피커)
+- 항목 목록에서 알림 아이콘 표시
+- 알림 탭 시 해당 항목으로 이동
+
+### 참고
+- Tauri 호환성 이슈 해결 후 구현 (현재 보류 상태였던 기능)

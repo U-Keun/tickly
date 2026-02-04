@@ -745,10 +745,10 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
   - Real-time auto-reset timer
 
 ### Planned Features (see `docs/roadmap.md` for details)
-- **v0.5.0**: Shared lists (family/team collaboration)
-- **v0.6.0**: iOS widgets
-
-### Notes
-- Notifications on hold due to Tauri compatibility issues
+- **v0.5.0**: Tags (항목에 텍스트 태그 부착, 필터링, 그래프 뷰 기반)
+- **v0.6.0**: Graph view (태그 기반 노드 그래프 시각화)
+- **v0.7.0**: Shared lists (family/team collaboration)
+- **v0.8.0**: iOS widgets
+- **v0.9.0**: Item notifications (항목별 알림, Tauri 호환성 해결 후)
 
 Keep it simple. Ship fast. Iterate based on real user feedback.
