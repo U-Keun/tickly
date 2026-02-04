@@ -1,13 +1,20 @@
-import type { TodoItem, Category, RepeatType } from '../../types';
+import type { TodoItem, Category, RepeatType, Tag } from '../../types';
 import * as categoryApi from '../api/categoryApi';
 import * as todoApi from '../api/todoApi';
 import * as streakApi from '../api/streakApi';
+import * as tagApi from '../api/tagApi';
 import { syncStore } from './syncStore.svelte';
 
 // Core app state
 let items = $state<TodoItem[]>([]);
 let categories = $state<Category[]>([]);
 let selectedCategoryId = $state<number | null>(null);
+
+// Tag state
+let allTags = $state<Tag[]>([]);
+let activeTagFilter = $state<number | null>(null);
+let filteredItems = $state<TodoItem[]>([]);
+let itemTagsMap = $state<Record<number, Tag[]>>({});
 
 // Actions
 async function loadCategories(): Promise<void> {
@@ -88,7 +95,8 @@ async function addItem(
   memo: string | null = null,
   repeatType: RepeatType = 'none',
   repeatDetail: string | null = null,
-  trackStreak: boolean = false
+  trackStreak: boolean = false,
+  tagNames: string[] = []
 ): Promise<void> {
   try {
     const newItem = await todoApi.addItem(text, selectedCategoryId, repeatType, repeatDetail, trackStreak);
@@ -97,6 +105,16 @@ async function addItem(
       newItem.memo = memo;
     }
     items = [...items, newItem];
+    // Attach tags if provided
+    if (tagNames.length > 0) {
+      const tags: Tag[] = [];
+      for (const name of tagNames) {
+        const tag = await tagApi.addTagToItem(newItem.id, name);
+        tags.push(tag);
+      }
+      itemTagsMap = { ...itemTagsMap, [newItem.id]: tags };
+      await loadAllTags();
+    }
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to add item:', error);
@@ -202,6 +220,90 @@ function setCategories(newCategories: Category[]): void {
   categories = newCategories;
 }
 
+// Tag actions
+async function loadAllTags(): Promise<void> {
+  try {
+    allTags = await tagApi.getAllTags();
+  } catch (error) {
+    console.error('Failed to load tags:', error);
+  }
+}
+
+async function loadTagsForItems(itemList: TodoItem[]): Promise<void> {
+  try {
+    const map: Record<number, Tag[]> = {};
+    for (const item of itemList) {
+      map[item.id] = await tagApi.getTagsForItem(item.id);
+    }
+    itemTagsMap = map;
+  } catch (error) {
+    console.error('Failed to load item tags:', error);
+  }
+}
+
+async function addTagToItem(itemId: number, tagName: string): Promise<Tag | null> {
+  try {
+    const tag = await tagApi.addTagToItem(itemId, tagName);
+    // Update local tag maps
+    const currentTags = itemTagsMap[itemId] || [];
+    if (!currentTags.find(t => t.id === tag.id)) {
+      itemTagsMap = { ...itemTagsMap, [itemId]: [...currentTags, tag] };
+    }
+    // Refresh allTags in case a new tag was created
+    await loadAllTags();
+    syncStore.scheduleSync();
+    return tag;
+  } catch (error) {
+    console.error('Failed to add tag to item:', error);
+    return null;
+  }
+}
+
+async function removeTagFromItem(itemId: number, tagId: number): Promise<void> {
+  try {
+    await tagApi.removeTagFromItem(itemId, tagId);
+    const currentTags = itemTagsMap[itemId] || [];
+    itemTagsMap = { ...itemTagsMap, [itemId]: currentTags.filter(t => t.id !== tagId) };
+    syncStore.scheduleSync();
+  } catch (error) {
+    console.error('Failed to remove tag from item:', error);
+  }
+}
+
+async function deleteTagGlobal(tagId: number): Promise<void> {
+  try {
+    await tagApi.deleteTag(tagId);
+    allTags = allTags.filter(t => t.id !== tagId);
+    // Remove from all item tag maps
+    const newMap: Record<number, Tag[]> = {};
+    for (const [id, tags] of Object.entries(itemTagsMap)) {
+      newMap[Number(id)] = tags.filter(t => t.id !== tagId);
+    }
+    itemTagsMap = newMap;
+    if (activeTagFilter === tagId) {
+      activeTagFilter = null;
+      filteredItems = [];
+    }
+    syncStore.scheduleSync();
+  } catch (error) {
+    console.error('Failed to delete tag:', error);
+  }
+}
+
+async function setTagFilter(tagId: number): Promise<void> {
+  try {
+    activeTagFilter = tagId;
+    filteredItems = await tagApi.getItemsByTag(tagId);
+  } catch (error) {
+    console.error('Failed to filter by tag:', error);
+  }
+}
+
+function clearTagFilter(): void {
+  activeTagFilter = null;
+  filteredItems = [];
+}
+
 function goToFirstCategory(): void {
   if (categories.length > 0) {
     selectCategory(categories[0].id);
@@ -220,6 +322,7 @@ async function refreshAll(): Promise<void> {
   }
 
   await loadItems();
+  await loadAllTags();
 }
 
 // Export store with getters and actions
@@ -228,6 +331,12 @@ export const appStore = {
   get items() { return items; },
   get categories() { return categories; },
   get selectedCategoryId() { return selectedCategoryId; },
+
+  // Tag getters (reactive)
+  get allTags() { return allTags; },
+  get activeTagFilter() { return activeTagFilter; },
+  get filteredItems() { return filteredItems; },
+  get itemTagsMap() { return itemTagsMap; },
 
   // Data loading
   loadCategories,
@@ -252,4 +361,13 @@ export const appStore = {
   updateTrackStreak,
   resetAllItems,
   setItems,
+
+  // Tag actions
+  loadAllTags,
+  loadTagsForItems,
+  addTagToItem,
+  removeTagFromItem,
+  deleteTag: deleteTagGlobal,
+  setTagFilter,
+  clearTagFilter,
 };

@@ -9,6 +9,7 @@
     onReset,
     onReorder,
     onStreak,
+    onTagFilter,
     onSettings,
   }: {
     show: boolean;
@@ -16,6 +17,7 @@
     onReset: () => void;
     onReorder: () => void;
     onStreak: () => void;
+    onTagFilter: () => void;
     onSettings: () => void;
   } = $props();
 
@@ -33,6 +35,11 @@
   function handleStreak() {
     menuOpen = false;
     onStreak();
+  }
+
+  function handleTagFilter() {
+    menuOpen = false;
+    onTagFilter();
   }
 
   function handleSettings() {
@@ -101,6 +108,22 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+        </svg>
+      </button>
+    {/if}
+
+    <!-- Tag Filter Button -->
+    {#if menuOpen}
+      <button
+        onclick={handleTagFilter}
+        class="w-12 h-12 bg-paper text-ink-muted rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+        style="border: 1px solid var(--color-border);"
+        title={i18n.t('tagFilter')}
+        in:fly={{ x: 50, duration: 200, delay: 25, easing: cubicOut }}
+        out:fly={{ x: 50, duration: 200, delay: 25, easing: cubicOut }}
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
         </svg>
       </button>
     {/if}

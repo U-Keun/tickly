@@ -28,6 +28,7 @@
 - 📊 **자동 정렬** - 완료된 항목이 자동으로 아래로 이동
 - 🔄 **반복 규칙** - 매일/매주/매월 자동 재활성화 스케줄링
 - 🔥 **스트릭 히트맵** - 항목별 GitHub 스타일 달성 기록 시각화
+- 🏷️ **태그** - 항목에 #태그 부착, 태그 기반 필터링, 클라우드 동기화
 - ☁️ **클라우드 동기화** - Apple/Google 로그인으로 멀티 디바이스 실시간 연동
 - 🎨 **테마 커스터마이징** - 5가지 프리셋 + 커스텀 색상 지원
 - 🔤 **폰트 커스터마이징** - 다양한 폰트 선택 가능
@@ -145,8 +146,10 @@ Tickly/
 │   │       ├── +page.svelte          # 설정 메인 페이지
 │   │       ├── theme/
 │   │       │   └── +page.svelte      # 테마 설정 페이지
-│   │       └── language/
-│   │           └── +page.svelte      # 언어 설정 페이지
+│   │       ├── language/
+│   │       │   └── +page.svelte      # 언어 설정 페이지
+│   │       └── tags/
+│   │           └── +page.svelte      # 태그 관리 페이지
 │   ├── components/                   # 재사용 가능한 컴포넌트
 │   │   ├── ModalWrapper.svelte       # 공통 모달 레이아웃
 │   │   ├── SettingsLayout.svelte     # 공통 설정 페이지 레이아웃
@@ -158,6 +161,9 @@ Tickly/
 │   │   ├── CategoryTabs.svelte       # 카테고리 탭
 │   │   ├── StreakModal.svelte        # 스트릭 히트맵 모달
 │   │   ├── StreakHeatmap.svelte      # 히트맵 그리드 컴포넌트
+│   │   ├── TagChip.svelte           # #태그 텍스트 표시
+│   │   ├── TagInput.svelte          # 태그 입력 + 자동완성
+│   │   ├── TagFilterModal.svelte    # 태그 필터 선택 모달
 │   │   └── ...
 │   ├── lib/
 │   │   ├── api/                      # API 레이어 (Tauri invoke 래퍼)
@@ -167,7 +173,8 @@ Tickly/
 │   │   │   ├── streakApi.ts          # Streak API
 │   │   │   ├── authApi.ts            # Auth API (로그인/로그아웃)
 │   │   │   ├── syncApi.ts            # Sync API (동기화)
-│   │   │   └── realtimeApi.ts        # Realtime API (실시간 연결)
+│   │   │   ├── realtimeApi.ts        # Realtime API (실시간 연결)
+│   │   │   └── tagApi.ts             # Tag API (태그 CRUD)
 │   │   ├── stores/                   # Svelte 5 reactive stores
 │   │   │   ├── appStore.svelte.ts    # 앱 상태 (카테고리, 항목)
 │   │   │   ├── modalStore.svelte.ts  # 모달 상태 관리
@@ -187,7 +194,8 @@ Tickly/
 │   │   │   ├── category.rs           # Category 구조체
 │   │   │   ├── todo_item.rs          # TodoItem 구조체
 │   │   │   ├── completion_log.rs     # CompletionLog 구조체
-│   │   │   └── sync.rs               # Sync 관련 구조체 (AuthSession, SyncResult 등)
+│   │   │   ├── sync.rs               # Sync 관련 구조체 (AuthSession, SyncResult 등)
+│   │   │   └── tag.rs                # Tag, TodoTag 구조체
 │   │   ├── repository/               # 데이터 접근 레이어
 │   │   │   ├── database.rs           # DB 초기화
 │   │   │   ├── migration.rs          # 스키마 마이그레이션
@@ -196,7 +204,9 @@ Tickly/
 │   │   │   ├── settings_repo.rs      # Settings CRUD
 │   │   │   ├── completion_log_repo.rs # CompletionLog CRUD
 │   │   │   ├── auth_repo.rs          # Auth 세션 CRUD
-│   │   │   └── sync_repo.rs          # Sync 메타데이터 CRUD
+│   │   │   ├── sync_repo.rs          # Sync 메타데이터 CRUD
+│   │   │   ├── tag_repo.rs           # Tag CRUD
+│   │   │   └── todo_tag_repo.rs      # TodoTag (조인) CRUD
 │   │   ├── service/                  # 비즈니스 로직 레이어
 │   │   │   ├── category_service.rs   # Category 비즈니스 로직
 │   │   │   ├── todo_service.rs       # Todo 비즈니스 로직
@@ -206,7 +216,8 @@ Tickly/
 │   │   │   ├── auth_service.rs       # 인증 서비스
 │   │   │   ├── sync_service.rs       # 동기화 서비스
 │   │   │   ├── realtime_service.rs   # 실시간 동기화 (WebSocket)
-│   │   │   └── supabase_client.rs    # Supabase REST API 클라이언트
+│   │   │   ├── supabase_client.rs    # Supabase REST API 클라이언트
+│   │   │   └── tag_service.rs        # 태그 비즈니스 로직
 │   │   └── commands/                 # Tauri 커맨드 핸들러
 │   │       ├── category_commands.rs  # Category 커맨드
 │   │       ├── todo_commands.rs      # Todo 커맨드
@@ -214,7 +225,8 @@ Tickly/
 │   │       ├── streak_commands.rs    # Streak 커맨드
 │   │       ├── auth_commands.rs      # Auth 커맨드
 │   │       ├── sync_commands.rs      # Sync 커맨드
-│   │       └── realtime_commands.rs  # Realtime 커맨드
+│   │       ├── realtime_commands.rs  # Realtime 커맨드
+│   │       └── tag_commands.rs       # Tag 커맨드
 │   └── tauri.conf.json               # Tauri 설정
 ├── CLAUDE.md                         # 프로젝트 가이드
 └── README.md                         # 이 파일

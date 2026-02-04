@@ -8,6 +8,7 @@ let showAddItemModal = $state(false);
 let showReorderModal = $state(false);
 let showReorderCategoriesModal = $state(false);
 let showStreakModal = $state(false);
+let showTagFilterModal = $state(false);
 let selectedCategoryForMenu = $state<Category | null>(null);
 
 // Reset confirm modal actions
@@ -55,6 +56,15 @@ function closeStreakModal(): void {
   showStreakModal = false;
 }
 
+// Tag filter modal actions
+function openTagFilterModal(): void {
+  showTagFilterModal = true;
+}
+
+function closeTagFilterModal(): void {
+  showTagFilterModal = false;
+}
+
 // Category menu modal actions
 function openCategoryMenu(category: Category): void {
   selectedCategoryForMenu = category;
@@ -86,6 +96,7 @@ function closeAllModals(): void {
   showReorderModal = false;
   showReorderCategoriesModal = false;
   showStreakModal = false;
+  showTagFilterModal = false;
   selectedCategoryForMenu = null;
 }
 
@@ -99,6 +110,7 @@ export const modalStore = {
   get showReorderModal() { return showReorderModal; },
   get showReorderCategoriesModal() { return showReorderCategoriesModal; },
   get showStreakModal() { return showStreakModal; },
+  get showTagFilterModal() { return showTagFilterModal; },
   get selectedCategoryForMenu() { return selectedCategoryForMenu; },
 
   // Reset confirm modal
@@ -120,6 +132,10 @@ export const modalStore = {
   // Streak modal
   openStreakModal,
   closeStreakModal,
+
+  // Tag filter modal
+  openTagFilterModal,
+  closeTagFilterModal,
 
   // Category menu modal
   openCategoryMenu,

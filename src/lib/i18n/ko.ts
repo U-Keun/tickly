@@ -165,6 +165,21 @@ export const ko = {
   realtimeReconnecting: '재연결 중...',
   realtimeDisconnected: '연결 안됨',
 
+  // Tags
+  tags: '태그',
+  tagFilter: '태그 필터',
+  tagAdd: '태그 추가',
+  tagPlaceholder: '태그 입력...',
+  tagEmpty: '태그가 없습니다',
+  tagFilterClear: '필터 해제',
+  tagFilterActive: '태그 필터 적용 중',
+  tagManage: '태그 관리',
+  tagDeleteConfirmTemplate: (name: string) =>
+    `"${name}" 태그를 삭제하시겠습니까?\n모든 항목에서 제거됩니다.`,
+
+  // Advanced settings
+  advancedSettings: '상세 설정',
+
   // Common
   saving: '저장 중...',
 };

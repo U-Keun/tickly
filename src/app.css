@@ -147,6 +147,46 @@ html, body {
   /* wrapper for flip animation */
 }
 
+.tag-filter-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--color-accent-sky);
+  flex-shrink: 0;
+}
+
+.tag-filter-banner .filter-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+.tag-filter-banner .filter-icon {
+  flex-shrink: 0;
+}
+
+.tag-filter-banner .filter-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-ink-muted);
+  border-radius: 50%;
+}
+
+.tag-filter-banner .filter-clear-btn:hover {
+  background: var(--color-mist);
+}
+
 @keyframes ios_focus_opacity_blink {
   0% { opacity: 0; }
   100% { opacity: 1; }

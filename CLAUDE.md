@@ -63,13 +63,18 @@ Tickly/
 │   │       │   └── +page.svelte      # Theme customization page
 │   │       ├── language/
 │   │       │   └── +page.svelte      # Language settings page
-│   │       └── account/
-│   │           └── +page.svelte      # Cloud sync & account page
+│   │       ├── account/
+│   │       │   └── +page.svelte      # Cloud sync & account page
+│   │       └── tags/
+│   │           └── +page.svelte      # Tag management page
 │   ├── components/                   # Reusable Svelte components
 │   │   ├── ModalWrapper.svelte       # Common modal layout
 │   │   ├── SettingsLayout.svelte     # Common settings page layout
 │   │   ├── BottomNav.svelte          # Bottom navigation bar
-│   │   ├── FloatingActions.svelte    # FAB buttons (add, reset)
+│   │   ├── FloatingActions.svelte    # FAB buttons (add, reset, tag filter)
+│   │   ├── TagChip.svelte           # #tag text display
+│   │   ├── TagInput.svelte          # Tag input with autocomplete
+│   │   ├── TagFilterModal.svelte    # Tag filter selection modal
 │   │   └── ...                       # Other components
 │   ├── lib/
 │   │   ├── api/                      # API Layer (Tauri invoke wrappers)
@@ -80,7 +85,8 @@ Tickly/
 │   │   │   ├── settingsApi.ts        # Settings API functions
 │   │   │   ├── streakApi.ts          # Streak tracking API functions
 │   │   │   ├── authApi.ts            # Auth API functions
-│   │   │   └── syncApi.ts            # Sync API functions
+│   │   │   ├── syncApi.ts            # Sync API functions
+│   │   │   └── tagApi.ts             # Tag API functions
 │   │   ├── stores/                   # Svelte 5 reactive stores
 │   │   │   ├── index.ts              # Re-exports
 │   │   │   ├── appStore.svelte.ts    # App state (categories, items)
@@ -105,7 +111,8 @@ Tickly/
 │   │   │   ├── mod.rs
 │   │   │   ├── category.rs           # Category struct
 │   │   │   ├── todo_item.rs          # TodoItem struct
-│   │   │   └── completion_log.rs     # CompletionLog, HeatmapData structs
+│   │   │   ├── completion_log.rs     # CompletionLog, HeatmapData structs
+│   │   │   └── tag.rs                # Tag, TodoTag structs
 │   │   ├── repository/               # Data access layer
 │   │   │   ├── mod.rs
 │   │   │   ├── database.rs           # DB initialization
@@ -113,7 +120,9 @@ Tickly/
 │   │   │   ├── category_repo.rs      # Category CRUD
 │   │   │   ├── todo_repo.rs          # Todo CRUD
 │   │   │   ├── settings_repo.rs      # Settings CRUD
-│   │   │   └── completion_log_repo.rs # Completion log CRUD
+│   │   │   ├── completion_log_repo.rs # Completion log CRUD
+│   │   │   ├── tag_repo.rs           # Tag CRUD + sync
+│   │   │   └── todo_tag_repo.rs      # TodoTag join table CRUD + sync
 │   │   ├── service/                  # Business logic layer
 │   │   │   ├── mod.rs
 │   │   │   ├── category_service.rs   # Category business logic
@@ -124,7 +133,8 @@ Tickly/
 │   │   │   ├── auth_service.rs       # Auth (Apple/Google sign in)
 │   │   │   ├── oauth_service.rs      # OAuth PKCE flow
 │   │   │   ├── sync_service.rs       # Cloud sync (push/pull)
-│   │   │   └── supabase_client.rs    # Supabase REST API client
+│   │   │   ├── supabase_client.rs    # Supabase REST API client
+│   │   │   └── tag_service.rs        # Tag business logic
 │   │   └── commands/                 # Tauri command handlers
 │   │       ├── mod.rs
 │   │       ├── category_commands.rs  # Category Tauri commands
@@ -132,7 +142,8 @@ Tickly/
 │   │       ├── settings_commands.rs  # Settings Tauri commands
 │   │       ├── streak_commands.rs    # Streak Tauri commands
 │   │       ├── auth_commands.rs      # Auth Tauri commands
-│   │       └── sync_commands.rs      # Sync Tauri commands
+│   │       ├── sync_commands.rs      # Sync Tauri commands
+│   │       └── tag_commands.rs       # Tag Tauri commands
 │   └── tauri.conf.json               # Tauri configuration
 ├── static/                           # Static assets (IMPORTANT: use for iOS)
 └── tailwind.config.ts                # TailwindCSS configuration
@@ -244,6 +255,15 @@ const items = await invoke('get_items', { categoryId });
 - `getTrackedItems()` - Get all items with streak tracking enabled
 - `getItemHeatmapData(itemId)` - Get heatmap data for a specific item
 - `updateTrackStreak(id, trackStreak)` - Enable/disable streak tracking for an item
+
+**tagApi.ts**:
+- `getAllTags()` - Get all tags
+- `createTag(name)` - Create a new tag
+- `deleteTag(id)` - Delete a tag
+- `addTagToItem(itemId, tagName)` - Add tag to item (auto-creates tag if needed)
+- `removeTagFromItem(itemId, tagId)` - Remove tag from item
+- `getTagsForItem(itemId)` - Get all tags for an item
+- `getItemsByTag(tagId)` - Get all items with a specific tag
 
 ## Rust Backend Architecture
 
@@ -511,6 +531,15 @@ await appStore.loadCategories();
 await appStore.addItem(text, memo);
 await appStore.toggleItem(id);
 appStore.selectCategory(id);
+
+// Tags
+appStore.allTags           // Tag[]
+appStore.activeTagFilter   // number | null
+appStore.filteredItems     // TodoItem[] (filtered by tag)
+await appStore.addTagToItem(itemId, tagName);
+await appStore.removeTagFromItem(itemId, tagId);
+appStore.setTagFilter(tagId);
+appStore.clearTagFilter();
 ```
 
 ### modalStore
@@ -524,6 +553,7 @@ import { modalStore } from '$lib/stores';
 modalStore.showAddItemModal
 modalStore.showResetConfirm
 modalStore.showCategoryMenu
+modalStore.showTagFilterModal
 
 // Actions
 modalStore.openAddItemModal();
@@ -576,7 +606,7 @@ Cloud sync uses Supabase (PostgreSQL + REST API) with the following flow:
 
 ### Sync Fields
 
-All syncable entities (todos, categories) have:
+All syncable entities (todos, categories, tags, todo_tags) have:
 - `sync_id`: Supabase UUID (NULL if not yet synced)
 - `created_at`, `updated_at`: ISO 8601 timestamps
 - `sync_status`: 'pending' | 'synced' | 'deleted'
@@ -633,7 +663,7 @@ All syncable entities (todos, categories) have:
 
 **동작 방식:**
 1. 로그인 시 WebSocket 연결 (`wss://xxx.supabase.co/realtime/v1/websocket`)
-2. `postgres_changes` 구독 (todos, categories, completion_logs 테이블)
+2. `postgres_changes` 구독 (todos, categories, completion_logs, tags, todo_tags 테이블)
 3. 원격 변경 수신 시 자동 sync() 호출 → 로컬 DB 갱신 → UI 업데이트
 4. 로컬 변경 시 2초 디바운스 후 자동 sync() 호출 → 서버에 push
 
@@ -710,6 +740,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - ✅ Cloud sync (Supabase) - 인증, 실시간 동기화, 스트릭 동기화 완료
 - ✅ Auto-reset timer (설정된 시간에 실시간 초기화)
 - ✅ Realtime sync (Supabase Realtime WebSocket) - 멀티 디바이스 실시간 동기화
+- ✅ Tags (#태그 부착, 필터링, 설정에서 관리, 클라우드 동기화)
 
 ### UI/UX
 - ✅ Theme customization (5 presets + custom colors)
@@ -720,6 +751,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - ✅ Common layout components (SettingsLayout, ModalWrapper)
 - ✅ Bottom navigation bar
 - ✅ Floating action buttons
+- ✅ Collapsible advanced settings (repeat, streak, tags hidden behind toggle)
 
 ### Architecture
 - ✅ Layered backend (Repository → Service → Commands)
@@ -743,9 +775,14 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
   - Auto-sync on local changes (2초 디바운스)
   - Login persistence (auto refresh on session expiry)
   - Real-time auto-reset timer
+- **v0.5.0**: ✅ Tags
+  - #태그 부착/제거 (항목 추가 시, MemoDrawer 편집 시)
+  - 태그 기반 필터링 (FloatingActions → TagFilterModal)
+  - 설정 > 태그 관리 (전체 조회/삭제)
+  - 클라우드 동기화 (tags, todo_tags push/pull + Realtime 구독)
+  - 상세 설정 접기/펼치기 UI (반복, 스트릭, 태그를 collapsible section으로)
 
 ### Planned Features (see `docs/roadmap.md` for details)
-- **v0.5.0**: Tags (항목에 텍스트 태그 부착, 필터링, 그래프 뷰 기반)
 - **v0.6.0**: Graph view (태그 기반 노드 그래프 시각화)
 - **v0.7.0**: Shared lists (family/team collaboration)
 - **v0.8.0**: iOS widgets

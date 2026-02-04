@@ -1,11 +1,12 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import type { TodoItem } from '../types';
+  import type { TodoItem, Tag } from '../types';
   import type { Snippet } from 'svelte';
 
   interface Props {
     item: TodoItem;
+    itemTags?: Tag[];
     disabled?: boolean;
     longPressMs?: number;
     onToggle: (id: number) => void;
@@ -16,6 +17,7 @@
 
   let {
     item,
+    itemTags = [],
     disabled = false,
     longPressMs = 350,
     onToggle,
@@ -23,6 +25,9 @@
     onOpenChange,
     drawerContent
   }: Props = $props();
+
+  let displayTags = $derived(itemTags.slice(0, 2));
+  let extraTagCount = $derived(Math.max(0, itemTags.length - 2));
 
   // Local state
   let open = $state(false);
@@ -87,6 +92,16 @@
             <path d="M3 12.2v-2a4 4 0 0 1 4-4h12.8M7 21.9l-4-4 4-4"></path>
             <path d="M21 11.8v2a4 4 0 0 1-4 4H4.2"></path>
           </svg>
+        </span>
+      {/if}
+      {#if displayTags.length > 0}
+        <span class="tag-badges">
+          {#each displayTags as tag (tag.id)}
+            <span class="tag-badge">#{tag.name}</span>
+          {/each}
+          {#if extraTagCount > 0}
+            <span class="tag-badge tag-extra">+{extraTagCount}</span>
+          {/if}
         </span>
       {/if}
     </div>
@@ -186,6 +201,30 @@
     display: flex;
     align-items: center;
     opacity: 0.8;
+  }
+
+  .tag-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .tag-badge {
+    display: inline-block;
+    padding: 0;
+    background: none;
+    font-size: 10px;
+    color: var(--color-ink-muted);
+    white-space: nowrap;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+
+  .tag-extra {
+    color: var(--color-ink-muted);
   }
 
   .text {

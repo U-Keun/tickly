@@ -32,6 +32,15 @@ export interface TodoItem {
   sync_status?: SyncStatus;
 }
 
+export interface Tag {
+  id: number;
+  name: string;
+  sync_id?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  sync_status?: SyncStatus;
+}
+
 export interface ThemeColors {
   paper: string;
   canvas: string;
