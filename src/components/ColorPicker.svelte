@@ -7,7 +7,7 @@
 
   let { label, value, onChange }: Props = $props();
 
-  let hexInput = $state(value);
+  let hexInput = $state('');
 
   $effect(() => {
     hexInput = value;

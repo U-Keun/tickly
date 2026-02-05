@@ -68,6 +68,7 @@ impl CategoryRepository {
         }
     }
 
+    #[allow(dead_code)]
     pub fn get_by_sync_id(
         conn: &Connection,
         sync_id: &str,

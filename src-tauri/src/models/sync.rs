@@ -20,6 +20,7 @@ impl SyncStatus {
         }
     }
 
+    #[allow(dead_code)]
     pub fn to_str(&self) -> &'static str {
         match self {
             SyncStatus::Pending => "pending",

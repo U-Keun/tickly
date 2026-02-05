@@ -1,4 +1,5 @@
 import * as authApi from '$lib/api/authApi';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { syncStore } from './syncStore.svelte';
 import type { AuthSession, UserProfile } from '../../types';
 
@@ -120,7 +121,6 @@ class AuthStore {
       });
 
       // 3. Open the OAuth URL in browser
-      const { openUrl } = await import('@tauri-apps/plugin-opener');
       await openUrl(oauthUrl);
 
       // 4. Wait for the callback (handled by deep link listener)

@@ -3,7 +3,7 @@ use crate::models::{
     RealtimeStatus,
 };
 use crate::service::realtime_messages::{
-    PhoenixMessage, PostgresChangePayload, PostgresChangesEventPayload, SystemReplyPayload,
+    PhoenixMessage, PostgresChangesEventPayload, SystemReplyPayload,
 };
 use futures_util::{SinkExt, StreamExt};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};

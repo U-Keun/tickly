@@ -111,6 +111,7 @@
       {#each categories as category (category.id)}
         {#if editingCategoryId === category.id}
           <!-- Editing Mode -->
+          <!-- svelte-ignore a11y_autofocus -->
           <input
             use:iosFocusFix
             bind:value={editingCategoryName}
@@ -143,6 +144,7 @@
 
       <!-- Add Category Button or Input -->
       {#if isAddingCategory}
+        <!-- svelte-ignore a11y_autofocus -->
         <input
           use:iosFocusFix
           bind:value={newCategoryName}

@@ -104,6 +104,7 @@ pub struct RemoteTodoTag {
 }
 
 #[derive(Debug, Serialize)]
+#[allow(dead_code)]
 struct OAuthSignInRequest {
     id_token: String,
     nonce: Option<String>,

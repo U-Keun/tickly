@@ -96,6 +96,7 @@ impl TodoRepository {
     }
 
     /// Get all todos including deleted ones (for sync purposes)
+    #[allow(dead_code)]
     pub fn get_all_including_deleted(conn: &Connection) -> Result<Vec<TodoItem>, rusqlite::Error> {
         let sql = format!(
             "SELECT {} FROM todos ORDER BY display_order ASC",
@@ -126,6 +127,7 @@ impl TodoRepository {
         Ok(items)
     }
 
+    #[allow(dead_code)]
     pub fn get_by_sync_id(
         conn: &Connection,
         sync_id: &str,

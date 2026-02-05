@@ -175,6 +175,7 @@
             class="toggle-switch"
             class:active={syncStore.isEnabled}
             onclick={handleToggleSync}
+            aria-label="Toggle sync"
           >
             <span class="toggle-thumb"></span>
           </button>

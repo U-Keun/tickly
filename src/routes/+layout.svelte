@@ -5,8 +5,11 @@
   import { beforeNavigate } from '$app/navigation';
   import { cubicOut } from 'svelte/easing';
   import { onMount, onDestroy } from 'svelte';
+  import type { Snippet } from 'svelte';
   import { authStore, handleOAuthCallback } from '$lib/stores/authStore.svelte';
   import { syncStore } from '$lib/stores/syncStore.svelte';
+
+  let { children }: { children: Snippet } = $props();
 
   let direction = $state(1); // 1: 오른쪽에서, -1: 왼쪽에서
   let hasNavigated = $state(false); // 네비게이션 발생 여부
@@ -118,7 +121,7 @@
     class="page-wrapper"
     in:transitionIn
   >
-    <slot />
+    {@render children()}
   </div>
 {/key}
 

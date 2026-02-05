@@ -144,6 +144,7 @@
             class:active={trackStreak}
             onclick={() => trackStreak = !trackStreak}
             aria-pressed={trackStreak}
+            aria-label="Toggle streak tracking"
           >
             <span class="toggle-track">
               <span class="toggle-thumb"></span>

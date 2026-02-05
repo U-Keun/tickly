@@ -14,6 +14,7 @@ impl TodoService {
         TodoRepository::get_by_category(conn, category_id)
     }
 
+    #[allow(dead_code)]
     pub fn get_item(conn: &Connection, id: i64) -> Result<Option<TodoItem>, rusqlite::Error> {
         TodoRepository::get_by_id(conn, id)
     }

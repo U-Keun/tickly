@@ -141,6 +141,7 @@ impl TodoTagRepository {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn mark_synced(
         conn: &Connection,
         todo_id: i64,
@@ -153,6 +154,7 @@ impl TodoTagRepository {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn delete(
         conn: &Connection,
         todo_id: i64,

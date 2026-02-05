@@ -27,6 +27,7 @@ impl SyncRepository {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn delete_metadata(conn: &Connection, key: &str) -> Result<(), rusqlite::Error> {
         conn.execute("DELETE FROM sync_metadata WHERE key = ?1", params![key])?;
         Ok(())

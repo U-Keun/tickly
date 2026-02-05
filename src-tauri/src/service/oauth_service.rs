@@ -6,6 +6,7 @@ use tokio::sync::oneshot;
 use super::supabase_client::{SupabaseAuthResponse, SupabaseClient};
 
 /// OAuth state for managing the PKCE flow
+#[allow(dead_code)]
 pub struct OAuthState {
     pub code_verifier: String,
     pub redirect_url: String,

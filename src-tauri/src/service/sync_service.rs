@@ -52,6 +52,7 @@ struct PendingTagSync {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct PendingTodoTagSync {
     todo_id: i64,
     tag_id: i64,
@@ -63,6 +64,7 @@ struct PendingTodoTagSync {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct LocalCompletionLogSync {
     item_id: i64,
     todo_sync_id: String,
@@ -282,6 +284,7 @@ impl SyncService {
             .collect())
     }
 
+    #[allow(dead_code)]
     fn collect_pending_todos(conn: &Connection) -> Result<Vec<PendingTodoSync>, String> {
         let cat_sync_map: HashMap<i64, String> = CategoryRepository::get_all(conn)
             .map_err(|e| e.to_string())?

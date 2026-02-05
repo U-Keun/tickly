@@ -1,7 +1,6 @@
 use tauri::State;
 
 use crate::models::{SyncResult, SyncStatusInfo};
-use crate::repository::{CategoryRepository, TodoRepository};
 use crate::service::{AuthService, SyncService};
 use crate::AppState;
 

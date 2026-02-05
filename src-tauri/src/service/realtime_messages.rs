@@ -108,6 +108,7 @@ pub struct PostgresChangesEventPayload {
 
 /// Postgres change payload received from Supabase
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct PostgresChangePayload {
     pub schema: String,
     pub table: String,
@@ -121,6 +122,7 @@ pub struct PostgresChangePayload {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct ColumnInfo {
     pub name: String,
     #[serde(rename = "type")]
@@ -136,6 +138,7 @@ pub struct SystemReplyPayload {
 
 impl PostgresChangesConfig {
     /// Create config for subscribing to all changes on a table
+    #[allow(dead_code)]
     pub fn all_changes(table: &str, user_id: &str) -> Self {
         Self {
             event: "*".to_string(),
@@ -148,6 +151,7 @@ impl PostgresChangesConfig {
 
 impl RealtimeSubscribePayload {
     /// Create payload for subscribing to postgres changes
+    #[allow(dead_code)]
     pub fn for_tables(tables: &[&str], user_id: &str) -> Self {
         let postgres_changes = tables
             .iter()

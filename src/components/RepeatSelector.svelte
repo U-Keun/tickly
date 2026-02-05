@@ -14,7 +14,7 @@
   let { repeatType, repeatDetail, onRepeatTypeChange, onRepeatDetailChange }: Props = $props();
 
   // Local state for controlling transitions
-  let localType = $state<RepeatType>(repeatType);
+  let localType = $state<RepeatType>('none');
 
   // Sync local state with prop
   $effect(() => {
@@ -70,7 +70,7 @@
 </script>
 
 <div class="repeat-selector">
-  <label class="label">{i18n.t('repeatLabel')}</label>
+  <span class="label">{i18n.t('repeatLabel')}</span>
 
   <div class="type-buttons">
     {#each repeatTypes as rt}

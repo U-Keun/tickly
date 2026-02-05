@@ -9,6 +9,7 @@
   let { name, removable = false, onclick, onRemove }: Props = $props();
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <span
   class="tag-chip"
   class:clickable={!!onclick}
