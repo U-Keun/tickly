@@ -188,10 +188,6 @@
               <span class="status-value">{syncStore.formatLastSyncedAt() || i18n.t('never')}</span>
             </div>
             <div class="status-row">
-              <span class="status-label">{i18n.t('pendingChanges')}</span>
-              <span class="status-value">{syncStore.pendingCount}</span>
-            </div>
-            <div class="status-row">
               <span class="status-label">{i18n.t('realtimeSync')}</span>
               <span class="status-value realtime-status" class:connected={syncStore.realtimeState === 'connected'} class:connecting={syncStore.realtimeState === 'connecting' || syncStore.realtimeState === 'reconnecting'}>
                 {#if syncStore.realtimeState === 'connected'}

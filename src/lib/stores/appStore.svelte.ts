@@ -231,7 +231,7 @@ async function loadAllTags(): Promise<void> {
 
 async function loadTagsForItems(itemList: TodoItem[]): Promise<void> {
   try {
-    const map: Record<number, Tag[]> = {};
+    const map: Record<number, Tag[]> = { ...itemTagsMap };
     for (const item of itemList) {
       map[item.id] = await tagApi.getTagsForItem(item.id);
     }

@@ -22,9 +22,15 @@
   } = $props();
 
   let menuOpen = $state(false);
+  let collapsed = $state(false);
 
   function toggleMenu() {
     menuOpen = !menuOpen;
+  }
+
+  function toggleCollapse() {
+    collapsed = !collapsed;
+    if (collapsed) menuOpen = false;
   }
 
   function handleReorder() {
@@ -48,12 +54,24 @@
   }
 </script>
 
-{#if show}
+<!-- Collapse/Expand Toggle (always visible) -->
+<button
+  onclick={toggleCollapse}
+  class="collapse-toggle"
+  class:collapsed
+  aria-label={collapsed ? 'Show buttons' : 'Hide buttons'}
+>
+  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+  </svg>
+</button>
+
+{#if show && !collapsed}
 <div
   class="fixed right-6 flex flex-col gap-3 items-end z-10"
-  style="bottom: 14px;"
-  in:fly={{ y: 100, duration: 400, easing: cubicOut }}
-  out:fly={{ y: 100, duration: 300, easing: cubicOut }}
+  style="bottom: 58px;"
+  in:fly={{ y: 40, duration: 300, easing: cubicOut }}
+  out:fly={{ y: 40, duration: 200, easing: cubicOut }}
 >
   <!-- Add Button -->
   <button
@@ -164,3 +182,28 @@
   </div>
 </div>
 {/if}
+
+<style>
+  .collapse-toggle {
+    position: fixed;
+    right: 24px;
+    bottom: 14px;
+    z-index: 10;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: var(--color-paper);
+    color: var(--color-ink-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+  }
+
+  .collapse-toggle.collapsed {
+    transform: rotate(180deg);
+  }
+</style>

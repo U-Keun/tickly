@@ -32,6 +32,10 @@
   // Local state
   let open = $state(false);
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let pressStartX = 0;
+  let pressStartY = 0;
+
+  const MOVE_CANCEL_THRESHOLD = 10; // px of movement to cancel long-press
 
   function toggleCheck() {
     if (disabled) return;
@@ -43,12 +47,23 @@
     onOpenChange?.(item.id, false);
   }
 
-  function startLongPress(_e: PointerEvent) {
+  function startLongPress(e: PointerEvent) {
     if (disabled) return;
+    pressStartX = e.clientX;
+    pressStartY = e.clientY;
     timer = setTimeout(() => {
       open = !open;
       onOpenChange?.(item.id, open);
     }, longPressMs);
+  }
+
+  function handlePointerMove(e: PointerEvent) {
+    if (!timer) return;
+    const dx = e.clientX - pressStartX;
+    const dy = e.clientY - pressStartY;
+    if (Math.abs(dx) > MOVE_CANCEL_THRESHOLD || Math.abs(dy) > MOVE_CANCEL_THRESHOLD) {
+      cancelLongPress();
+    }
   }
 
   function cancelLongPress() {
@@ -63,6 +78,7 @@
   class:done={item.done}
   role="listitem"
   onpointerdown={startLongPress}
+  onpointermove={handlePointerMove}
   onpointerup={cancelLongPress}
   onpointercancel={cancelLongPress}
   onpointerleave={cancelLongPress}
