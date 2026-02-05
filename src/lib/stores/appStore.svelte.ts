@@ -44,6 +44,7 @@ async function loadItems(): Promise<void> {
 async function selectCategory(categoryId: number): Promise<void> {
   selectedCategoryId = categoryId;
   await loadItems();
+  await loadTagsForItems(items);
 }
 
 async function addCategory(name: string): Promise<void> {
