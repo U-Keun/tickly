@@ -154,16 +154,16 @@ CREATE POLICY "Users can CRUD own completion_logs" ON completion_logs FOR ALL US
 - 마지막 동기화 시간, 대기 중인 변경사항 수 표시
 - "지금 동기화" 버튼 (수동 동기화 옵션)
 
-## 0.5.0 — 태그
+## 0.5.0 — 태그 ✅ 완료
 **목표:** 항목에 태그를 붙여 분류하고, 향후 그래프 뷰의 기반 데이터로 활용.
 
-### MVP 범위
-- 태그 대상: 할 일 항목(todo)에만 적용
-- 태그 형식: 텍스트 전용 (색상 없음)
-- 태그 관리: 생성, 삭제
-- 항목당 복수 태그 가능
-- 태그 기반 필터링: 특정 태그가 붙은 항목만 카테고리 횡단 조회
-- 클라우드 동기화 지원
+### 구현 완료
+- ✅ 항목에 #태그 부착/제거 (항목 추가 시 + MemoDrawer 편집 시)
+- ✅ 태그 자동완성 (기존 태그 드롭다운 + 새 태그 자동 생성)
+- ✅ 태그 기반 필터링 (FloatingActions → TagFilterModal → 카테고리 횡단 조회)
+- ✅ 태그 관리 (설정 > 태그 관리에서 전체 태그 조회/삭제)
+- ✅ 클라우드 동기화 (tags, todo_tags push/pull + Realtime 구독)
+- ✅ 상세 설정 접기/펼치기 UI (반복, 스트릭, 태그를 collapsible section으로 정리)
 
 ### 데이터 모델 변경
 - 새 테이블 `tags`:
@@ -206,10 +206,10 @@ CREATE POLICY "Users can CRUD own todo_tags" ON todo_tags FOR ALL USING (auth.ui
 ```
 
 ### UX 요약
-- MemoDrawer에서 태그 추가/제거 (기존 태그 선택 또는 새 태그 입력)
-- 항목 목록에서 태그 칩 표시 (항목명 아래 또는 옆)
-- 태그 필터: 상단 또는 FloatingActions에서 태그 선택 → 해당 태그 항목만 표시
-- 태그 관리: 설정에서 전체 태그 목록 확인/삭제
+- AddItemModal / MemoDrawer 상세 설정(접기/펼치기)에서 태그 추가/제거
+- 항목 목록에서 #태그 텍스트 표시 (최대 2개 + "+N")
+- FloatingActions → 태그 필터 모달 → 해당 태그 항목만 표시
+- 설정 > 태그 관리에서 전체 태그 조회/삭제
 
 ### 향후 확장
 - **그래프 뷰**: v0.6.0에서 태그 기반 노드 그래프 시각화 구현 예정

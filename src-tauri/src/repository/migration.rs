@@ -13,6 +13,8 @@ pub fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
     migrate_add_sync_fields(conn)?;
     migrate_create_auth_session(conn)?;
     migrate_create_sync_metadata(conn)?;
+    migrate_create_tags(conn)?;
+    migrate_create_todo_tags(conn)?;
     Ok(())
 }
 
@@ -331,6 +333,46 @@ fn migrate_create_sync_metadata(conn: &Connection) -> Result<(), rusqlite::Error
             key TEXT PRIMARY KEY,
             value TEXT
         )",
+        [],
+    )?;
+    Ok(())
+}
+
+fn migrate_create_tags(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            sync_id TEXT,
+            created_at TEXT,
+            updated_at TEXT,
+            sync_status TEXT DEFAULT 'pending'
+        )",
+        [],
+    )?;
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_tags_sync_id ON tags(sync_id)",
+        [],
+    )?;
+    Ok(())
+}
+
+fn migrate_create_todo_tags(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS todo_tags (
+            todo_id INTEGER NOT NULL,
+            tag_id INTEGER NOT NULL,
+            sync_id TEXT,
+            created_at TEXT,
+            sync_status TEXT DEFAULT 'pending',
+            PRIMARY KEY (todo_id, tag_id),
+            FOREIGN KEY (todo_id) REFERENCES todos(id) ON DELETE CASCADE,
+            FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+        )",
+        [],
+    )?;
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_todo_tags_sync_id ON todo_tags(sync_id)",
         [],
     )?;
     Ok(())

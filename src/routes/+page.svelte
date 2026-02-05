@@ -15,6 +15,7 @@
   import IntroAnimation from '../components/IntroAnimation.svelte';
   import FloatingActions from '../components/FloatingActions.svelte';
   import StreakModal from '../components/StreakModal.svelte';
+  import TagFilterModal from '../components/TagFilterModal.svelte';
   import { initializeTheme } from '../lib/themes';
   import { initializeFonts } from '../lib/fonts';
   import { appStore, modalStore } from '../lib/stores';
@@ -25,6 +26,11 @@
   // Local UI state only
   let isEditingItem = $state(false);
   let showFab = $state(false);
+
+  // Computed display items (tag filter aware)
+  let displayItems = $derived(
+    appStore.activeTagFilter !== null ? appStore.filteredItems : appStore.items
+  );
 
   // Track last processed date to avoid duplicate processing
   let lastProcessedDate = '';
@@ -159,6 +165,8 @@
 
     await appStore.loadCategories();
     await appStore.loadItems();
+    await appStore.loadAllTags();
+    await appStore.loadTagsForItems(appStore.items);
 
     // Schedule auto-reset timer
     await scheduleResetTimer();
@@ -196,31 +204,55 @@
 
   <!-- Main Content -->
   <main class="main-content max-w-2xl w-full mx-auto flex flex-col flex-1 min-h-0">
+    <!-- Tag Filter Banner -->
+    {#if appStore.activeTagFilter !== null}
+      {@const activeTag = appStore.allTags.find(t => t.id === appStore.activeTagFilter)}
+      <div class="tag-filter-banner">
+        <span class="filter-text">
+          <svg class="filter-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          {activeTag?.name ?? ''}
+        </span>
+        <button class="filter-clear-btn" onclick={() => appStore.clearTagFilter()}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    {/if}
+
     <!-- Scrollable Todo List -->
     <div class="todo-list-scroll">
-      {#if appStore.items.length === 0}
+      {#if displayItems.length === 0}
         <div class="p-8 text-center text-ink-muted">
           <p>{i18n.t('emptyListTitle')}</p>
           <p class="text-sm mt-1">{i18n.t('emptyListSubtitle')}</p>
         </div>
       {:else}
         <div class="item-list">
-          {#each appStore.items as item (item.id)}
+          {#each displayItems as item (item.id)}
             <div animate:flip={{ duration: 300 }} class="item-wrapper">
               <SwipeableItem {item} onDelete={appStore.deleteItem}>
                 {#snippet children()}
                   <LeafTodoItem
                     {item}
+                    itemTags={appStore.itemTagsMap[item.id] ?? []}
                     onToggle={appStore.toggleItem}
                     onEdit={appStore.editItem}
                   >
                     {#snippet drawerContent({ item: drawerItem, closeDrawer })}
                       <MemoDrawer
                         item={drawerItem}
+                        itemTags={appStore.itemTagsMap[drawerItem.id] ?? []}
+                        allTags={appStore.allTags}
                         onSaveMemo={appStore.updateMemo}
                         onEditText={appStore.editItem}
                         onUpdateRepeat={appStore.updateRepeat}
                         onUpdateTrackStreak={appStore.updateTrackStreak}
+                        onAddTag={appStore.addTagToItem}
+                        onRemoveTag={appStore.removeTagFromItem}
                         onEditModeChange={(editing) => isEditingItem = editing}
                         {closeDrawer}
                       />
@@ -242,12 +274,14 @@
     onReset={modalStore.openResetConfirm}
     onReorder={modalStore.openReorderModal}
     onStreak={modalStore.openStreakModal}
+    onTagFilter={modalStore.openTagFilterModal}
     onSettings={() => goto('/settings')}
   />
 
   <!-- Add Item Modal -->
   <AddItemModal
     show={modalStore.showAddItemModal}
+    allTags={appStore.allTags}
     onAdd={appStore.addItem}
     onCancel={modalStore.closeAddItemModal}
   />
@@ -305,6 +339,16 @@
   <StreakModal
     show={modalStore.showStreakModal}
     onClose={modalStore.closeStreakModal}
+  />
+
+  <!-- Tag Filter Modal -->
+  <TagFilterModal
+    show={modalStore.showTagFilterModal}
+    tags={appStore.allTags}
+    activeTagId={appStore.activeTagFilter}
+    onSelect={appStore.setTagFilter}
+    onClear={appStore.clearTagFilter}
+    onClose={modalStore.closeTagFilterModal}
   />
 
   <!-- Intro Animation Component -->

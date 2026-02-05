@@ -102,6 +102,14 @@ pub fn run() {
             set_sync_enabled,
             is_sync_enabled,
             force_pull,
+            // Tag commands
+            get_all_tags,
+            create_tag,
+            delete_tag,
+            add_tag_to_item,
+            remove_tag_from_item,
+            get_tags_for_item,
+            get_items_by_tag,
             // Realtime commands
             connect_realtime,
             disconnect_realtime,

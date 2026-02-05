@@ -1,21 +1,27 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import type { TodoItem, RepeatType } from '../types';
+  import type { TodoItem, RepeatType, Tag } from '../types';
   import { i18n } from '$lib/i18n';
   import RepeatSelector from './RepeatSelector.svelte';
+  import TagInput from './TagInput.svelte';
+  import TagChip from './TagChip.svelte';
 
   interface Props {
     item: TodoItem;
+    itemTags?: Tag[];
+    allTags?: Tag[];
     onSaveMemo: (id: number, memo: string | null) => void;
     onEditText: (id: number, text: string) => void;
     onUpdateRepeat: (id: number, repeatType: RepeatType, repeatDetail: string | null) => void;
     onUpdateTrackStreak: (id: number, trackStreak: boolean) => void;
+    onAddTag?: (itemId: number, tagName: string) => void;
+    onRemoveTag?: (itemId: number, tagId: number) => void;
     onEditModeChange?: (editing: boolean) => void;
     closeDrawer: () => void;
   }
 
-  let { item, onSaveMemo, onEditText, onUpdateRepeat, onUpdateTrackStreak, onEditModeChange, closeDrawer }: Props = $props();
+  let { item, itemTags = [], allTags = [], onSaveMemo, onEditText, onUpdateRepeat, onUpdateTrackStreak, onAddTag, onRemoveTag, onEditModeChange, closeDrawer }: Props = $props();
 
   let isEditMode = $state(false);
   let editText = $state('');
@@ -24,6 +30,7 @@
   let repeatDetail = $state<number[]>([]);
   let trackStreak = $state(false);
   let isSaving = $state(false);
+  let showAdvanced = $state(false);
 
   // Sync texts when item changes
   $effect(() => {
@@ -45,6 +52,7 @@
     repeatType = item.repeat_type;
     repeatDetail = item.repeat_detail ? JSON.parse(item.repeat_detail) : [];
     trackStreak = item.track_streak;
+    showAdvanced = false;
     isEditMode = false;
     onEditModeChange?.(false);
   }
@@ -141,30 +149,63 @@
           rows="3"
         ></textarea>
       </div>
-      <div class="edit-section">
-        <RepeatSelector
-          {repeatType}
-          {repeatDetail}
-          onRepeatTypeChange={handleRepeatTypeChange}
-          onRepeatDetailChange={handleRepeatDetailChange}
-        />
-      </div>
-      <div class="edit-section streak-toggle-section">
-        <label class="streak-toggle-label">
-          <span class="streak-label-text">{i18n.t('trackStreak')}</span>
-          <button
-            type="button"
-            class="streak-toggle"
-            class:active={trackStreak}
-            onclick={() => trackStreak = !trackStreak}
-            aria-pressed={trackStreak}
-          >
-            <span class="toggle-track">
-              <span class="toggle-thumb"></span>
-            </span>
-          </button>
-        </label>
-      </div>
+      <button
+        type="button"
+        class="advanced-toggle"
+        onclick={() => showAdvanced = !showAdvanced}
+      >
+        <span class="advanced-toggle-text">{i18n.t('advancedSettings')}</span>
+        <svg
+          class="advanced-toggle-icon"
+          class:rotated={showAdvanced}
+          width="16" height="16" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"
+        >
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      {#if showAdvanced}
+        <div class="advanced-section" transition:slide={{ duration: 250, easing: cubicOut }}>
+          <div class="edit-section">
+            <RepeatSelector
+              {repeatType}
+              {repeatDetail}
+              onRepeatTypeChange={handleRepeatTypeChange}
+              onRepeatDetailChange={handleRepeatDetailChange}
+            />
+          </div>
+          <hr class="advanced-divider" />
+          <div class="edit-section streak-toggle-section">
+            <label class="streak-toggle-label">
+              <span class="streak-label-text">{i18n.t('trackStreak')}</span>
+              <button
+                type="button"
+                class="streak-toggle"
+                class:active={trackStreak}
+                onclick={() => trackStreak = !trackStreak}
+                aria-pressed={trackStreak}
+              >
+                <span class="toggle-track">
+                  <span class="toggle-thumb"></span>
+                </span>
+              </button>
+            </label>
+          </div>
+          {#if onAddTag && onRemoveTag}
+            <hr class="advanced-divider" />
+            <div class="edit-section">
+              <span class="section-label">{i18n.t('tags')}</span>
+              <TagInput
+                currentTags={itemTags}
+                {allTags}
+                onAdd={(name) => onAddTag?.(item.id, name)}
+                onRemove={(tagId) => onRemoveTag?.(item.id, tagId)}
+              />
+            </div>
+          {/if}
+        </div>
+      {/if}
       <div class="actions">
         <button
           type="button"
@@ -195,8 +236,15 @@
   {:else}
     <!-- View Mode -->
     <div class="view-container">
-      {#if item.memo || item.repeat_type !== 'none' || item.track_streak}
+      {#if item.memo || item.repeat_type !== 'none' || item.track_streak || itemTags.length > 0}
         <div class="memo-display">
+          {#if itemTags.length > 0}
+            <div class="tags-display">
+              {#each itemTags as tag (tag.id)}
+                <TagChip name={tag.name} />
+              {/each}
+            </div>
+          {/if}
           {#if item.memo}
             <p class="memo-text">{item.memo}</p>
           {/if}
@@ -395,6 +443,50 @@
     background: var(--color-accent-sky-strong);
   }
 
+  .advanced-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    padding: 8px;
+    background: none;
+    border: 1px solid var(--color-stroke);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--color-ink-muted);
+    font-size: 13px;
+    transition: background-color 0.2s;
+  }
+
+  .advanced-toggle:hover {
+    background: var(--color-canvas);
+  }
+
+  .advanced-toggle-text {
+    font-size: 13px;
+  }
+
+  .advanced-toggle-icon {
+    transition: transform 0.25s ease;
+  }
+
+  .advanced-toggle-icon.rotated {
+    transform: rotate(180deg);
+  }
+
+  .advanced-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .advanced-divider {
+    border: none;
+    border-top: 1px solid var(--color-stroke);
+    margin: 2px 0;
+  }
+
   .streak-toggle-section {
     padding-top: 4px;
   }
@@ -446,6 +538,19 @@
 
   .streak-toggle.active .toggle-thumb {
     transform: translateX(20px);
+  }
+
+  .section-label {
+    font-size: 14px;
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+
+  .tags-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 2px;
   }
 
   .streak-info {

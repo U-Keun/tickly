@@ -167,6 +167,21 @@ export const en: Translations = {
   realtimeReconnecting: 'Reconnecting...',
   realtimeDisconnected: 'Disconnected',
 
+  // Tags
+  tags: 'Tags',
+  tagFilter: 'Tag Filter',
+  tagAdd: 'Add Tag',
+  tagPlaceholder: 'Enter tag...',
+  tagEmpty: 'No tags',
+  tagFilterClear: 'Clear Filter',
+  tagFilterActive: 'Tag filter active',
+  tagManage: 'Manage Tags',
+  tagDeleteConfirmTemplate: (name: string) =>
+    `Delete "${name}" tag?\nIt will be removed from all items.`,
+
+  // Advanced settings
+  advancedSettings: 'More Options',
+
   // Common
   saving: 'Saving...',
 };

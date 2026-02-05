@@ -233,7 +233,7 @@ impl TodoRepository {
         Ok(())
     }
 
-    fn mark_updated(conn: &Connection, id: i64) -> Result<(), rusqlite::Error> {
+    pub fn mark_updated(conn: &Connection, id: i64) -> Result<(), rusqlite::Error> {
         let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         conn.execute(
             "UPDATE todos SET updated_at = ?1, sync_status = 'pending' WHERE id = ?2",

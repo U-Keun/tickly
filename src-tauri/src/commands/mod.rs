@@ -4,6 +4,7 @@ mod realtime_commands;
 mod settings_commands;
 mod streak_commands;
 mod sync_commands;
+mod tag_commands;
 mod todo_commands;
 
 pub use auth_commands::*;
@@ -12,4 +13,5 @@ pub use realtime_commands::*;
 pub use settings_commands::*;
 pub use streak_commands::*;
 pub use sync_commands::*;
+pub use tag_commands::*;
 pub use todo_commands::*;

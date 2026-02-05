@@ -2,6 +2,7 @@ mod category;
 mod completion_log;
 mod realtime;
 mod sync;
+mod tag;
 mod todo_item;
 
 pub use category::Category;
@@ -11,4 +12,5 @@ pub use realtime::{
     RealtimeStatus,
 };
 pub use sync::{AuthProvider, AuthSession, SyncResult, SyncStatus, SyncStatusInfo, UserProfile};
+pub use tag::{Tag, TodoTag};
 pub use todo_item::{RepeatType, TodoItem};

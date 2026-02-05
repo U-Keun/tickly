@@ -4,9 +4,9 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::models::{Category, SyncResult, SyncStatus, TodoItem};
-use crate::repository::{CategoryRepository, CompletionLogRepository, SyncRepository, TodoRepository};
+use crate::repository::{CategoryRepository, CompletionLogRepository, SyncRepository, TagRepository, TodoRepository, TodoTagRepository};
 
-use super::supabase_client::{RemoteCategory, RemoteCompletionLog, RemoteTodo, SupabaseClient};
+use super::supabase_client::{RemoteCategory, RemoteCompletionLog, RemoteTag, RemoteTodo, RemoteTodoTag, SupabaseClient};
 
 pub struct SyncService;
 
@@ -38,6 +38,27 @@ struct PendingTodoSync {
     track_streak: bool,
     created_at: Option<String>,
     updated_at: Option<String>,
+    sync_status: SyncStatus,
+}
+
+#[derive(Debug, Clone)]
+struct PendingTagSync {
+    id: i64,
+    sync_id: Option<String>,
+    name: String,
+    created_at: Option<String>,
+    updated_at: Option<String>,
+    sync_status: SyncStatus,
+}
+
+#[derive(Debug, Clone)]
+struct PendingTodoTagSync {
+    todo_id: i64,
+    tag_id: i64,
+    sync_id: Option<String>,
+    todo_sync_id: Option<String>,
+    tag_sync_id: Option<String>,
+    created_at: Option<String>,
     sync_status: SyncStatus,
 }
 
@@ -108,6 +129,26 @@ impl SyncService {
         // Collect completion logs
         let local_completion_logs = Self::collect_completion_logs(conn, &todo_id_to_sync_id)?;
 
+        // Collect pending tags
+        let pending_tags = Self::collect_pending_tags(conn)?;
+
+        // Build tag id to sync_id map
+        let all_tags = TagRepository::get_all(conn).map_err(|e| e.to_string())?;
+        let mut tag_id_to_sync_id: HashMap<i64, String> = HashMap::new();
+        for tag in &all_tags {
+            if let Some(sync_id) = &tag.sync_id {
+                tag_id_to_sync_id.insert(tag.id, sync_id.clone());
+            }
+        }
+        for tag in &pending_tags {
+            if let Some(sync_id) = &tag.sync_id {
+                tag_id_to_sync_id.insert(tag.id, sync_id.clone());
+            }
+        }
+
+        // Collect pending todo_tags
+        let pending_todo_tags = Self::collect_pending_todo_tags(conn, &todo_id_to_sync_id, &tag_id_to_sync_id)?;
+
         // Run async operations
         let result = rt.block_on(async {
             let mut result = SyncResult::default();
@@ -126,17 +167,27 @@ impl SyncService {
                 Self::push_completion_logs_async(client, access_token, user_id, &local_completion_logs)
                     .await?;
 
-            result.pushed = pushed_cats.len() + pushed_todos.len() + pushed_logs;
+            // Push tags
+            let pushed_tags =
+                Self::push_tags_async(client, access_token, user_id, &pending_tags).await?;
+
+            // Push todo_tags
+            let pushed_todo_tags =
+                Self::push_todo_tags_async(client, access_token, user_id, &pending_todo_tags).await?;
+
+            result.pushed = pushed_cats.len() + pushed_todos.len() + pushed_logs + pushed_tags.len() + pushed_todo_tags;
 
             // Pull remote data
             let remote_categories = client.fetch_categories(access_token).await?;
             let remote_todos = client.fetch_todos(access_token).await?;
             let remote_completion_logs = client.fetch_all_completion_logs(access_token).await?;
+            let remote_tags = client.fetch_tags(access_token).await.unwrap_or_default();
+            let remote_todo_tags = client.fetch_todo_tags(access_token).await.unwrap_or_default();
 
-            Ok::<_, String>((result, pushed_cats, pushed_todos, remote_categories, remote_todos, remote_completion_logs))
+            Ok::<_, String>((result, pushed_cats, pushed_todos, pushed_tags, remote_categories, remote_todos, remote_completion_logs, remote_tags, remote_todo_tags))
         })?;
 
-        let (mut sync_result, pushed_cats, pushed_todos, remote_categories, remote_todos, remote_completion_logs) = result;
+        let (mut sync_result, pushed_cats, pushed_todos, pushed_tags, remote_categories, remote_todos, remote_completion_logs, remote_tags, remote_todo_tags) = result;
 
         // Update local database with push results
         for (local_id, sync_id) in pushed_cats {
@@ -167,6 +218,21 @@ impl SyncService {
             }
         }
 
+        // Update local tags with push results
+        for (local_id, sync_id) in pushed_tags {
+            if let Some(tag) = pending_tags.iter().find(|t| t.id == local_id) {
+                if tag.sync_id.is_none() {
+                    TagRepository::update_sync_id(conn, local_id, &sync_id)
+                        .map_err(|e| e.to_string())?;
+                }
+                if tag.sync_status == SyncStatus::Deleted {
+                    TagRepository::delete(conn, local_id).map_err(|e| e.to_string())?;
+                } else {
+                    TagRepository::mark_synced(conn, local_id).map_err(|e| e.to_string())?;
+                }
+            }
+        }
+
         // Re-fetch local data AFTER push to get updated sync_ids
         let updated_local_categories = CategoryRepository::get_all(conn).map_err(|e| e.to_string())?;
         let updated_local_todos = TodoRepository::get_all(conn).map_err(|e| e.to_string())?;
@@ -182,7 +248,14 @@ impl SyncService {
 
         // Apply remote completion logs
         let pulled_logs = Self::apply_remote_completion_logs(conn, &updated_local_todos, remote_completion_logs)?;
-        sync_result.pulled = pulled + pulled_logs;
+
+        // Apply remote tags
+        let pulled_tags = Self::apply_remote_tags(conn, remote_tags)?;
+
+        // Apply remote todo_tags
+        let pulled_todo_tags = Self::apply_remote_todo_tags(conn, remote_todo_tags)?;
+
+        sync_result.pulled = pulled + pulled_logs + pulled_tags + pulled_todo_tags;
 
         // Update last synced timestamp
         let now = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
@@ -530,6 +603,203 @@ impl SyncService {
         )
         .map_err(|e| format!("Failed to insert todo: {}", e))?;
         Ok(())
+    }
+
+    fn collect_pending_tags(conn: &Connection) -> Result<Vec<PendingTagSync>, String> {
+        let tags = TagRepository::get_pending_sync(conn).map_err(|e| e.to_string())?;
+        Ok(tags
+            .into_iter()
+            .map(|t| PendingTagSync {
+                id: t.id,
+                sync_id: t.sync_id.clone().or_else(|| Some(Uuid::new_v4().to_string())),
+                name: t.name,
+                created_at: t.created_at,
+                updated_at: t.updated_at,
+                sync_status: t.sync_status,
+            })
+            .collect())
+    }
+
+    fn collect_pending_todo_tags(
+        conn: &Connection,
+        todo_id_to_sync_id: &HashMap<i64, String>,
+        tag_id_to_sync_id: &HashMap<i64, String>,
+    ) -> Result<Vec<PendingTodoTagSync>, String> {
+        let todo_tags = TodoTagRepository::get_pending_sync(conn).map_err(|e| e.to_string())?;
+        Ok(todo_tags
+            .into_iter()
+            .filter_map(|tt| {
+                let todo_sync_id = todo_id_to_sync_id.get(&tt.todo_id).cloned();
+                let tag_sync_id = tag_id_to_sync_id.get(&tt.tag_id).cloned();
+                // Skip if we can't resolve both sync_ids
+                if todo_sync_id.is_none() || tag_sync_id.is_none() {
+                    return None;
+                }
+                Some(PendingTodoTagSync {
+                    todo_id: tt.todo_id,
+                    tag_id: tt.tag_id,
+                    sync_id: tt.sync_id.clone().or_else(|| Some(Uuid::new_v4().to_string())),
+                    todo_sync_id,
+                    tag_sync_id,
+                    created_at: tt.created_at,
+                    sync_status: tt.sync_status,
+                })
+            })
+            .collect())
+    }
+
+    async fn push_tags_async(
+        client: &SupabaseClient,
+        access_token: &str,
+        user_id: &str,
+        tags: &[PendingTagSync],
+    ) -> Result<Vec<(i64, String)>, String> {
+        let mut results = Vec::new();
+
+        for tag in tags {
+            let sync_id = tag.sync_id.clone().unwrap_or_else(|| Uuid::new_v4().to_string());
+
+            match tag.sync_status {
+                SyncStatus::Pending => {
+                    let remote = RemoteTag {
+                        id: sync_id.clone(),
+                        user_id: user_id.to_string(),
+                        name: tag.name.clone(),
+                        created_at: tag.created_at.clone().unwrap_or_else(|| {
+                            Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
+                        }),
+                        updated_at: tag.updated_at.clone().unwrap_or_else(|| {
+                            Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
+                        }),
+                    };
+                    client.upsert_tag(access_token, &remote).await?;
+                    results.push((tag.id, sync_id));
+                }
+                SyncStatus::Deleted => {
+                    if let Some(sync_id) = &tag.sync_id {
+                        client.delete_tag(access_token, sync_id).await?;
+                        results.push((tag.id, sync_id.clone()));
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(results)
+    }
+
+    async fn push_todo_tags_async(
+        client: &SupabaseClient,
+        access_token: &str,
+        user_id: &str,
+        todo_tags: &[PendingTodoTagSync],
+    ) -> Result<usize, String> {
+        let mut count = 0;
+
+        for tt in todo_tags {
+            let sync_id = tt.sync_id.clone().unwrap_or_else(|| Uuid::new_v4().to_string());
+
+            match tt.sync_status {
+                SyncStatus::Pending => {
+                    if let (Some(todo_sync_id), Some(tag_sync_id)) = (&tt.todo_sync_id, &tt.tag_sync_id) {
+                        let remote = RemoteTodoTag {
+                            id: sync_id,
+                            user_id: user_id.to_string(),
+                            todo_id: todo_sync_id.clone(),
+                            tag_id: tag_sync_id.clone(),
+                            created_at: tt.created_at.clone().unwrap_or_else(|| {
+                                Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
+                            }),
+                        };
+                        client.upsert_todo_tag(access_token, &remote).await?;
+                        count += 1;
+                    }
+                }
+                SyncStatus::Deleted => {
+                    if let Some(sync_id) = &tt.sync_id {
+                        client.delete_todo_tag(access_token, sync_id).await?;
+                        count += 1;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(count)
+    }
+
+    fn apply_remote_tags(
+        conn: &Connection,
+        remote_tags: Vec<RemoteTag>,
+    ) -> Result<usize, String> {
+        let mut count = 0;
+
+        for remote in remote_tags {
+            let existing = TagRepository::get_by_sync_id(conn, &remote.id).map_err(|e| e.to_string())?;
+            if let Some(local) = existing {
+                // Update if remote is newer
+                if Self::is_remote_newer(&local.updated_at, &remote.updated_at) {
+                    conn.execute(
+                        "UPDATE tags SET name = ?1, updated_at = ?2, sync_status = 'synced' WHERE id = ?3",
+                        rusqlite::params![remote.name, remote.updated_at, local.id],
+                    ).map_err(|e| e.to_string())?;
+                    count += 1;
+                }
+            } else {
+                // Check if tag with same name exists (merge)
+                if let Some(local_by_name) = TagRepository::get_by_name(conn, &remote.name).map_err(|e| e.to_string())? {
+                    // Assign sync_id to existing local tag
+                    TagRepository::update_sync_id(conn, local_by_name.id, &remote.id).map_err(|e| e.to_string())?;
+                } else {
+                    // Insert new tag
+                    conn.execute(
+                        "INSERT INTO tags (name, sync_id, created_at, updated_at, sync_status) VALUES (?1, ?2, ?3, ?4, 'synced')",
+                        rusqlite::params![remote.name, remote.id, remote.created_at, remote.updated_at],
+                    ).map_err(|e| e.to_string())?;
+                }
+                count += 1;
+            }
+        }
+
+        Ok(count)
+    }
+
+    fn apply_remote_todo_tags(
+        conn: &Connection,
+        remote_todo_tags: Vec<RemoteTodoTag>,
+    ) -> Result<usize, String> {
+        let mut count = 0;
+
+        // Build sync_id to local_id maps
+        let all_todos = TodoRepository::get_all(conn).map_err(|e| e.to_string())?;
+        let todo_sync_to_local: HashMap<String, i64> = all_todos
+            .iter()
+            .filter_map(|t| t.sync_id.as_ref().map(|s| (s.clone(), t.id)))
+            .collect();
+
+        let all_tags = TagRepository::get_all(conn).map_err(|e| e.to_string())?;
+        let tag_sync_to_local: HashMap<String, i64> = all_tags
+            .iter()
+            .filter_map(|t| t.sync_id.as_ref().map(|s| (s.clone(), t.id)))
+            .collect();
+
+        for remote in remote_todo_tags {
+            let local_todo_id = todo_sync_to_local.get(&remote.todo_id).copied();
+            let local_tag_id = tag_sync_to_local.get(&remote.tag_id).copied();
+
+            if let (Some(todo_id), Some(tag_id)) = (local_todo_id, local_tag_id) {
+                // Check if this todo_tag already exists
+                let existing = TodoTagRepository::get_by_sync_id(conn, &remote.id).map_err(|e| e.to_string())?;
+                if existing.is_none() {
+                    // Insert and set sync_id
+                    TodoTagRepository::add_tag(conn, todo_id, tag_id).map_err(|e| e.to_string())?;
+                    TodoTagRepository::update_sync_id(conn, todo_id, tag_id, &remote.id).map_err(|e| e.to_string())?;
+                    count += 1;
+                }
+            }
+        }
+
+        Ok(count)
     }
 
     pub fn get_pending_count(conn: &Connection) -> Result<usize, String> {

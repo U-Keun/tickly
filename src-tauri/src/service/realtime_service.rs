@@ -261,6 +261,18 @@ impl RealtimeService {
                         "schema": "public",
                         "table": "completion_logs",
                         "filter": format!("user_id=eq.{}", config.user_id)
+                    },
+                    {
+                        "event": "*",
+                        "schema": "public",
+                        "table": "tags",
+                        "filter": format!("user_id=eq.{}", config.user_id)
+                    },
+                    {
+                        "event": "*",
+                        "schema": "public",
+                        "table": "todo_tags",
+                        "filter": format!("user_id=eq.{}", config.user_id)
                     }
                 ],
                 "private": false

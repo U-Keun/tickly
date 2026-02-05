@@ -8,6 +8,7 @@ mod reset_service;
 mod streak_service;
 pub mod supabase_client;
 mod sync_service;
+mod tag_service;
 mod todo_service;
 
 pub use auth_service::AuthService;
@@ -19,4 +20,5 @@ pub use reset_service::ResetService;
 pub use streak_service::StreakService;
 pub use supabase_client::{SupabaseClient, SupabaseConfig};
 pub use sync_service::SyncService;
+pub use tag_service::TagService;
 pub use todo_service::TodoService;
