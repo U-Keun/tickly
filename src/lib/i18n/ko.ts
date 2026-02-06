@@ -177,6 +177,11 @@ export const ko = {
   tagDeleteConfirmTemplate: (name: string) =>
     `"${name}" 태그를 삭제하시겠습니까?\n모든 항목에서 제거됩니다.`,
 
+  // Graph view
+  graphView: '그래프 뷰',
+  graphEmpty: '항목이 없습니다',
+  graphEmptyHint: '항목을 추가하면 그래프에 표시됩니다',
+
   // Advanced settings
   advancedSettings: '상세 설정',
 

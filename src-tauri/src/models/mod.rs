@@ -1,5 +1,6 @@
 mod category;
 mod completion_log;
+pub mod graph;
 mod realtime;
 mod sync;
 mod tag;

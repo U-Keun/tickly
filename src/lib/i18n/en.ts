@@ -179,6 +179,11 @@ export const en: Translations = {
   tagDeleteConfirmTemplate: (name: string) =>
     `Delete "${name}" tag?\nIt will be removed from all items.`,
 
+  // Graph view
+  graphView: 'Graph View',
+  graphEmpty: 'No items yet',
+  graphEmptyHint: 'Add items to see them on the graph',
+
   // Advanced settings
   advancedSettings: 'More Options',
 
