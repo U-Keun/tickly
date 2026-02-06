@@ -111,6 +111,8 @@ pub fn run() {
             remove_tag_from_item,
             get_tags_for_item,
             get_items_by_tag,
+            // Graph commands
+            get_graph_data,
             // Realtime commands
             connect_realtime,
             disconnect_realtime,

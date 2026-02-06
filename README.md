@@ -29,6 +29,7 @@
 - 🔄 **반복 규칙** - 매일/매주/매월 자동 재활성화 스케줄링
 - 🔥 **스트릭 히트맵** - 항목별 GitHub 스타일 달성 기록 시각화
 - 🏷️ **태그** - 항목에 #태그 부착, 태그 기반 필터링, 클라우드 동기화
+- 🕸️ **그래프 뷰** - 카테고리·태그·항목 간 관계를 노드 그래프로 시각화 (PixiJS WebGL + d3-force)
 - ☁️ **클라우드 동기화** - Apple/Google 로그인으로 멀티 디바이스 실시간 연동
 - 🎨 **테마 커스터마이징** - 5가지 프리셋 + 커스텀 색상 지원
 - 🔤 **폰트 커스터마이징** - 다양한 폰트 선택 가능
@@ -142,6 +143,8 @@ Tickly/
 ├── src/                              # Frontend (SvelteKit)
 │   ├── routes/
 │   │   ├── +page.svelte              # 메인 페이지
+│   │   ├── graph/
+│   │   │   └── +page.svelte         # 그래프 뷰 페이지
 │   │   └── settings/
 │   │       ├── +page.svelte          # 설정 메인 페이지
 │   │       ├── theme/
@@ -154,7 +157,8 @@ Tickly/
 │   │   ├── ModalWrapper.svelte       # 공통 모달 레이아웃
 │   │   ├── SettingsLayout.svelte     # 공통 설정 페이지 레이아웃
 │   │   ├── BottomNav.svelte          # 하단 네비게이션 바
-│   │   ├── FloatingActions.svelte    # FAB 버튼 (추가, 리셋, 스트릭)
+│   │   ├── FloatingActions.svelte    # FAB 버튼 (추가, 그래프, 메뉴)
+│   │   ├── GraphCanvas.svelte       # 그래프 뷰 (PixiJS + d3-force)
 │   │   ├── LeafTodoItem.svelte       # Todo 항목 컴포넌트
 │   │   ├── AddItemModal.svelte       # 항목 추가 모달
 │   │   ├── SwipeableItem.svelte      # 스와이프 삭제 래퍼
@@ -174,7 +178,8 @@ Tickly/
 │   │   │   ├── authApi.ts            # Auth API (로그인/로그아웃)
 │   │   │   ├── syncApi.ts            # Sync API (동기화)
 │   │   │   ├── realtimeApi.ts        # Realtime API (실시간 연결)
-│   │   │   └── tagApi.ts             # Tag API (태그 CRUD)
+│   │   │   ├── tagApi.ts             # Tag API (태그 CRUD)
+│   │   │   └── graphApi.ts           # Graph API (그래프 데이터)
 │   │   ├── stores/                   # Svelte 5 reactive stores
 │   │   │   ├── appStore.svelte.ts    # 앱 상태 (카테고리, 항목)
 │   │   │   ├── modalStore.svelte.ts  # 모달 상태 관리
@@ -195,7 +200,8 @@ Tickly/
 │   │   │   ├── todo_item.rs          # TodoItem 구조체
 │   │   │   ├── completion_log.rs     # CompletionLog 구조체
 │   │   │   ├── sync.rs               # Sync 관련 구조체 (AuthSession, SyncResult 등)
-│   │   │   └── tag.rs                # Tag, TodoTag 구조체
+│   │   │   ├── tag.rs                # Tag, TodoTag 구조체
+│   │   │   └── graph.rs              # GraphNode, GraphEdge, GraphData 구조체
 │   │   ├── repository/               # 데이터 접근 레이어
 │   │   │   ├── database.rs           # DB 초기화
 │   │   │   ├── migration.rs          # 스키마 마이그레이션
@@ -206,7 +212,8 @@ Tickly/
 │   │   │   ├── auth_repo.rs          # Auth 세션 CRUD
 │   │   │   ├── sync_repo.rs          # Sync 메타데이터 CRUD
 │   │   │   ├── tag_repo.rs           # Tag CRUD
-│   │   │   └── todo_tag_repo.rs      # TodoTag (조인) CRUD
+│   │   │   ├── todo_tag_repo.rs      # TodoTag (조인) CRUD
+│   │   │   └── graph_repo.rs         # Graph 데이터 집계 쿼리
 │   │   ├── service/                  # 비즈니스 로직 레이어
 │   │   │   ├── category_service.rs   # Category 비즈니스 로직
 │   │   │   ├── todo_service.rs       # Todo 비즈니스 로직
@@ -226,7 +233,8 @@ Tickly/
 │   │       ├── auth_commands.rs      # Auth 커맨드
 │   │       ├── sync_commands.rs      # Sync 커맨드
 │   │       ├── realtime_commands.rs  # Realtime 커맨드
-│   │       └── tag_commands.rs       # Tag 커맨드
+│   │       ├── tag_commands.rs       # Tag 커맨드
+│   │       └── graph_commands.rs     # Graph 커맨드
 │   └── tauri.conf.json               # Tauri 설정
 ├── CLAUDE.md                         # 프로젝트 가이드
 └── README.md                         # 이 파일

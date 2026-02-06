@@ -1,6 +1,7 @@
 // Re-export all API modules
 export * from './authApi';
 export * from './categoryApi';
+export * from './graphApi';
 export * from './realtimeApi';
 export * from './settingsApi';
 export * from './streakApi';

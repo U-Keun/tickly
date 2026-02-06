@@ -57,6 +57,8 @@ Tickly/
 │   │   ├── +layout.svelte            # Global layout with CSS imports
 │   │   ├── +layout.ts                # SPA mode config
 │   │   ├── +page.svelte              # Main app page
+│   │   ├── graph/
+│   │   │   └── +page.svelte         # Graph view page
 │   │   └── settings/
 │   │       ├── +page.svelte          # Settings main page
 │   │       ├── theme/
@@ -71,7 +73,8 @@ Tickly/
 │   │   ├── ModalWrapper.svelte       # Common modal layout
 │   │   ├── SettingsLayout.svelte     # Common settings page layout
 │   │   ├── BottomNav.svelte          # Bottom navigation bar
-│   │   ├── FloatingActions.svelte    # FAB buttons (add, reset, tag filter)
+│   │   ├── FloatingActions.svelte    # FAB buttons (add, graph, menu)
+│   │   ├── GraphCanvas.svelte       # Graph view (PixiJS + d3-force)
 │   │   ├── TagChip.svelte           # #tag text display
 │   │   ├── TagInput.svelte          # Tag input with autocomplete
 │   │   ├── TagFilterModal.svelte    # Tag filter selection modal
@@ -86,7 +89,8 @@ Tickly/
 │   │   │   ├── streakApi.ts          # Streak tracking API functions
 │   │   │   ├── authApi.ts            # Auth API functions
 │   │   │   ├── syncApi.ts            # Sync API functions
-│   │   │   └── tagApi.ts             # Tag API functions
+│   │   │   ├── tagApi.ts             # Tag API functions
+│   │   │   └── graphApi.ts           # Graph view API functions
 │   │   ├── stores/                   # Svelte 5 reactive stores
 │   │   │   ├── index.ts              # Re-exports
 │   │   │   ├── appStore.svelte.ts    # App state (categories, items)
@@ -112,7 +116,8 @@ Tickly/
 │   │   │   ├── category.rs           # Category struct
 │   │   │   ├── todo_item.rs          # TodoItem struct
 │   │   │   ├── completion_log.rs     # CompletionLog, HeatmapData structs
-│   │   │   └── tag.rs                # Tag, TodoTag structs
+│   │   │   ├── tag.rs                # Tag, TodoTag structs
+│   │   │   └── graph.rs              # GraphNode, GraphEdge, GraphData structs
 │   │   ├── repository/               # Data access layer
 │   │   │   ├── mod.rs
 │   │   │   ├── database.rs           # DB initialization
@@ -122,7 +127,8 @@ Tickly/
 │   │   │   ├── settings_repo.rs      # Settings CRUD
 │   │   │   ├── completion_log_repo.rs # Completion log CRUD
 │   │   │   ├── tag_repo.rs           # Tag CRUD + sync
-│   │   │   └── todo_tag_repo.rs      # TodoTag join table CRUD + sync
+│   │   │   ├── todo_tag_repo.rs      # TodoTag join table CRUD + sync
+│   │   │   └── graph_repo.rs         # Graph data aggregation query
 │   │   ├── service/                  # Business logic layer
 │   │   │   ├── mod.rs
 │   │   │   ├── category_service.rs   # Category business logic
@@ -143,7 +149,8 @@ Tickly/
 │   │       ├── streak_commands.rs    # Streak Tauri commands
 │   │       ├── auth_commands.rs      # Auth Tauri commands
 │   │       ├── sync_commands.rs      # Sync Tauri commands
-│   │       └── tag_commands.rs       # Tag Tauri commands
+│   │       ├── tag_commands.rs       # Tag Tauri commands
+│   │       └── graph_commands.rs     # Graph view Tauri commands
 │   └── tauri.conf.json               # Tauri configuration
 ├── static/                           # Static assets (IMPORTANT: use for iOS)
 └── tailwind.config.ts                # TailwindCSS configuration
@@ -264,6 +271,9 @@ const items = await invoke('get_items', { categoryId });
 - `removeTagFromItem(itemId, tagId)` - Remove tag from item
 - `getTagsForItem(itemId)` - Get all tags for an item
 - `getItemsByTag(tagId)` - Get all items with a specific tag
+
+**graphApi.ts**:
+- `getGraphData()` - Get graph data (nodes: categories/tags/items, edges: connections)
 
 ## Rust Backend Architecture
 
@@ -741,6 +751,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - ✅ Auto-reset timer (설정된 시간에 실시간 초기화)
 - ✅ Realtime sync (Supabase Realtime WebSocket) - 멀티 디바이스 실시간 동기화
 - ✅ Tags (#태그 부착, 필터링, 설정에서 관리, 클라우드 동기화)
+- ✅ Graph view (PixiJS WebGL + d3-force 노드 그래프 시각화)
 
 ### UI/UX
 - ✅ Theme customization (5 presets + custom colors)
@@ -781,9 +792,14 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
   - 설정 > 태그 관리 (전체 조회/삭제)
   - 클라우드 동기화 (tags, todo_tags push/pull + Realtime 구독)
   - 상세 설정 접기/펼치기 UI (반복, 스트릭, 태그를 collapsible section으로)
+- **v0.6.0**: ✅ Graph view
+  - PixiJS WebGL + d3-force 노드 그래프 시각화
+  - 카테고리(민트)/태그(스카이)/아이템 노드, 엣지 연결
+  - 팬/줌/드래그 인터랙션
+  - 카테고리 탭 → 해당 카테고리 이동, 태그 꾹 누르기 → 엣지 하이라이트, 아이템 탭 → 완료 토글
+  - FloatingActions에서 리셋 버튼 제거, 그래프 뷰 버튼 추가
 
 ### Planned Features (see `docs/roadmap.md` for details)
-- **v0.6.0**: Graph view (태그 기반 노드 그래프 시각화)
 - **v0.7.0**: Shared lists (family/team collaboration)
 - **v0.8.0**: iOS widgets
 - **v0.9.0**: Item notifications (항목별 알림, Tauri 호환성 해결 후)

@@ -271,7 +271,7 @@
   <FloatingActions
     show={showFab && !isEditingItem}
     onAdd={modalStore.openAddItemModal}
-    onReset={modalStore.openResetConfirm}
+    onGraph={() => goto('/graph')}
     onReorder={modalStore.openReorderModal}
     onStreak={modalStore.openStreakModal}
     onTagFilter={modalStore.openTagFilterModal}

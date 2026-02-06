@@ -1,5 +1,6 @@
 mod auth_commands;
 mod category_commands;
+mod graph_commands;
 mod realtime_commands;
 mod settings_commands;
 mod streak_commands;
@@ -9,6 +10,7 @@ mod todo_commands;
 
 pub use auth_commands::*;
 pub use category_commands::*;
+pub use graph_commands::*;
 pub use realtime_commands::*;
 pub use settings_commands::*;
 pub use streak_commands::*;
