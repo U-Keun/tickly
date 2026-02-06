@@ -368,30 +368,56 @@
 
     // Pan & zoom
     let isPanning = false;
+    let panPointerId: number | null = null;
     let panStart = { x: 0, y: 0 };
     let worldStart = { x: 0, y: 0 };
+    let activePointers = new Set<number>();
 
     const canvas = app.canvas as HTMLCanvasElement;
 
     canvas.addEventListener('pointerdown', (e) => {
-      isPanning = true;
-      panStart = { x: e.clientX, y: e.clientY };
-      worldStart = { x: world.x, y: world.y };
+      activePointers.add(e.pointerId);
+      // Only start pan with single touch, and only if not already panning
+      if (activePointers.size === 1 && panPointerId === null) {
+        isPanning = true;
+        panPointerId = e.pointerId;
+        panStart = { x: e.clientX, y: e.clientY };
+        worldStart = { x: world.x, y: world.y };
+      } else {
+        // Multi-touch: cancel panning, let pinch-zoom handle it
+        isPanning = false;
+        panPointerId = null;
+      }
     });
 
     canvas.addEventListener('pointermove', (e) => {
-      if (!isPanning) return;
+      if (!isPanning || e.pointerId !== panPointerId) return;
       const dx = e.clientX - panStart.x;
       const dy = e.clientY - panStart.y;
       world.x = worldStart.x + dx;
       world.y = worldStart.y + dy;
     });
 
-    canvas.addEventListener('pointerup', () => {
-      isPanning = false;
+    canvas.addEventListener('pointerup', (e) => {
+      activePointers.delete(e.pointerId);
+      if (e.pointerId === panPointerId) {
+        isPanning = false;
+        panPointerId = null;
+      }
     });
-    canvas.addEventListener('pointerleave', () => {
-      isPanning = false;
+    canvas.addEventListener('pointerleave', (e) => {
+      activePointers.delete(e.pointerId);
+      if (e.pointerId === panPointerId) {
+        isPanning = false;
+        panPointerId = null;
+      }
+    });
+    canvas.addEventListener('pointercancel', (e) => {
+      activePointers.delete(e.pointerId);
+      if (e.pointerId === panPointerId) {
+        isPanning = false;
+        panPointerId = null;
+      }
     });
 
     canvas.addEventListener(
