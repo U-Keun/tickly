@@ -298,3 +298,47 @@ await openUrl(oauthUrl);
 3. Supabase 콘솔 → Authentication → URL Configuration → Redirect URLs에 `tickly://auth/callback` 추가
 
 4. capabilities (`default.json`, `ios.json`)에 `deep-link:default` 권한 추가
+
+---
+
+## v0.6.0 - 그래프 뷰 (Graph View)
+
+### 멀티터치 시 화면이 튀는 현상
+
+**증상**: 그래프 뷰에서 두 손가락으로 터치하면 화면이 이상한 위치로 이동
+
+**원인**: Canvas의 `pointerdown` 이벤트가 각 손가락마다 발생하면서:
+1. 첫 번째 손가락으로 pan 시작 → `panStart`에 위치 저장
+2. 두 번째 손가락이 `pointerdown` 발생 → `panStart`가 두 번째 손가락 위치로 덮어씌워짐
+3. `pointermove`에서 두 포인터 모두 pan을 제어 → 화면이 급격히 이동
+4. pan과 pinch-zoom이 동시에 작동하면서 충돌
+
+**해결**: pointer ID 기반 추적 + 멀티터치 시 pan 비활성화
+
+```typescript
+let panPointerId: number | null = null;
+let activePointers = new Set<number>();
+
+canvas.addEventListener('pointerdown', (e) => {
+  activePointers.add(e.pointerId);
+  if (activePointers.size === 1 && panPointerId === null) {
+    // 단일 터치: pan 시작
+    isPanning = true;
+    panPointerId = e.pointerId;
+    panStart = { x: e.clientX, y: e.clientY };
+    worldStart = { x: world.x, y: world.y };
+  } else {
+    // 멀티터치: pan 취소, pinch-zoom에 위임
+    isPanning = false;
+    panPointerId = null;
+  }
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  // pan을 시작한 포인터만 처리
+  if (!isPanning || e.pointerId !== panPointerId) return;
+  // ...
+});
+```
+
+**핵심**: `pointercancel` 이벤트도 처리해야 iOS에서 터치 취소 시 상태가 정리됨

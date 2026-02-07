@@ -194,6 +194,7 @@
       bind:this={categoryTabsComponent}
       categories={appStore.categories}
       selectedCategoryId={appStore.selectedCategoryId}
+      hasActiveTagFilter={appStore.activeTagFilter !== null}
       onSelectCategory={appStore.selectCategory}
       onAddCategory={appStore.addCategory}
       onEditCategory={appStore.editCategory}

@@ -6,6 +6,7 @@
   interface Props {
     categories: Category[];
     selectedCategoryId: number | null;
+    hasActiveTagFilter?: boolean;
     onSelectCategory: (id: number) => void;
     onAddCategory: (name: string) => Promise<void>;
     onEditCategory: (id: number, name: string) => Promise<void>;
@@ -13,7 +14,7 @@
     onReorderCategories: () => void;
   }
 
-  let { categories, selectedCategoryId, onSelectCategory, onAddCategory, onEditCategory, onCategoryLongPress, onReorderCategories }: Props = $props();
+  let { categories, selectedCategoryId, hasActiveTagFilter = false, onSelectCategory, onAddCategory, onEditCategory, onCategoryLongPress, onReorderCategories }: Props = $props();
 
   // Local state for inline editing
   let editingCategoryId = $state<number | null>(null);
@@ -132,7 +133,7 @@
             ontouchend={handleCategoryTouchEnd}
             ontouchcancel={handleCategoryTouchEnd}
             class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors {
-              selectedCategoryId === category.id
+              !hasActiveTagFilter && selectedCategoryId === category.id
                 ? 'bg-accent-sky-strong text-ink'
                 : 'bg-paper text-ink-muted hover:bg-mist'
             }"
