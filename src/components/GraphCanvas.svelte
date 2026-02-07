@@ -276,11 +276,11 @@
         'link',
         forceLink<SimNode, SimLink>(simLinks)
           .id((d) => d.id)
-          .distance(55)
-          .strength(0.8)
+          .distance(75)
+          .strength(0.6)
       )
-      .force('charge', forceManyBody().strength(-60))
-      .force('center', forceCenter(width / 2, height / 2).strength(0.15))
+      .force('charge', forceManyBody().strength(-80))
+      .force('center', forceCenter(width / 2, height / 2).strength(0.10))
       .force(
         'collide',
         forceCollide<SimNode>().radius((d) => d.radius + 4)
