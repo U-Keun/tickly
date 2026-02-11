@@ -800,8 +800,8 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
   - FloatingActions에서 리셋 버튼 제거, 그래프 뷰 버튼 추가
 
 ### Planned Features (see `docs/roadmap.md` for details)
-- **v0.7.0**: Shared lists (family/team collaboration)
+- **v0.7.0**: Item notifications (항목별 알림, tauri-plugin-notification v2.3.1+)
 - **v0.8.0**: iOS widgets
-- **v0.9.0**: Item notifications (항목별 알림, Tauri 호환성 해결 후)
+- **v0.9.0**: Shared lists (family/team collaboration)
 
 Keep it simple. Ship fast. Iterate based on real user feedback.
