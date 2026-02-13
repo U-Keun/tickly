@@ -6,6 +6,7 @@
   const languages: { id: Locale; name: string; nativeName: string }[] = [
     { id: 'ko', name: 'Korean', nativeName: '한국어' },
     { id: 'en', name: 'English', nativeName: 'English' },
+    { id: 'ja', name: 'Japanese', nativeName: '日本語' },
   ];
 
   async function selectLanguage(locale: Locale) {

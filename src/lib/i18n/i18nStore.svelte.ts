@@ -1,18 +1,19 @@
 import { ko, type Translations } from './ko';
 import { en } from './en';
+import { ja } from './ja';
 import * as settingsApi from '../api/settingsApi';
 
-export type Locale = 'ko' | 'en';
+export type Locale = 'ko' | 'en' | 'ja';
 export type TranslationKey = keyof Translations;
 
-const translations: Record<Locale, Translations> = { ko, en };
+const translations: Record<Locale, Translations> = { ko, en, ja };
 
 let currentLocale = $state<Locale>('ko');
 
 async function loadLocale(): Promise<void> {
   try {
     const saved = await settingsApi.getSetting('locale');
-    if (saved === 'en' || saved === 'ko') {
+    if (saved === 'en' || saved === 'ko' || saved === 'ja') {
       currentLocale = saved;
     }
   } catch (error) {
