@@ -8,7 +8,7 @@ impl TodoRepository {
     fn row_to_item(row: &rusqlite::Row) -> Result<TodoItem, rusqlite::Error> {
         let repeat_type_str: String = row.get(6)?;
         let track_streak_int: i32 = row.get(10)?;
-        let sync_status_str: Option<String> = row.get(14)?;
+        let sync_status_str: Option<String> = row.get(15)?;
         Ok(TodoItem {
             id: row.get(0)?,
             text: row.get(1)?,
@@ -21,16 +21,17 @@ impl TodoRepository {
             next_due_at: row.get(8)?,
             last_completed_at: row.get(9)?,
             track_streak: track_streak_int != 0,
-            sync_id: row.get(11)?,
-            created_at: row.get(12)?,
-            updated_at: row.get(13)?,
+            reminder_at: row.get(11)?,
+            sync_id: row.get(12)?,
+            created_at: row.get(13)?,
+            updated_at: row.get(14)?,
             sync_status: sync_status_str
                 .map(|s| SyncStatus::from_str(&s))
                 .unwrap_or_default(),
         })
     }
 
-    const SELECT_COLUMNS: &'static str = "id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at, track_streak, sync_id, created_at, updated_at, sync_status";
+    const SELECT_COLUMNS: &'static str = "id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at, track_streak, reminder_at, sync_id, created_at, updated_at, sync_status";
 
     pub fn get_by_category(
         conn: &Connection,
@@ -175,6 +176,7 @@ impl TodoRepository {
         repeat_detail: Option<&str>,
         next_due_at: Option<&str>,
         track_streak: bool,
+        reminder_at: Option<&str>,
     ) -> Result<TodoItem, rusqlite::Error> {
         let max_order: i64 = if let Some(cat_id) = category_id {
             conn.query_row(
@@ -197,8 +199,8 @@ impl TodoRepository {
         let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
         conn.execute(
-            "INSERT INTO todos (text, done, category_id, display_order, repeat_type, repeat_detail, next_due_at, track_streak, created_at, updated_at, sync_status) VALUES (?1, 0, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending')",
-            params![text, category_id, display_order, repeat_type_str, repeat_detail, next_due_at, track_streak, &now, &now],
+            "INSERT INTO todos (text, done, category_id, display_order, repeat_type, repeat_detail, next_due_at, track_streak, reminder_at, created_at, updated_at, sync_status) VALUES (?1, 0, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'pending')",
+            params![text, category_id, display_order, repeat_type_str, repeat_detail, next_due_at, track_streak, reminder_at, &now, &now],
         )?;
 
         let id = conn.last_insert_rowid();
@@ -215,6 +217,7 @@ impl TodoRepository {
             next_due_at: next_due_at.map(|s| s.to_string()),
             last_completed_at: None,
             track_streak,
+            reminder_at: reminder_at.map(|s| s.to_string()),
             sync_id: None,
             created_at: Some(now.clone()),
             updated_at: Some(now),
@@ -230,6 +233,19 @@ impl TodoRepository {
         conn.execute(
             "UPDATE todos SET track_streak = ?1 WHERE id = ?2",
             params![track_streak as i32, id],
+        )?;
+        Self::mark_updated(conn, id)?;
+        Ok(())
+    }
+
+    pub fn update_reminder(
+        conn: &Connection,
+        id: i64,
+        reminder_at: Option<&str>,
+    ) -> Result<(), rusqlite::Error> {
+        conn.execute(
+            "UPDATE todos SET reminder_at = ?1 WHERE id = ?2",
+            params![reminder_at, id],
         )?;
         Self::mark_updated(conn, id)?;
         Ok(())

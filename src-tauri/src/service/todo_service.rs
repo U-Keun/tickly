@@ -26,6 +26,7 @@ impl TodoService {
         repeat_type: &RepeatType,
         repeat_detail: Option<&str>,
         track_streak: bool,
+        reminder_at: Option<&str>,
     ) -> Result<TodoItem, rusqlite::Error> {
         // Calculate initial next_due_at for repeating items
         let next_due_at = if *repeat_type != RepeatType::None {
@@ -43,7 +44,16 @@ impl TodoService {
             repeat_detail,
             next_due_at.as_deref(),
             track_streak,
+            reminder_at,
         )
+    }
+
+    pub fn update_reminder(
+        conn: &Connection,
+        id: i64,
+        reminder_at: Option<&str>,
+    ) -> Result<(), rusqlite::Error> {
+        TodoRepository::update_reminder(conn, id, reminder_at)
     }
 
     pub fn toggle_item(conn: &Connection, id: i64) -> Result<Option<TodoItem>, rusqlite::Error> {

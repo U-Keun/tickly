@@ -15,13 +15,14 @@
     onEditText: (id: number, text: string) => void;
     onUpdateRepeat: (id: number, repeatType: RepeatType, repeatDetail: string | null) => void;
     onUpdateTrackStreak: (id: number, trackStreak: boolean) => void;
+    onUpdateReminder: (id: number, reminderAt: string | null) => void;
     onAddTag?: (itemId: number, tagName: string) => void;
     onRemoveTag?: (itemId: number, tagId: number) => void;
     onEditModeChange?: (editing: boolean) => void;
     closeDrawer: () => void;
   }
 
-  let { item, itemTags = [], allTags = [], onSaveMemo, onEditText, onUpdateRepeat, onUpdateTrackStreak, onAddTag, onRemoveTag, onEditModeChange, closeDrawer }: Props = $props();
+  let { item, itemTags = [], allTags = [], onSaveMemo, onEditText, onUpdateRepeat, onUpdateTrackStreak, onUpdateReminder, onAddTag, onRemoveTag, onEditModeChange, closeDrawer }: Props = $props();
 
   let isEditMode = $state(false);
   let editText = $state('');
@@ -29,6 +30,7 @@
   let repeatType = $state<RepeatType>('none');
   let repeatDetail = $state<number[]>([]);
   let trackStreak = $state(false);
+  let reminderTime = $state('');
   let isSaving = $state(false);
   let showAdvanced = $state(false);
 
@@ -39,6 +41,7 @@
     repeatType = item.repeat_type;
     repeatDetail = item.repeat_detail ? JSON.parse(item.repeat_detail) : [];
     trackStreak = item.track_streak;
+    reminderTime = item.reminder_at || '';
   });
 
   function enterEditMode() {
@@ -52,6 +55,7 @@
     repeatType = item.repeat_type;
     repeatDetail = item.repeat_detail ? JSON.parse(item.repeat_detail) : [];
     trackStreak = item.track_streak;
+    reminderTime = item.reminder_at || '';
     showAdvanced = false;
     isEditMode = false;
     onEditModeChange?.(false);
@@ -84,6 +88,12 @@
     // Save track_streak if changed
     if (trackStreak !== item.track_streak) {
       onUpdateTrackStreak(item.id, trackStreak);
+    }
+
+    // Save reminder if changed
+    const newReminderAt = reminderTime || null;
+    if (newReminderAt !== (item.reminder_at || null)) {
+      onUpdateReminder(item.id, newReminderAt);
     }
 
     isSaving = false;
@@ -193,6 +203,30 @@
               </button>
             </label>
           </div>
+          <hr class="advanced-divider" />
+          <div class="edit-section reminder-section">
+            <span class="section-label">{i18n.t('reminder')}</span>
+            <div class="reminder-row">
+              <input
+                type="time"
+                class="reminder-input"
+                bind:value={reminderTime}
+              />
+              {#if reminderTime}
+                <button
+                  type="button"
+                  class="reminder-clear"
+                  onclick={() => reminderTime = ''}
+                  title={i18n.t('reminderClear')}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              {/if}
+            </div>
+          </div>
           {#if onAddTag && onRemoveTag}
             <hr class="advanced-divider" />
             <div class="edit-section">
@@ -237,7 +271,7 @@
   {:else}
     <!-- View Mode -->
     <div class="view-container">
-      {#if item.memo || item.repeat_type !== 'none' || item.track_streak || itemTags.length > 0}
+      {#if item.memo || item.repeat_type !== 'none' || item.track_streak || item.reminder_at || itemTags.length > 0}
         <div class="memo-display">
           {#if itemTags.length > 0}
             <div class="tags-display">
@@ -270,6 +304,17 @@
                 </svg>
               </span>
               {i18n.t('trackingStreak')}
+            </p>
+          {/if}
+          {#if item.reminder_at}
+            <p class="reminder-info">
+              <span class="reminder-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
+                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
+                </svg>
+              </span>
+              {item.reminder_at}
             </p>
           {/if}
         </div>
@@ -567,5 +612,64 @@
     display: flex;
     align-items: center;
     color: var(--color-accent-peach-strong);
+  }
+
+  .reminder-section {
+    padding-top: 4px;
+  }
+
+  .reminder-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .reminder-input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--color-stroke);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--color-white);
+    color: var(--color-ink);
+  }
+
+  .reminder-input:focus {
+    outline: none;
+    border-color: var(--color-accent-sky);
+  }
+
+  .reminder-clear {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-canvas);
+    color: var(--color-ink-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+  }
+
+  .reminder-clear:hover {
+    background: var(--color-mist);
+  }
+
+  .reminder-info {
+    margin: 6px 0 0 0;
+    font-size: 13px;
+    color: var(--color-ink-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .reminder-icon {
+    display: flex;
+    align-items: center;
+    color: var(--color-accent-sky-strong);
   }
 </style>

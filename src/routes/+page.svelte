@@ -22,6 +22,7 @@
   import * as todoApi from '../lib/api/todoApi';
   import * as settingsApi from '../lib/api/settingsApi';
   import { i18n } from '$lib/i18n';
+  import { scheduleReminder, cancelReminder, rescheduleAll } from '$lib/notification';
 
   // Local UI state only
   let isEditingItem = $state(false);
@@ -83,7 +84,6 @@
       lastProcessedDate = today;
 
       if (reactivatedCount > 0) {
-        console.log(`Reactivated ${reactivatedCount} repeating items`);
         // Reload items to reflect changes
         await appStore.loadItems();
       }
@@ -105,7 +105,6 @@
     try {
       const didReset = await todoApi.checkAndAutoReset();
       if (didReset) {
-        console.log('Auto-reset performed');
         await appStore.loadItems();
       }
     } catch (error) {
@@ -141,10 +140,8 @@
       if (!resetTime) return;
 
       const msUntilReset = getMsUntilResetTime(resetTime);
-      console.log(`Next reset scheduled in ${Math.round(msUntilReset / 1000 / 60)} minutes`);
 
       resetTimer = setTimeout(async () => {
-        console.log('Reset time reached, performing auto-reset...');
         await checkAndPerformAutoReset();
         // Schedule next reset (for tomorrow)
         await scheduleResetTimer();
@@ -152,6 +149,55 @@
     } catch (error) {
       console.error('Failed to schedule reset timer:', error);
     }
+  }
+
+  // Notification-aware wrappers
+  async function handleAddItem(
+    text: string,
+    memo: string | null,
+    repeatType: import('../types').RepeatType,
+    repeatDetail: string | null,
+    trackStreak: boolean,
+    tagNames?: string[],
+    reminderAt?: string | null
+  ) {
+    await appStore.addItem(text, memo, repeatType, repeatDetail, trackStreak, tagNames ?? [], reminderAt ?? null);
+    // Schedule notification if reminder was set
+    if (reminderAt) {
+      // Find the newly added item (last in list)
+      const lastItem = appStore.items[appStore.items.length - 1];
+      if (lastItem) {
+        await scheduleReminder(lastItem.id, lastItem.text, reminderAt);
+      }
+    }
+  }
+
+  async function handleUpdateReminder(id: number, reminderAt: string | null) {
+    await appStore.updateReminder(id, reminderAt);
+    if (reminderAt) {
+      const item = appStore.items.find(i => i.id === id);
+      await scheduleReminder(id, item?.text ?? '', reminderAt);
+    } else {
+      await cancelReminder(id);
+    }
+  }
+
+  async function handleToggleItem(id: number) {
+    const item = appStore.items.find(i => i.id === id);
+    const wasDone = item?.done;
+    await appStore.toggleItem(id);
+    if (!wasDone && item?.reminder_at) {
+      // Item was completed → cancel reminder
+      await cancelReminder(id);
+    } else if (wasDone && item?.reminder_at) {
+      // Item was re-activated → reschedule reminder
+      await scheduleReminder(id, item.text, item.reminder_at);
+    }
+  }
+
+  async function handleDeleteItem(id: number) {
+    await cancelReminder(id);
+    await appStore.deleteItem(id);
   }
 
   onMount(async () => {
@@ -170,6 +216,9 @@
 
     // Schedule auto-reset timer
     await scheduleResetTimer();
+
+    // Reschedule all notifications
+    await rescheduleAll(appStore.items);
 
     showFab = true;
 
@@ -235,12 +284,12 @@
         <div class="item-list">
           {#each displayItems as item (item.id)}
             <div animate:flip={{ duration: 300 }} class="item-wrapper">
-              <SwipeableItem {item} onDelete={appStore.deleteItem}>
+              <SwipeableItem {item} onDelete={handleDeleteItem}>
                 {#snippet children()}
                   <LeafTodoItem
                     {item}
                     itemTags={appStore.itemTagsMap[item.id] ?? []}
-                    onToggle={appStore.toggleItem}
+                    onToggle={handleToggleItem}
                     onEdit={appStore.editItem}
                   >
                     {#snippet drawerContent({ item: drawerItem, closeDrawer })}
@@ -252,6 +301,7 @@
                         onEditText={appStore.editItem}
                         onUpdateRepeat={appStore.updateRepeat}
                         onUpdateTrackStreak={appStore.updateTrackStreak}
+                        onUpdateReminder={handleUpdateReminder}
                         onAddTag={appStore.addTagToItem}
                         onRemoveTag={appStore.removeTagFromItem}
                         onEditModeChange={(editing) => isEditingItem = editing}
@@ -283,7 +333,7 @@
   <AddItemModal
     show={modalStore.showAddItemModal}
     allTags={appStore.allTags}
-    onAdd={appStore.addItem}
+    onAdd={handleAddItem}
     onCancel={modalStore.closeAddItemModal}
   />
 

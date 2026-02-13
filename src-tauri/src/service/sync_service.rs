@@ -36,6 +36,7 @@ struct PendingTodoSync {
     next_due_at: Option<String>,
     last_completed_at: Option<String>,
     track_streak: bool,
+    reminder_at: Option<String>,
     created_at: Option<String>,
     updated_at: Option<String>,
     sync_status: SyncStatus,
@@ -316,6 +317,7 @@ impl SyncService {
                 next_due_at: t.next_due_at,
                 last_completed_at: t.last_completed_at,
                 track_streak: t.track_streak,
+                reminder_at: t.reminder_at,
                 created_at: t.created_at,
                 updated_at: t.updated_at,
                 sync_status: t.sync_status,
@@ -397,6 +399,7 @@ impl SyncService {
                         next_due_at: todo.next_due_at.clone(),
                         last_completed_at: todo.last_completed_at.clone(),
                         track_streak: todo.track_streak,
+                        reminder_at: todo.reminder_at.clone(),
                         created_at: todo.created_at.clone().unwrap_or_else(|| {
                             Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
                         }),
@@ -546,7 +549,7 @@ impl SyncService {
         conn.execute(
             "UPDATE todos SET text = ?1, done = ?2, category_id = ?3, display_order = ?4, memo = ?5,
              repeat_type = ?6, repeat_detail = ?7, next_due_at = ?8, last_completed_at = ?9,
-             track_streak = ?10, updated_at = ?11, sync_status = 'synced' WHERE id = ?12",
+             track_streak = ?10, reminder_at = ?11, updated_at = ?12, sync_status = 'synced' WHERE id = ?13",
             rusqlite::params![
                 remote.text,
                 remote.done,
@@ -558,6 +561,7 @@ impl SyncService {
                 remote.next_due_at,
                 remote.last_completed_at,
                 remote.track_streak,
+                remote.reminder_at,
                 remote.updated_at,
                 local.id
             ],
@@ -573,8 +577,8 @@ impl SyncService {
     ) -> Result<(), String> {
         conn.execute(
             "INSERT INTO todos (text, done, category_id, display_order, memo, repeat_type, repeat_detail,
-             next_due_at, last_completed_at, track_streak, sync_id, created_at, updated_at, sync_status)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 'synced')
+             next_due_at, last_completed_at, track_streak, reminder_at, sync_id, created_at, updated_at, sync_status)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, 'synced')
              ON CONFLICT(sync_id) DO UPDATE SET
                 text = excluded.text,
                 done = excluded.done,
@@ -586,6 +590,7 @@ impl SyncService {
                 next_due_at = excluded.next_due_at,
                 last_completed_at = excluded.last_completed_at,
                 track_streak = excluded.track_streak,
+                reminder_at = excluded.reminder_at,
                 updated_at = excluded.updated_at,
                 sync_status = 'synced'",
             rusqlite::params![
@@ -599,6 +604,7 @@ impl SyncService {
                 remote.next_due_at,
                 remote.last_completed_at,
                 remote.track_streak,
+                remote.reminder_at,
                 remote.id,
                 remote.created_at,
                 remote.updated_at

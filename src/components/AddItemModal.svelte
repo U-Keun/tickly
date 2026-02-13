@@ -10,7 +10,7 @@
   interface Props {
     show: boolean;
     allTags?: Tag[];
-    onAdd: (text: string, memo: string | null, repeatType: RepeatType, repeatDetail: string | null, trackStreak: boolean, tagNames?: string[]) => void;
+    onAdd: (text: string, memo: string | null, repeatType: RepeatType, repeatDetail: string | null, trackStreak: boolean, tagNames?: string[], reminderAt?: string | null) => void;
     onCancel: () => void;
   }
 
@@ -21,6 +21,7 @@
   let repeatType = $state<RepeatType>('none');
   let repeatDetail = $state<number[]>([]);
   let trackStreak = $state(false);
+  let reminderTime = $state('');
   let showAdvanced = $state(false);
   let pendingTags = $state<Tag[]>([]);
   let nextLocalTagId = $state(-1);
@@ -34,6 +35,7 @@
       repeatType = 'none';
       repeatDetail = [];
       trackStreak = false;
+      reminderTime = '';
       showAdvanced = false;
       pendingTags = [];
       nextLocalTagId = -1;
@@ -57,7 +59,8 @@
     const trimmedMemo = memo.trim() || null;
     const repeatDetailJson = repeatDetail.length > 0 ? JSON.stringify(repeatDetail) : null;
     const tagNames = pendingTags.map(t => t.name);
-    onAdd(trimmedText, trimmedMemo, repeatType, repeatDetailJson, trackStreak, tagNames);
+    const reminderAt = reminderTime || null;
+    onAdd(trimmedText, trimmedMemo, repeatType, repeatDetailJson, trackStreak, tagNames, reminderAt);
     onCancel();
   }
 
@@ -151,6 +154,32 @@
             </span>
           </button>
         </label>
+      </div>
+
+      <hr class="advanced-divider" />
+
+      <div class="form-group reminder-section">
+        <span class="form-label">{i18n.t('reminder')}</span>
+        <div class="reminder-row">
+          <input
+            type="time"
+            class="reminder-input"
+            bind:value={reminderTime}
+          />
+          {#if reminderTime}
+            <button
+              type="button"
+              class="reminder-clear"
+              onclick={() => reminderTime = ''}
+              title={i18n.t('reminderClear')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          {/if}
+        </div>
       </div>
 
       <hr class="advanced-divider" />
@@ -367,5 +396,49 @@
 
   .streak-toggle.active .toggle-thumb {
     transform: translateX(20px);
+  }
+
+  .reminder-section {
+    padding-top: 4px;
+  }
+
+  .reminder-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .reminder-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 2px solid var(--color-stroke);
+    border-radius: 10px;
+    font-size: 14px;
+    background: var(--color-white);
+    color: var(--color-ink);
+  }
+
+  .reminder-input:focus {
+    outline: none;
+    border-color: var(--color-accent-sky);
+  }
+
+  .reminder-clear {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-canvas);
+    color: var(--color-ink-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+  }
+
+  .reminder-clear:hover {
+    background: var(--color-mist);
   }
 </style>

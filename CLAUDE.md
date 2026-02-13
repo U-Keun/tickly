@@ -103,6 +103,7 @@ Tickly/
 │   │   │   ├── ko.ts                 # Korean translations
 │   │   │   └── en.ts                 # English translations
 │   │   ├── themes.ts                 # Theme presets and utilities
+│   │   ├── notification.ts           # Notification scheduling utilities
 │   │   └── iosFocusFix.ts            # iOS input focus fix
 │   ├── types.ts                      # TypeScript type definitions
 │   ├── app.css                       # Tailwind directives + CSS variables
@@ -243,6 +244,7 @@ const items = await invoke('get_items', { categoryId });
 - `deleteItem(id)` - Delete an item
 - `editItem(id, text)` - Update item text
 - `updateItemMemo(id, memo)` - Update item memo
+- `updateItemReminder(id, reminderAt)` - Update item reminder time
 - `reorderItems(itemIds)` - Reorder items
 - `resetAllItems(categoryId)` - Reset all items' done status
 - `checkAndAutoReset()` - Auto-reset if new day
@@ -550,6 +552,9 @@ await appStore.addTagToItem(itemId, tagName);
 await appStore.removeTagFromItem(itemId, tagId);
 appStore.setTagFilter(tagId);
 appStore.clearTagFilter();
+
+// Reminders
+await appStore.updateReminder(id, reminderAt);
 ```
 
 ### modalStore
@@ -752,6 +757,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 - ✅ Realtime sync (Supabase Realtime WebSocket) - 멀티 디바이스 실시간 동기화
 - ✅ Tags (#태그 부착, 필터링, 설정에서 관리, 클라우드 동기화)
 - ✅ Graph view (PixiJS WebGL + d3-force 노드 그래프 시각화)
+- ✅ Item notifications (항목별 알림, tauri-plugin-notification + UNCalendarNotificationTrigger)
 
 ### UI/UX
 - ✅ Theme customization (5 presets + custom colors)
@@ -798,9 +804,13 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
   - 팬/줌/드래그 인터랙션
   - 카테고리 탭 → 해당 카테고리 이동, 태그 꾹 누르기 → 엣지 하이라이트, 아이템 탭 → 완료 토글
   - FloatingActions에서 리셋 버튼 제거, 그래프 뷰 버튼 추가
+- **v0.7.0**: ✅ Item notifications
+  - 항목별 알림 시간 설정 (HH:MM 피커) — MemoDrawer + AddItemModal
+  - tauri-plugin-notification + UNCalendarNotificationTrigger (iOS)
+  - reminder_at 필드 DB 저장 + 클라우드 동기화
+  - 항목 완료/삭제 시 알림 자동 취소, 앱 시작 시 재스케줄
 
 ### Planned Features (see `docs/roadmap.md` for details)
-- **v0.7.0**: Item notifications (항목별 알림, tauri-plugin-notification v2.3.1+)
 - **v0.8.0**: iOS widgets
 - **v0.9.0**: Shared lists (family/team collaboration)
 

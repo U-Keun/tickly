@@ -72,6 +72,7 @@ pub struct RemoteTodo {
     pub next_due_at: Option<String>,
     pub last_completed_at: Option<String>,
     pub track_streak: bool,
+    pub reminder_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
