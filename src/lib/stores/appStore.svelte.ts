@@ -32,9 +32,6 @@ async function loadItems(): Promise<void> {
   try {
     // Check and perform auto-reset if needed before loading items
     const didReset = await todoApi.checkAndAutoReset();
-    if (didReset) {
-      console.log('Auto-reset performed');
-    }
     items = await todoApi.getItems(selectedCategoryId);
   } catch (error) {
     console.error('Failed to load items:', error);
@@ -97,10 +94,11 @@ async function addItem(
   repeatType: RepeatType = 'none',
   repeatDetail: string | null = null,
   trackStreak: boolean = false,
-  tagNames: string[] = []
+  tagNames: string[] = [],
+  reminderAt: string | null = null
 ): Promise<void> {
   try {
-    const newItem = await todoApi.addItem(text, selectedCategoryId, repeatType, repeatDetail, trackStreak);
+    const newItem = await todoApi.addItem(text, selectedCategoryId, repeatType, repeatDetail, trackStreak, reminderAt);
     if (memo) {
       await todoApi.updateItemMemo(newItem.id, memo);
       newItem.memo = memo;
@@ -200,6 +198,18 @@ async function updateTrackStreak(id: number, trackStreak: boolean): Promise<void
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to update track_streak:', error);
+  }
+}
+
+async function updateReminder(id: number, reminderAt: string | null): Promise<void> {
+  try {
+    await todoApi.updateItemReminder(id, reminderAt);
+    items = items.map(item =>
+      item.id === id ? { ...item, reminder_at: reminderAt } : item
+    );
+    syncStore.scheduleSync();
+  } catch (error) {
+    console.error('Failed to update reminder:', error);
   }
 }
 
@@ -360,6 +370,7 @@ export const appStore = {
   updateMemo,
   updateRepeat,
   updateTrackStreak,
+  updateReminder,
   resetAllItems,
   setItems,
 

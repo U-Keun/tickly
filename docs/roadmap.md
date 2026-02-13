@@ -5,7 +5,7 @@
 ## 공통 방향
 - **일일 자동 초기화는 제거**하고, 반복 규칙으로 대체합니다.
 - 성과/통계는 **완료율 계산 없이** 스트릭(연속 달성)만 제공합니다.
-- 알림 기능은 Tauri 충돌 이슈로 보류합니다.
+- 알림 기능은 v0.7.0에서 구현 완료 (tauri-plugin-notification).
 
 ## 0.2.0 — 반복 규칙 스케줄링 ✅ 완료
 **목표:** 일일 초기화 제거 후, 반복 규칙으로 체크리스트를 유지/재생성.
@@ -234,27 +234,31 @@ CREATE POLICY "Users can CRUD own todo_tags" ON todo_tags FOR ALL USING (auth.ui
 - 인터랙티브 그래프 (터치 드래그, 핀치 줌)
 - 항목 노드 탭 → 해당 카테고리 화면으로 이동
 
-## 0.7.0 — 항목 알림
+## 0.7.0 — 항목 알림 ✅ 완료
 **목표:** 특정 항목에 알림을 설정하여 잊지 않고 실행.
 
-### MVP 범위
-- 항목별 알림 시간 설정 (날짜 + 시간)
-- 반복 항목과 연동: 반복 규칙에 맞춰 알림 자동 생성
-- 로컬 알림 (iOS push notification)
+### 구현 완료
+- ✅ 항목별 알림 시간 설정 (HH:MM 타임 피커)
+- ✅ MemoDrawer + AddItemModal 상세 설정에서 알림 설정/해제
+- ✅ iOS 로컬 알림 (`tauri-plugin-notification` + `UNCalendarNotificationTrigger`)
+- ✅ 항목 완료/삭제 시 알림 자동 취소
+- ✅ 앱 시작 시 미완료 항목 알림 재스케줄 (`rescheduleAll`)
+- ✅ `reminder_at` 클라우드 동기화 지원
 
 ### 데이터 모델 변경
 - `todos` 테이블 확장:
-  - `reminder_at` (알림 시간, TIMESTAMPTZ / nullable)
-- 클라우드 동기화 지원
+  - `reminder_at` (알림 시간, TEXT "HH:MM" / nullable)
+
+### 기술 노트
+- `Schedule.at(date)` 사용 불가: Rust `time::iso8601` 시리얼라이저가 날짜 포맷을 변경하여 (`+00` vs `.SSSZ`) Swift DateFormatter 파싱 실패
+- **해결**: `Schedule.interval({ hour, minute })` 사용 → `UNCalendarNotificationTrigger` (정수값만 전달, 날짜 문자열 round-trip 문제 없음)
+- 플러그인 JS API (`sendNotification`, `isPermissionGranted` 등)는 `window.Notification` (Web API) 사용 — iOS WKWebView에서 동작하지 않음
+- **해결**: `invoke('plugin:notification|notify', { options })` 등 직접 invoke 호출
 
 ### UX 요약
-- MemoDrawer에서 알림 시간 설정 (날짜/시간 피커)
-- 항목 목록에서 알림 아이콘 표시
-- 알림 탭 시 해당 항목으로 이동
-
-### 참고
-- Tauri `tauri-plugin-notification` v2.3.1+에서 iOS 스케줄링 지원 확인
-- `Schedule.at(date)` API로 특정 시간 알림 예약
+- MemoDrawer/AddItemModal 상세 설정에서 알림 시간 설정 (time input)
+- View 모드에서 알림 설정 시 종 아이콘 + 시간 표시
+- 알림 해제 버튼 (X) 제공
 
 ## 0.8.0 — 위젯
 **목표:** 앱을 열지 않고 빠르게 체크.

@@ -10,7 +10,8 @@ export async function addItem(
   categoryId: number | null,
   repeatType?: RepeatType,
   repeatDetail?: string | null,
-  trackStreak?: boolean
+  trackStreak?: boolean,
+  reminderAt?: string | null
 ): Promise<TodoItem> {
   return invoke<TodoItem>('add_item', {
     text,
@@ -18,7 +19,15 @@ export async function addItem(
     repeatType: repeatType || null,
     repeatDetail: repeatDetail || null,
     trackStreak: trackStreak || false,
+    reminderAt: reminderAt || null,
   });
+}
+
+export async function updateItemReminder(
+  id: number,
+  reminderAt: string | null
+): Promise<void> {
+  return invoke<void>('update_item_reminder', { id, reminderAt });
 }
 
 export async function toggleItem(id: number): Promise<TodoItem | null> {

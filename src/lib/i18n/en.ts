@@ -184,6 +184,12 @@ export const en: Translations = {
   graphEmpty: 'No items yet',
   graphEmptyHint: 'Add items to see them on the graph',
 
+  // Reminder / Notification
+  reminder: 'Reminder',
+  reminderSet: 'Reminder set',
+  reminderPlaceholder: 'Select time...',
+  reminderClear: 'Clear reminder',
+
   // Advanced settings
   advancedSettings: 'More Options',
 

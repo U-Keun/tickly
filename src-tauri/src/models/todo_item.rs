@@ -53,6 +53,7 @@ pub struct TodoItem {
     pub next_due_at: Option<String>,
     pub last_completed_at: Option<String>,
     pub track_streak: bool,
+    pub reminder_at: Option<String>,
     // Sync fields
     pub sync_id: Option<String>,
     pub created_at: Option<String>,

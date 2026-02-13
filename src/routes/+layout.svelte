@@ -8,6 +8,7 @@
   import type { Snippet } from 'svelte';
   import { authStore, handleOAuthCallback } from '$lib/stores/authStore.svelte';
   import { syncStore } from '$lib/stores/syncStore.svelte';
+  import { ensurePermission } from '$lib/notification';
 
   let { children }: { children: Snippet } = $props();
 
@@ -24,6 +25,9 @@
 
   // Check session and set up deep link listener
   onMount(async () => {
+    // Request notification permission
+    await ensurePermission();
+
     // Restore login state from saved session
     await authStore.checkSession();
 
@@ -36,7 +40,6 @@
       // Listen for deep link events
       await onOpenUrl(async (urls) => {
         for (const url of urls) {
-          console.log('Deep link received:', url);
 
           // Parse the URL to extract OAuth callback parameters
           try {
@@ -53,7 +56,6 @@
               }
 
               if (code) {
-                console.log('OAuth code received, completing sign in...');
                 await handleOAuthCallback(code);
                 // Connect to realtime after successful OAuth
                 await connectRealtimeIfLoggedIn();
@@ -66,7 +68,7 @@
       });
     } catch (e) {
       // Deep link plugin might not be available on all platforms
-      console.log('Deep link plugin not available:', e);
+      // Deep link plugin not available on this platform
     }
   });
 

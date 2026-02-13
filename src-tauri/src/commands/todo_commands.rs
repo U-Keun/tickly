@@ -11,13 +11,25 @@ pub fn add_item(
     repeat_type: Option<String>,
     repeat_detail: Option<String>,
     track_streak: Option<bool>,
+    reminder_at: Option<String>,
     state: State<AppState>,
 ) -> Result<TodoItem, String> {
     let db = state.db.lock().unwrap();
     let repeat = repeat_type
         .map(|s| RepeatType::from_str(&s))
         .unwrap_or(RepeatType::None);
-    TodoService::create_item(&db, &text, category_id, &repeat, repeat_detail.as_deref(), track_streak.unwrap_or(false))
+    TodoService::create_item(&db, &text, category_id, &repeat, repeat_detail.as_deref(), track_streak.unwrap_or(false), reminder_at.as_deref())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn update_item_reminder(
+    id: i64,
+    reminder_at: Option<String>,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    TodoService::update_reminder(&db, id, reminder_at.as_deref())
         .map_err(|e| e.to_string())
 }
 

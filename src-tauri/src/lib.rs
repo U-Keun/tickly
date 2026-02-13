@@ -21,7 +21,8 @@ pub fn run() {
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
-        .plugin(tauri_plugin_deep_link::init());
+        .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_notification::init());
 
     // Add Sign In with Apple plugin on iOS
     #[cfg(target_os = "ios")]
@@ -69,6 +70,7 @@ pub fn run() {
             reset_all_items,
             check_and_auto_reset,
             process_repeats,
+            update_item_reminder,
             // Category commands
             get_categories,
             add_category,

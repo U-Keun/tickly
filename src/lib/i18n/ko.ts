@@ -182,6 +182,12 @@ export const ko = {
   graphEmpty: '항목이 없습니다',
   graphEmptyHint: '항목을 추가하면 그래프에 표시됩니다',
 
+  // Reminder / Notification
+  reminder: '알림',
+  reminderSet: '알림 설정됨',
+  reminderPlaceholder: '시간 선택...',
+  reminderClear: '알림 해제',
+
   // Advanced settings
   advancedSettings: '상세 설정',
 
