@@ -101,7 +101,8 @@ Tickly/
 │   │   │   ├── index.ts              # Re-exports
 │   │   │   ├── i18nStore.svelte.ts   # i18n store with locale state
 │   │   │   ├── ko.ts                 # Korean translations
-│   │   │   └── en.ts                 # English translations
+│   │   │   ├── en.ts                 # English translations
+│   │   │   └── ja.ts                 # Japanese translations
 │   │   ├── themes.ts                 # Theme presets and utilities
 │   │   ├── notification.ts           # Notification scheduling utilities
 │   │   └── iosFocusFix.ts            # iOS input focus fix
@@ -474,7 +475,7 @@ Settings pages use `SettingsLayout.svelte` for consistent header and layout:
 
 ## Internationalization (i18n)
 
-The app supports Korean and English with a reactive i18n system.
+The app supports Korean, English, and Japanese with a reactive i18n system.
 
 ### Usage
 
@@ -485,7 +486,7 @@ import { i18n } from '$lib/i18n';
 const text = i18n.t('settingsTitle');
 
 // Get current locale
-const locale = i18n.locale; // 'ko' | 'en'
+const locale = i18n.locale; // 'ko' | 'en' | 'ja'
 
 // Change locale
 await i18n.setLocale('en');
@@ -501,7 +502,7 @@ export const ko = {
 };
 ```
 
-2. Add same key to `src/lib/i18n/en.ts`:
+2. Add same key to `src/lib/i18n/en.ts` and `src/lib/i18n/ja.ts`:
 ```typescript
 export const en: Translations = {
   // ...existing keys
@@ -762,7 +763,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### UI/UX
 - ✅ Theme customization (5 presets + custom colors)
 - ✅ Font customization
-- ✅ Internationalization (Korean/English)
+- ✅ Internationalization (Korean/English/Japanese)
 - ✅ iOS-optimized UI with safe area handling
 - ✅ Unified modal styles with slide-up animation
 - ✅ Common layout components (SettingsLayout, ModalWrapper)
