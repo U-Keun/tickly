@@ -222,13 +222,24 @@ jobs:
           done
 
       - name: Build iOS
-        run: yarn tauri ios build --ci --export-method app-store-connect --verbose
+        run: yarn tauri ios build --ci --export-method release-testing --verbose
 
       - name: Debug iOS signing settings (on failure)
         if: failure()
         run: |
           set +e
           xcodebuild -workspace src-tauri/gen/apple/tickly.xcodeproj/project.xcworkspace -scheme tickly_iOS -showBuildSettings | egrep "PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY|PROVISIONING_PROFILE"
+
+      - name: Debug iOS export logs (on failure)
+        if: failure()
+        run: |
+          set +e
+          LOG_DIR=$(ls -td /var/folders/*/*/*/T/*.xcdistributionlogs 2>/dev/null | head -1)
+          echo "Latest xcdistributionlogs: ${LOG_DIR:-not found}"
+          if [ -n "$LOG_DIR" ]; then
+            find "$LOG_DIR" -type f | sort
+            find "$LOG_DIR" -type f -name "*.log" -print -exec tail -n 200 {} \;
+          fi
 
       - name: Find IPA file
         id: find-ipa
