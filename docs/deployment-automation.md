@@ -8,7 +8,7 @@ Tickly 배포 자동화는 GitHub Actions의 CI/CD 워크플로우로 구성됩�
   - 실행 시점: `main` 브랜치 push, `main` 대상 PR, 수동 실행
   - 수행 작업:
     - `package.json`과 `src-tauri/tauri.conf.json` 버전 동기화 검증
-    - 프론트엔드 타입체크 (`yarn check`)
+    - 프론트엔드 타입체크 (`yarn run check`)
     - Rust 체크/테스트 (`cargo check`, `cargo test`)
     - `main` push 시 macOS 번들 빌드 스모크 체크
 
@@ -43,7 +43,7 @@ Tickly 배포 자동화는 GitHub Actions의 CI/CD 워크플로우로 구성됩�
    - `package.json`의 `version`
    - `src-tauri/tauri.conf.json`의 `version`
 2. 로컬 검증
-   - `yarn check`
+   - `yarn run check`
    - `cargo test --manifest-path src-tauri/Cargo.toml`
 3. 태그 생성/푸시
    - `git tag vX.Y.Z`

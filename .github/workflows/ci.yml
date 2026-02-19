@@ -42,7 +42,7 @@ jobs:
           cache: yarn
 
       - run: yarn install --frozen-lockfile
-      - run: yarn check
+      - run: yarn run check
 
   rust-check:
     name: Rust Check
