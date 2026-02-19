@@ -77,6 +77,9 @@ jobs:
           key: cargo-${{ runner.os }}-${{ hashFiles('src-tauri/Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-
 
+      - name: Ensure frontend dist exists for Tauri context
+        run: mkdir -p build
+
       - run: cargo check --manifest-path src-tauri/Cargo.toml
       - run: cargo test --manifest-path src-tauri/Cargo.toml
 
