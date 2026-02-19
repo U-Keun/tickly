@@ -218,6 +218,8 @@ jobs:
               set_or_add ":objects:$id:buildSettings:CODE_SIGN_IDENTITY" "Apple Distribution"
               set_or_add ":objects:$id:buildSettings:PROVISIONING_PROFILE" "$IOS_PROFILE_UUID"
               set_or_add ":objects:$id:buildSettings:PROVISIONING_PROFILE_SPECIFIER" "$IOS_PROFILE_NAME"
+              set_or_add ":objects:$id:buildSettings:SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD" "NO"
+              set_or_add ":objects:$id:buildSettings:SUPPORTED_PLATFORMS" "iphoneos iphonesimulator"
             fi
           done
 
@@ -232,7 +234,7 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string tickly" "$INFO_PLIST"
 
       - name: Build iOS
-        run: yarn tauri ios build --ci --export-method release-testing --verbose
+        run: yarn tauri ios build --ci --target aarch64 --export-method release-testing --verbose
 
       - name: Debug iOS signing settings (on failure)
         if: failure()
