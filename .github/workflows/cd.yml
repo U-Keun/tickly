@@ -126,6 +126,9 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE_P12 }}
+      IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+      IOS_MOBILE_PROVISION: ${{ secrets.IOS_PROVISIONING_PROFILE }}
     steps:
       - uses: actions/checkout@v4
 
@@ -154,32 +157,10 @@ jobs:
       - name: Build frontend (required for iOS)
         run: yarn build
 
-      - name: Import Apple certificate
-        env:
-          IOS_CERTIFICATE_P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
-          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+      - name: Extract development team from provisioning profile
         run: |
-          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
           PROFILE_PATH=$RUNNER_TEMP/profile.mobileprovision
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          KEYCHAIN_PASSWORD=$(openssl rand -hex 16)
-
-          echo -n "$IOS_CERTIFICATE_P12" | base64 --decode -o $CERTIFICATE_PATH
-          echo -n "$IOS_PROVISIONING_PROFILE" | base64 --decode -o $PROFILE_PATH
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-          security import $CERTIFICATE_PATH -P "$IOS_CERTIFICATE_PASSWORD" \
-            -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security set-key-partition-list -S apple-tool:,apple: \
-            -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
-
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp $PROFILE_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+          echo -n "$IOS_MOBILE_PROVISION" | base64 --decode > "$PROFILE_PATH"
 
           security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
           TEAM_ID=$(/usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" "$RUNNER_TEMP/profile.plist")
@@ -193,7 +174,7 @@ jobs:
         run: yarn tauri ios init --ci
 
       - name: Build iOS
-        run: yarn tauri ios build
+        run: yarn tauri ios build --ci --export-method app-store-connect
 
       - name: Find IPA file
         id: find-ipa
