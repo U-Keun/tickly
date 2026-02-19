@@ -170,6 +170,20 @@ jobs:
           fi
           echo "APPLE_DEVELOPMENT_TEAM=$TEAM_ID" >> $GITHUB_ENV
 
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" "$RUNNER_TEMP/profile.plist")
+          if [ -z "$PROFILE_UUID" ]; then
+            echo "Failed to extract UUID from provisioning profile"
+            exit 1
+          fi
+          echo "IOS_PROFILE_UUID=$PROFILE_UUID" >> $GITHUB_ENV
+
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" "$RUNNER_TEMP/profile.plist")
+          if [ -z "$PROFILE_NAME" ]; then
+            echo "Failed to extract Name from provisioning profile"
+            exit 1
+          fi
+          echo "IOS_PROFILE_NAME=$PROFILE_NAME" >> $GITHUB_ENV
+
           # TestFlight/App Store export needs a distribution profile (not development).
           GET_TASK_ALLOW=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:get-task-allow" "$RUNNER_TEMP/profile.plist" 2>/dev/null || echo "unknown")
           if [ "$GET_TASK_ALLOW" = "true" ]; then
@@ -183,6 +197,29 @@ jobs:
 
       - name: Initialize iOS project
         run: yarn tauri ios init --ci
+
+      - name: Configure Xcode signing with provisioning profile
+        run: |
+          PBXPROJ="src-tauri/gen/apple/tickly.xcodeproj/project.pbxproj"
+
+          set_or_add() {
+            path="$1"
+            value="$2"
+            /usr/libexec/PlistBuddy -c "Set $path \"$value\"" "$PBXPROJ" 2>/dev/null || \
+              /usr/libexec/PlistBuddy -c "Add $path string \"$value\"" "$PBXPROJ"
+          }
+
+          CONFIG_IDS=$(/usr/libexec/PlistBuddy -c "Print :objects" "$PBXPROJ" | awk '/ = Dict/ {k=$1} /isa = XCBuildConfiguration/ {gsub("=", "", k); print k}')
+          for id in $CONFIG_IDS; do
+            bundle_id=$(/usr/libexec/PlistBuddy -c "Print :objects:$id:buildSettings:PRODUCT_BUNDLE_IDENTIFIER" "$PBXPROJ" 2>/dev/null || true)
+            if [ "$bundle_id" = "com.u-keunsong.tickly" ]; then
+              set_or_add ":objects:$id:buildSettings:CODE_SIGN_STYLE" "Manual"
+              set_or_add ":objects:$id:buildSettings:DEVELOPMENT_TEAM" "$APPLE_DEVELOPMENT_TEAM"
+              set_or_add ":objects:$id:buildSettings:CODE_SIGN_IDENTITY" "Apple Distribution"
+              set_or_add ":objects:$id:buildSettings:PROVISIONING_PROFILE" "$IOS_PROFILE_UUID"
+              set_or_add ":objects:$id:buildSettings:PROVISIONING_PROFILE_SPECIFIER" "$IOS_PROFILE_NAME"
+            fi
+          done
 
       - name: Build iOS
         run: yarn tauri ios build --ci --export-method app-store-connect --verbose
