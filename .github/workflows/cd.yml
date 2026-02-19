@@ -181,6 +181,17 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PROFILE_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
 
+          security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
+          TEAM_ID=$(/usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" "$RUNNER_TEMP/profile.plist")
+          if [ -z "$TEAM_ID" ]; then
+            echo "Failed to extract TeamIdentifier from provisioning profile"
+            exit 1
+          fi
+          echo "APPLE_DEVELOPMENT_TEAM=$TEAM_ID" >> $GITHUB_ENV
+
+      - name: Initialize iOS project
+        run: yarn tauri ios init --ci
+
       - name: Build iOS
         run: yarn tauri ios build
 
