@@ -13,6 +13,7 @@
 </p>
 
 **Tickly**는 심플한 체크리스트 앱입니다. 복잡한 기능 없이 빠르고 간단하게 사용할 수 있도록 설계되었습니다.
+현재 릴리즈 버전은 **v0.7.0**입니다.
 
 ### 주요 기능
 
@@ -31,6 +32,7 @@
 - 🏷️ **태그** - 항목에 #태그 부착, 태그 기반 필터링, 클라우드 동기화
 - 🕸️ **그래프 뷰** - 카테고리·태그·항목 간 관계를 노드 그래프로 시각화 (PixiJS WebGL + d3-force)
 - 🔔 **항목 알림** - 항목별 알림 시간 설정, iOS 로컬 알림으로 리마인더
+- 🔗 **앱 연결** - 항목에 앱 연결(지도/배달/택시 등) 설정 후 바로 실행
 - ☁️ **클라우드 동기화** - Apple/Google 로그인으로 멀티 디바이스 실시간 연동
 - 🎨 **테마 커스터마이징** - 5가지 프리셋 + 커스텀 색상 지원
 - 🔤 **폰트 커스터마이징** - 다양한 폰트 선택 가능
@@ -157,11 +159,13 @@ Tickly/
 │   ├── components/                   # 재사용 가능한 컴포넌트
 │   │   ├── ModalWrapper.svelte       # 공통 모달 레이아웃
 │   │   ├── SettingsLayout.svelte     # 공통 설정 페이지 레이아웃
-│   │   ├── BottomNav.svelte          # 하단 네비게이션 바
 │   │   ├── FloatingActions.svelte    # FAB 버튼 (추가, 그래프, 메뉴)
+│   │   ├── CategoryMenuModal.svelte  # 카테고리 메뉴 모달
 │   │   ├── GraphCanvas.svelte       # 그래프 뷰 (PixiJS + d3-force)
 │   │   ├── LeafTodoItem.svelte       # Todo 항목 컴포넌트
 │   │   ├── AddItemModal.svelte       # 항목 추가 모달
+│   │   ├── EditItemModal.svelte      # 항목 수정 모달
+│   │   ├── LinkedAppModal.svelte     # 앱 연결 선택 모달
 │   │   ├── SwipeableItem.svelte      # 스와이프 삭제 래퍼
 │   │   ├── CategoryTabs.svelte       # 카테고리 탭
 │   │   ├── StreakModal.svelte        # 스트릭 히트맵 모달
@@ -191,6 +195,7 @@ Tickly/
 │   │   │   ├── ko.ts                 # 한국어 번역
 │   │   │   ├── en.ts                 # 영어 번역
 │   │   │   └── ja.ts                 # 일본어 번역
+│   │   ├── linkedApps.ts             # 앱 연결 메타데이터/실행 유틸리티
 │   │   ├── themes.ts                 # 테마 프리셋 및 유틸리티
 │   │   └── notification.ts           # 알림 스케줄링 유틸리티
 │   ├── types.ts                      # TypeScript 타입 정의
@@ -239,6 +244,10 @@ Tickly/
 │   │       ├── tag_commands.rs       # Tag 커맨드
 │   │       └── graph_commands.rs     # Graph 커맨드
 │   └── tauri.conf.json               # Tauri 설정
+├── docs/                             # 프로젝트 문서
+│   ├── deployment-automation.md      # CI/CD 및 배포 자동화 가이드
+│   ├── roadmap.md                    # 버전별 로드맵
+│   └── troubleshooting.md            # 트러블슈팅 기록
 ├── CLAUDE.md                         # 프로젝트 가이드
 └── README.md                         # 이 파일
 ```

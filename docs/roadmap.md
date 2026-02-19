@@ -234,8 +234,8 @@ CREATE POLICY "Users can CRUD own todo_tags" ON todo_tags FOR ALL USING (auth.ui
 - 인터랙티브 그래프 (터치 드래그, 핀치 줌)
 - 항목 노드 탭 → 해당 카테고리 화면으로 이동
 
-## 0.7.0 — 항목 알림 ✅ 완료
-**목표:** 특정 항목에 알림을 설정하여 잊지 않고 실행.
+## 0.7.0 — 항목 알림 + 앱 연결 ✅ 완료
+**목표:** 특정 항목에 알림을 설정하고, 필요한 외부 앱을 바로 실행.
 
 ### 구현 완료
 - ✅ 항목별 알림 시간 설정 (HH:MM 타임 피커)
@@ -244,10 +244,14 @@ CREATE POLICY "Users can CRUD own todo_tags" ON todo_tags FOR ALL USING (auth.ui
 - ✅ 항목 완료/삭제 시 알림 자동 취소
 - ✅ 앱 시작 시 미완료 항목 알림 재스케줄 (`rescheduleAll`)
 - ✅ `reminder_at` 클라우드 동기화 지원
+- ✅ 항목별 앱 연결 설정 (`linked_app`)
+- ✅ MemoDrawer에서 연결 앱 바로 실행 버튼 제공
+- ✅ `linked_app` 클라우드 동기화 지원
 
 ### 데이터 모델 변경
 - `todos` 테이블 확장:
   - `reminder_at` (알림 시간, TEXT "HH:MM" / nullable)
+  - `linked_app` (연결 앱 식별자, TEXT / nullable)
 
 ### 기술 노트
 - `Schedule.at(date)` 사용 불가: Rust `time::iso8601` 시리얼라이저가 날짜 포맷을 변경하여 (`+00` vs `.SSSZ`) Swift DateFormatter 파싱 실패
@@ -257,8 +261,10 @@ CREATE POLICY "Users can CRUD own todo_tags" ON todo_tags FOR ALL USING (auth.ui
 
 ### UX 요약
 - MemoDrawer/AddItemModal 상세 설정에서 알림 시간 설정 (time input)
+- MemoDrawer/AddItemModal 상세 설정에서 앱 연결 설정
 - View 모드에서 알림 설정 시 종 아이콘 + 시간 표시
 - 알림 해제 버튼 (X) 제공
+- View 모드에서 연결 앱 아이콘 버튼으로 외부 앱 실행
 
 ## 0.8.0 — 위젯
 **목표:** 앱을 열지 않고 빠르게 체크.
