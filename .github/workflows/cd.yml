@@ -94,9 +94,6 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      IOS_CERTIFICATE_P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
-      IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-      IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
       APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
       APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
       APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
@@ -106,9 +103,6 @@ jobs:
           missing=()
           [[ -n "${SUPABASE_URL}" ]] || missing+=("SUPABASE_URL")
           [[ -n "${SUPABASE_ANON_KEY}" ]] || missing+=("SUPABASE_ANON_KEY")
-          [[ -n "${IOS_CERTIFICATE_P12}" ]] || missing+=("IOS_CERTIFICATE_P12")
-          [[ -n "${IOS_CERTIFICATE_PASSWORD}" ]] || missing+=("IOS_CERTIFICATE_PASSWORD")
-          [[ -n "${IOS_PROVISIONING_PROFILE}" ]] || missing+=("IOS_PROVISIONING_PROFILE")
           [[ -n "${APP_STORE_CONNECT_API_ISSUER_ID}" ]] || missing+=("APP_STORE_CONNECT_API_ISSUER_ID")
           [[ -n "${APP_STORE_CONNECT_API_KEY_ID}" ]] || missing+=("APP_STORE_CONNECT_API_KEY_ID")
           [[ -n "${APP_STORE_CONNECT_API_KEY_CONTENT}" ]] || missing+=("APP_STORE_CONNECT_API_KEY_CONTENT")
@@ -126,9 +120,9 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE_P12 }}
-      IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-      IOS_MOBILE_PROVISION: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+      APPLE_API_ISSUER: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+      APPLE_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
     steps:
       - uses: actions/checkout@v4
 
@@ -157,24 +151,27 @@ jobs:
       - name: Build frontend (required for iOS)
         run: yarn build
 
-      - name: Extract development team from provisioning profile
+      - name: Prepare App Store Connect API key
         run: |
-          PROFILE_PATH=$RUNNER_TEMP/profile.mobileprovision
-          echo -n "$IOS_MOBILE_PROVISION" | base64 --decode > "$PROFILE_PATH"
-
-          security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
-          TEAM_ID=$(/usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" "$RUNNER_TEMP/profile.plist")
-          if [ -z "$TEAM_ID" ]; then
-            echo "Failed to extract TeamIdentifier from provisioning profile"
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY}.p8"
+          if [ -z "$APP_STORE_CONNECT_API_KEY_CONTENT" ]; then
+            echo "Missing APP_STORE_CONNECT_API_KEY_CONTENT"
             exit 1
           fi
-          echo "APPLE_DEVELOPMENT_TEAM=$TEAM_ID" >> $GITHUB_ENV
+          printf "%s" "$APP_STORE_CONNECT_API_KEY_CONTENT" > "$KEY_PATH"
+          echo "APPLE_API_KEY_PATH=$KEY_PATH" >> $GITHUB_ENV
 
       - name: Initialize iOS project
         run: yarn tauri ios init --ci
 
       - name: Build iOS
-        run: yarn tauri ios build --ci --export-method app-store-connect
+        run: yarn tauri ios build --ci --export-method app-store-connect --verbose
+
+      - name: Debug iOS signing settings (on failure)
+        if: failure()
+        run: |
+          set +e
+          xcodebuild -workspace src-tauri/gen/apple/tickly.xcodeproj/project.xcworkspace -scheme tickly_iOS -showBuildSettings | egrep "PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY|PROVISIONING_PROFILE"
 
       - name: Find IPA file
         id: find-ipa
@@ -200,10 +197,6 @@ jobs:
           issuer-id: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
           api-key-id: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           api-private-key: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
-
-      - name: Cleanup keychain
-        if: always()
-        run: security delete-keychain $RUNNER_TEMP/app-signing.keychain-db || true
 
   build-desktop:
     name: Build Desktop (${{ matrix.platform }})
