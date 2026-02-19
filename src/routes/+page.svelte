@@ -16,6 +16,7 @@
   import FloatingActions from '../components/FloatingActions.svelte';
   import StreakModal from '../components/StreakModal.svelte';
   import TagFilterModal from '../components/TagFilterModal.svelte';
+  import EditItemModal from '../components/EditItemModal.svelte';
   import { initializeTheme } from '../lib/themes';
   import { initializeFonts } from '../lib/fonts';
   import { appStore, modalStore } from '../lib/stores';
@@ -27,6 +28,32 @@
   // Local UI state only
   let isEditingItem = $state(false);
   let showFab = $state(false);
+
+  // Edit item modal state (rendered at root to avoid CSS transform clipping)
+  let editingItem = $state<import('../types').TodoItem | null>(null);
+  let showEditModal = $state(false);
+  let capturedCloseDrawer = $state<(() => void) | null>(null);
+
+  function openEditModal(item: import('../types').TodoItem, closeDrawer: () => void) {
+    editingItem = item;
+    capturedCloseDrawer = closeDrawer;
+    showEditModal = true;
+    isEditingItem = true;
+  }
+
+  function handleEditSave() {
+    showEditModal = false;
+    isEditingItem = false;
+    capturedCloseDrawer?.();
+    capturedCloseDrawer = null;
+    editingItem = null;
+  }
+
+  function handleEditCancel() {
+    showEditModal = false;
+    isEditingItem = false;
+    editingItem = null;
+  }
 
   // Computed display items (tag filter aware)
   let displayItems = $derived(
@@ -159,9 +186,10 @@
     repeatDetail: string | null,
     trackStreak: boolean,
     tagNames?: string[],
-    reminderAt?: string | null
+    reminderAt?: string | null,
+    linkedApp?: string | null
   ) {
-    await appStore.addItem(text, memo, repeatType, repeatDetail, trackStreak, tagNames ?? [], reminderAt ?? null);
+    await appStore.addItem(text, memo, repeatType, repeatDetail, trackStreak, tagNames ?? [], reminderAt ?? null, linkedApp ?? null);
     // Schedule notification if reminder was set
     if (reminderAt) {
       // Find the newly added item (last in list)
@@ -296,16 +324,7 @@
                       <MemoDrawer
                         item={drawerItem}
                         itemTags={appStore.itemTagsMap[drawerItem.id] ?? []}
-                        allTags={appStore.allTags}
-                        onSaveMemo={appStore.updateMemo}
-                        onEditText={appStore.editItem}
-                        onUpdateRepeat={appStore.updateRepeat}
-                        onUpdateTrackStreak={appStore.updateTrackStreak}
-                        onUpdateReminder={handleUpdateReminder}
-                        onAddTag={appStore.addTagToItem}
-                        onRemoveTag={appStore.removeTagFromItem}
-                        onEditModeChange={(editing) => isEditingItem = editing}
-                        {closeDrawer}
+                        onOpenEdit={(item) => openEditModal(item, closeDrawer)}
                       />
                     {/snippet}
                   </LeafTodoItem>
@@ -401,6 +420,26 @@
     onClear={appStore.clearTagFilter}
     onClose={modalStore.closeTagFilterModal}
   />
+
+  <!-- Edit Item Modal (rendered at root to avoid CSS transform clipping) -->
+  {#if editingItem}
+    <EditItemModal
+      show={showEditModal}
+      item={editingItem}
+      itemTags={appStore.itemTagsMap[editingItem.id] ?? []}
+      allTags={appStore.allTags}
+      onSaveMemo={appStore.updateMemo}
+      onEditText={appStore.editItem}
+      onUpdateRepeat={appStore.updateRepeat}
+      onUpdateTrackStreak={appStore.updateTrackStreak}
+      onUpdateReminder={handleUpdateReminder}
+      onUpdateLinkedApp={appStore.updateLinkedApp}
+      onAddTag={appStore.addTagToItem}
+      onRemoveTag={appStore.removeTagFromItem}
+      onSave={handleEditSave}
+      onCancel={handleEditCancel}
+    />
+  {/if}
 
   <!-- Intro Animation Component -->
   <IntroAnimation />

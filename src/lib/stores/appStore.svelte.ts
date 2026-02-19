@@ -95,13 +95,18 @@ async function addItem(
   repeatDetail: string | null = null,
   trackStreak: boolean = false,
   tagNames: string[] = [],
-  reminderAt: string | null = null
+  reminderAt: string | null = null,
+  linkedApp: string | null = null
 ): Promise<void> {
   try {
     const newItem = await todoApi.addItem(text, selectedCategoryId, repeatType, repeatDetail, trackStreak, reminderAt);
     if (memo) {
       await todoApi.updateItemMemo(newItem.id, memo);
       newItem.memo = memo;
+    }
+    if (linkedApp) {
+      await todoApi.updateItemLinkedApp(newItem.id, linkedApp);
+      newItem.linked_app = linkedApp;
     }
     items = [...items, newItem];
     // Attach tags if provided
@@ -198,6 +203,18 @@ async function updateTrackStreak(id: number, trackStreak: boolean): Promise<void
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to update track_streak:', error);
+  }
+}
+
+async function updateLinkedApp(id: number, linkedApp: string | null): Promise<void> {
+  try {
+    await todoApi.updateItemLinkedApp(id, linkedApp);
+    items = items.map(item =>
+      item.id === id ? { ...item, linked_app: linkedApp } : item
+    );
+    syncStore.scheduleSync();
+  } catch (error) {
+    console.error('Failed to update linked app:', error);
   }
 }
 
@@ -370,6 +387,7 @@ export const appStore = {
   updateMemo,
   updateRepeat,
   updateTrackStreak,
+  updateLinkedApp,
   updateReminder,
   resetAllItems,
   setItems,

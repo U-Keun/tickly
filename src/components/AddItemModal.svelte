@@ -4,6 +4,8 @@
   import ModalWrapper from './ModalWrapper.svelte';
   import RepeatSelector from './RepeatSelector.svelte';
   import TagInput from './TagInput.svelte';
+  import LinkedAppModal from './LinkedAppModal.svelte';
+  import { getAppByKey, getAppLabel } from '$lib/linkedApps';
 
   type MaybePromise = void | Promise<void>;
 
@@ -17,7 +19,8 @@
       repeatDetail: string | null,
       trackStreak: boolean,
       tagNames?: string[],
-      reminderAt?: string | null
+      reminderAt?: string | null,
+      linkedApp?: string | null
     ) => MaybePromise;
     onCancel: () => MaybePromise;
   }
@@ -30,7 +33,9 @@
   let repeatDetail = $state<number[]>([]);
   let trackStreak = $state(false);
   let reminderTime = $state('');
+  let linkedApp = $state<string | null>(null);
   let showAdvanced = $state(false);
+  let showLinkedAppModal = $state(false);
   let pendingTags = $state<Tag[]>([]);
   let nextLocalTagId = $state(-1);
   let isSaving = $state(false);
@@ -39,7 +44,8 @@
     (repeatType !== 'none' ? 1 : 0) +
     (trackStreak ? 1 : 0) +
     (reminderTime ? 1 : 0) +
-    (pendingTags.length > 0 ? 1 : 0)
+    (pendingTags.length > 0 ? 1 : 0) +
+    (linkedApp ? 1 : 0)
   );
 
   $effect(() => {
@@ -50,7 +56,9 @@
       repeatDetail = [];
       trackStreak = false;
       reminderTime = '';
+      linkedApp = null;
       showAdvanced = false;
+      showLinkedAppModal = false;
       pendingTags = [];
       nextLocalTagId = -1;
       isSaving = false;
@@ -78,7 +86,7 @@
       const repeatDetailJson = repeatDetail.length > 0 ? JSON.stringify(repeatDetail) : null;
       const tagNames = pendingTags.map(t => t.name);
       const reminderAt = reminderTime || null;
-      await onAdd(trimmedText, trimmedMemo, repeatType, repeatDetailJson, trackStreak, tagNames, reminderAt);
+      await onAdd(trimmedText, trimmedMemo, repeatType, repeatDetailJson, trackStreak, tagNames, reminderAt, linkedApp);
       await onCancel();
     } finally {
       isSaving = false;
@@ -218,6 +226,49 @@
             onRemove={handleRemovePendingTag}
           />
         </div>
+
+        <hr class="advanced-divider" />
+
+        <div class="form-group">
+          <span class="form-label">{i18n.t('linkedApp')}</span>
+          {#if linkedApp}
+            {@const currentApp = getAppByKey(linkedApp)}
+            {#if currentApp}
+              <div class="linked-app-current">
+                <span class="linked-app-icon">{currentApp.icon}</span>
+                <span class="linked-app-name">{getAppLabel(linkedApp, i18n.locale)}</span>
+                <button
+                  type="button"
+                  class="linked-app-change-btn"
+                  onclick={() => showLinkedAppModal = true}
+                >{i18n.t('edit')}</button>
+                <button
+                  type="button"
+                  class="linked-app-remove-btn"
+                  onclick={() => linkedApp = null}
+                  aria-label="Remove linked app"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            {/if}
+          {:else}
+            <button
+              type="button"
+              class="linked-app-connect-btn"
+              onclick={() => showLinkedAppModal = true}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+              {i18n.t('linkedAppConnect')}
+            </button>
+          {/if}
+        </div>
       </div>
     </div>
   </div>
@@ -235,6 +286,13 @@
       {isSaving ? i18n.t('saving') : i18n.t('add')}
     </button>
   </div>
+
+  <LinkedAppModal
+    show={showLinkedAppModal}
+    selectedKey={linkedApp}
+    onSelect={(key) => { linkedApp = key; }}
+    onClose={() => showLinkedAppModal = false}
+  />
 </ModalWrapper>
 
 <style>
@@ -488,6 +546,81 @@
 
   .reminder-clear:hover {
     background: var(--color-mist);
+  }
+
+  .linked-app-connect-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px dashed var(--color-stroke);
+    border-radius: 10px;
+    background: var(--color-white);
+    color: var(--color-ink-muted);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+
+  .linked-app-connect-btn:hover {
+    background: var(--color-canvas);
+  }
+
+  .linked-app-current {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-accent-sky-strong);
+    border-radius: 10px;
+    background: var(--color-white);
+  }
+
+  .linked-app-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .linked-app-name {
+    flex: 1;
+    font-size: 14px;
+    color: var(--color-ink);
+  }
+
+  .linked-app-change-btn {
+    min-height: 32px;
+    padding: 4px 10px;
+    border: 1px solid var(--color-accent-sky-strong);
+    border-radius: 8px;
+    background: none;
+    color: var(--color-ink);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+
+  .linked-app-change-btn:hover {
+    background: var(--color-accent-sky);
+  }
+
+  .linked-app-remove-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--color-ink-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s;
+  }
+
+  .linked-app-remove-btn:hover {
+    background: var(--color-canvas);
   }
 
   .button-group {
