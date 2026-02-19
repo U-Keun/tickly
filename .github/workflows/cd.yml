@@ -157,6 +157,26 @@ jobs:
       - name: Build frontend (required for iOS)
         run: yarn build
 
+      - name: Import signing certificate to keychain
+        run: |
+          CERT_PATH="$RUNNER_TEMP/certificate.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(openssl rand -hex 16)
+
+          echo "IOS_KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
+          echo "IOS_KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> $GITHUB_ENV
+
+          echo -n "$IOS_CERTIFICATE" | base64 --decode > "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$IOS_CERTIFICATE_PASSWORD" -A -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" /Users/runner/Library/Keychains/login.keychain-db
+          security default-keychain -d user -s "$KEYCHAIN_PATH"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
       - name: Validate provisioning profile for App Store export
         run: |
           PROFILE_PATH=$RUNNER_TEMP/profile.mobileprovision
@@ -245,6 +265,12 @@ jobs:
             -sdk iphoneos \
             -destination "generic/platform=iOS" \
             -archivePath "$ARCHIVE_PATH" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="$APPLE_DEVELOPMENT_TEAM" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            'CODE_SIGN_IDENTITY[sdk=iphoneos*]=Apple Distribution' \
+            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_NAME" \
+            PROVISIONING_PROFILE="$IOS_PROFILE_UUID" \
             archive
 
       - name: Export iOS IPA (xcodebuild)
@@ -286,6 +312,7 @@ jobs:
         run: |
           set +e
           xcodebuild -workspace src-tauri/gen/apple/tickly.xcodeproj/project.xcworkspace -scheme tickly_iOS -showBuildSettings | egrep "PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY|PROVISIONING_PROFILE"
+          security find-identity -v -p codesigning "$IOS_KEYCHAIN_PATH"
 
       - name: Debug iOS export logs (on failure)
         if: failure()
@@ -322,6 +349,11 @@ jobs:
           issuer-id: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
           api-key-id: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           api-private-key: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+
+      - name: Cleanup keychain
+        if: always()
+        run: |
+          security delete-keychain "$IOS_KEYCHAIN_PATH" || true
 
   build-desktop:
     name: Build Desktop (${{ matrix.platform }})
