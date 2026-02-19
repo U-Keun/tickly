@@ -1,85 +1,109 @@
 <script lang="ts">
-  import type { RepeatType, Tag } from '../types';
+  import type { TodoItem, RepeatType, Tag } from '../types';
   import { i18n } from '$lib/i18n';
   import ModalWrapper from './ModalWrapper.svelte';
   import RepeatSelector from './RepeatSelector.svelte';
   import TagInput from './TagInput.svelte';
+  import LinkedAppModal from './LinkedAppModal.svelte';
+  import { getAppByKey, getAppLabel } from '$lib/linkedApps';
 
   type MaybePromise = void | Promise<void>;
 
   interface Props {
     show: boolean;
-    allTags?: Tag[];
-    onAdd: (
-      text: string,
-      memo: string | null,
-      repeatType: RepeatType,
-      repeatDetail: string | null,
-      trackStreak: boolean,
-      tagNames?: string[],
-      reminderAt?: string | null
-    ) => MaybePromise;
+    item: TodoItem;
+    itemTags: Tag[];
+    allTags: Tag[];
+    onSaveMemo: (id: number, memo: string | null) => MaybePromise;
+    onEditText: (id: number, text: string) => MaybePromise;
+    onUpdateRepeat: (id: number, repeatType: RepeatType, repeatDetail: string | null) => MaybePromise;
+    onUpdateTrackStreak: (id: number, trackStreak: boolean) => MaybePromise;
+    onUpdateReminder: (id: number, reminderAt: string | null) => MaybePromise;
+    onUpdateLinkedApp: (id: number, linkedApp: string | null) => MaybePromise;
+    onAddTag?: (itemId: number, tagName: string) => void;
+    onRemoveTag?: (itemId: number, tagId: number) => void;
+    onSave: () => MaybePromise;
     onCancel: () => MaybePromise;
   }
 
-  let { show, allTags = [], onAdd, onCancel }: Props = $props();
+  let {
+    show, item, itemTags, allTags,
+    onSaveMemo, onEditText, onUpdateRepeat, onUpdateTrackStreak,
+    onUpdateReminder, onUpdateLinkedApp, onAddTag, onRemoveTag,
+    onSave, onCancel,
+  }: Props = $props();
 
-  let text = $state('');
-  let memo = $state('');
+  let editText = $state('');
+  let memoText = $state('');
   let repeatType = $state<RepeatType>('none');
   let repeatDetail = $state<number[]>([]);
   let trackStreak = $state(false);
   let reminderTime = $state('');
-  let showAdvanced = $state(false);
-  let pendingTags = $state<Tag[]>([]);
-  let nextLocalTagId = $state(-1);
+  let linkedApp = $state<string | null>(null);
   let isSaving = $state(false);
+  let showAdvanced = $state(false);
+  let showLinkedAppModal = $state(false);
   let textInputElement = $state<HTMLInputElement | null>(null);
   let activeAdvancedCount = $derived(
     (repeatType !== 'none' ? 1 : 0) +
     (trackStreak ? 1 : 0) +
     (reminderTime ? 1 : 0) +
-    (pendingTags.length > 0 ? 1 : 0)
+    (itemTags.length > 0 ? 1 : 0) +
+    (linkedApp ? 1 : 0)
   );
 
   $effect(() => {
     if (show) {
-      text = '';
-      memo = '';
-      repeatType = 'none';
-      repeatDetail = [];
-      trackStreak = false;
-      reminderTime = '';
+      editText = item.text;
+      memoText = item.memo || '';
+      repeatType = item.repeat_type;
+      repeatDetail = item.repeat_detail ? JSON.parse(item.repeat_detail) : [];
+      trackStreak = item.track_streak;
+      reminderTime = item.reminder_at || '';
+      linkedApp = item.linked_app || null;
       showAdvanced = false;
-      pendingTags = [];
-      nextLocalTagId = -1;
-      isSaving = false;
+      showLinkedAppModal = false;
       setTimeout(() => textInputElement?.focus(), 100);
     }
   });
 
-  function handleAddPendingTag(tagName: string) {
-    if (pendingTags.find(t => t.name === tagName)) return;
-    pendingTags = [...pendingTags, { id: nextLocalTagId--, name: tagName } as Tag];
-  }
-
-  function handleRemovePendingTag(tagId: number) {
-    pendingTags = pendingTags.filter(t => t.id !== tagId);
-  }
-
-  async function handleSubmit() {
+  async function handleSave() {
     if (isSaving) return;
-    const trimmedText = text.trim();
+    const trimmedText = editText.trim();
     if (!trimmedText) return;
-
     isSaving = true;
     try {
-      const trimmedMemo = memo.trim() || null;
-      const repeatDetailJson = repeatDetail.length > 0 ? JSON.stringify(repeatDetail) : null;
-      const tagNames = pendingTags.map(t => t.name);
-      const reminderAt = reminderTime || null;
-      await onAdd(trimmedText, trimmedMemo, repeatType, repeatDetailJson, trackStreak, tagNames, reminderAt);
-      await onCancel();
+      const updates: MaybePromise[] = [];
+
+      if (trimmedText !== item.text) {
+        updates.push(onEditText(item.id, trimmedText));
+      }
+
+      const trimmedMemo = memoText.trim() || null;
+      if (trimmedMemo !== item.memo) {
+        updates.push(onSaveMemo(item.id, trimmedMemo));
+      }
+
+      const newRepeatDetail = repeatDetail.length > 0 ? JSON.stringify(repeatDetail) : null;
+      if (repeatType !== item.repeat_type || newRepeatDetail !== item.repeat_detail) {
+        updates.push(onUpdateRepeat(item.id, repeatType, newRepeatDetail));
+      }
+
+      if (trackStreak !== item.track_streak) {
+        updates.push(onUpdateTrackStreak(item.id, trackStreak));
+      }
+
+      const newReminderAt = reminderTime || null;
+      if (newReminderAt !== (item.reminder_at || null)) {
+        updates.push(onUpdateReminder(item.id, newReminderAt));
+      }
+
+      if (linkedApp !== (item.linked_app || null)) {
+        updates.push(onUpdateLinkedApp(item.id, linkedApp));
+      }
+
+      await Promise.all(updates);
+      await onSave();
     } finally {
       isSaving = false;
     }
@@ -89,21 +113,22 @@
     const targetIsInput = event.target instanceof HTMLInputElement;
     if (event.key === 'Enter' && (targetIsInput || event.metaKey || event.ctrlKey)) {
       event.preventDefault();
-      handleSubmit();
+      handleSave();
     }
   }
 </script>
 
 <ModalWrapper {show} onClose={onCancel} position="topCompact">
+  <!-- 고정 상단: 제목 + 항목 + 메모 + 상세 설정 토글 -->
   <div class="modal-top">
-    <h3 class="modal-title">{i18n.t('addItemTitle')}</h3>
+    <h3 class="modal-title">{i18n.t('editItemTitle')}</h3>
 
     <div class="form-group">
       <input
         bind:this={textInputElement}
-        bind:value={text}
+        bind:value={editText}
         onkeydown={handleKeydown}
-        id="item-text"
+        id="edit-text"
         type="text"
         class="form-input"
         placeholder={i18n.t('todoPlaceholder')}
@@ -114,9 +139,9 @@
 
     <div class="form-group">
       <textarea
-        bind:value={memo}
+        bind:value={memoText}
         onkeydown={handleKeydown}
-        id="item-memo"
+        id="edit-memo"
         class="form-textarea"
         placeholder={i18n.t('memoPlaceholder')}
         aria-label={i18n.t('memoLabel')}
@@ -149,6 +174,7 @@
     </div>
   </div>
 
+  <!-- 스크롤 영역: 상세 설정 (열렸을 때만) -->
   <div class="advanced-panel" class:open={showAdvanced} aria-hidden={!showAdvanced} inert={!showAdvanced}>
     <div class="modal-scrollable">
       <div class="advanced-section">
@@ -207,21 +233,67 @@
           </div>
         </div>
 
+        {#if onAddTag && onRemoveTag}
+          <hr class="advanced-divider" />
+
+          <div class="form-group">
+            <span class="form-label">{i18n.t('tags')}</span>
+            <TagInput
+              currentTags={itemTags}
+              {allTags}
+              onAdd={(name) => onAddTag?.(item.id, name)}
+              onRemove={(tagId) => onRemoveTag?.(item.id, tagId)}
+            />
+          </div>
+        {/if}
+
         <hr class="advanced-divider" />
 
         <div class="form-group">
-          <span class="form-label">{i18n.t('tags')}</span>
-          <TagInput
-            currentTags={pendingTags}
-            {allTags}
-            onAdd={handleAddPendingTag}
-            onRemove={handleRemovePendingTag}
-          />
+          <span class="form-label">{i18n.t('linkedApp')}</span>
+          {#if linkedApp}
+            {@const currentApp = getAppByKey(linkedApp)}
+            {#if currentApp}
+              <div class="linked-app-current">
+                <span class="linked-app-icon">{currentApp.icon}</span>
+                <span class="linked-app-name">{getAppLabel(linkedApp, i18n.locale)}</span>
+                <button
+                  type="button"
+                  class="linked-app-change-btn"
+                  onclick={() => showLinkedAppModal = true}
+                >{i18n.t('edit')}</button>
+                <button
+                  type="button"
+                  class="linked-app-remove-btn"
+                  onclick={() => linkedApp = null}
+                  aria-label="Remove linked app"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            {/if}
+          {:else}
+            <button
+              type="button"
+              class="linked-app-connect-btn"
+              onclick={() => showLinkedAppModal = true}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+              {i18n.t('linkedAppConnect')}
+            </button>
+          {/if}
         </div>
       </div>
     </div>
   </div>
 
+  <!-- 고정 하단: 버튼 -->
   <div class="button-group">
     <button type="button" class="btn btn-cancel" onclick={onCancel}>
       {i18n.t('cancel')}
@@ -229,12 +301,19 @@
     <button
       type="button"
       class="btn btn-primary"
-      onclick={handleSubmit}
-      disabled={!text.trim() || isSaving}
+      onclick={handleSave}
+      disabled={!editText.trim() || isSaving}
     >
-      {isSaving ? i18n.t('saving') : i18n.t('add')}
+      {isSaving ? i18n.t('saving') : i18n.t('save')}
     </button>
   </div>
+
+  <LinkedAppModal
+    show={showLinkedAppModal}
+    selectedKey={linkedApp}
+    onSelect={(key) => { linkedApp = key; }}
+    onClose={() => showLinkedAppModal = false}
+  />
 </ModalWrapper>
 
 <style>
@@ -488,6 +567,81 @@
 
   .reminder-clear:hover {
     background: var(--color-mist);
+  }
+
+  .linked-app-connect-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px dashed var(--color-stroke);
+    border-radius: 10px;
+    background: var(--color-white);
+    color: var(--color-ink-muted);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+
+  .linked-app-connect-btn:hover {
+    background: var(--color-canvas);
+  }
+
+  .linked-app-current {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-accent-sky-strong);
+    border-radius: 10px;
+    background: var(--color-white);
+  }
+
+  .linked-app-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .linked-app-name {
+    flex: 1;
+    font-size: 14px;
+    color: var(--color-ink);
+  }
+
+  .linked-app-change-btn {
+    min-height: 32px;
+    padding: 4px 10px;
+    border: 1px solid var(--color-accent-sky-strong);
+    border-radius: 8px;
+    background: none;
+    color: var(--color-ink);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+
+  .linked-app-change-btn:hover {
+    background: var(--color-accent-sky);
+  }
+
+  .linked-app-remove-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--color-ink-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s;
+  }
+
+  .linked-app-remove-btn:hover {
+    background: var(--color-canvas);
   }
 
   .button-group {

@@ -7,7 +7,7 @@
     show: boolean;
     onClose: () => void;
     size?: 'sm' | 'md';
-    position?: 'center' | 'top';
+    position?: 'center' | 'top' | 'topCompact';
     children: Snippet;
   }
 
@@ -34,6 +34,7 @@
   const positionClass = {
     center: 'items-center',
     top: 'items-start pt-[15vh]',
+    topCompact: 'items-start pt-[8vh]',
   };
 </script>
 
@@ -45,16 +46,18 @@
     tabindex="0"
     onclick={onClose}
     onkeydown={handleKeydown}
-    transition:fade={{ duration: 200 }}
+    transition:fade={{ duration: 260, easing: cubicOut }}
   >
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <div
       class="modal-content {sizeClass[size]}"
       onclick={(e) => e.stopPropagation()}
-      in:fly={{ y: 50, duration: 300, easing: cubicOut }}
-      out:fly={{ y: 30, duration: 200, easing: cubicOut }}
+      in:fly={{ y: 34, duration: 340, easing: cubicOut }}
+      out:fly={{ y: 20, duration: 260, easing: cubicOut }}
     >
-      {@render children()}
+      <div class="modal-content-inner" transition:fade={{ duration: 300, easing: cubicOut }}>
+        {@render children()}
+      </div>
     </div>
   </div>
 {/if}
@@ -67,8 +70,7 @@
     display: flex;
     justify-content: center;
     z-index: 50;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden;
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
 
@@ -79,7 +81,16 @@
     width: 100%;
     margin: 0 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    height: fit-content;
-    overflow-x: hidden;
+    max-height: calc(85vh - env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .modal-content-inner {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 </style>

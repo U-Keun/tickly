@@ -34,6 +34,7 @@ export const ko = {
   delete: '삭제',
   edit: '수정',
   editName: '이름 수정',
+  editItemTitle: '항목 수정',
   categoryPlaceholder: '카테고리명',
   addCategory: '카테고리 추가',
   categoryEditFailed: '카테고리 수정 실패: ',
@@ -187,6 +188,16 @@ export const ko = {
   reminderSet: '알림 설정됨',
   reminderPlaceholder: '시간 선택...',
   reminderClear: '알림 해제',
+
+  // Linked app
+  linkedApp: '연결 앱',
+  linkedAppOpen: '열기',
+  linkedAppNone: '없음',
+  linkedAppSelect: '앱 선택',
+  linkedAppConnect: '앱 연결하기',
+  linkedAppCustomAdd: '직접 추가',
+  linkedAppNamePlaceholder: '앱 이름',
+  linkedAppUrlPlaceholder: 'URL (예: spotify://)',
 
   // Advanced settings
   advancedSettings: '상세 설정',
