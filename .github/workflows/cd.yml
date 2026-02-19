@@ -261,7 +261,7 @@ jobs:
           xcodebuild \
             -workspace src-tauri/gen/apple/tickly.xcodeproj/project.xcworkspace \
             -scheme tickly_iOS \
-            -configuration Release \
+            -configuration release \
             -sdk iphoneos \
             -destination "generic/platform=iOS" \
             -archivePath "$ARCHIVE_PATH" \
