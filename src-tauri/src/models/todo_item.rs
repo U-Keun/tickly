@@ -54,6 +54,7 @@ pub struct TodoItem {
     pub last_completed_at: Option<String>,
     pub track_streak: bool,
     pub reminder_at: Option<String>,
+    pub linked_app: Option<String>,
     // Sync fields
     pub sync_id: Option<String>,
     pub created_at: Option<String>,

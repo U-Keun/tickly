@@ -30,6 +30,13 @@ export async function updateItemReminder(
   return invoke<void>('update_item_reminder', { id, reminderAt });
 }
 
+export async function updateItemLinkedApp(
+  id: number,
+  linkedApp: string | null
+): Promise<void> {
+  return invoke<void>('update_item_linked_app', { id, linkedApp });
+}
+
 export async function toggleItem(id: number): Promise<TodoItem | null> {
   return invoke<TodoItem | null>('toggle_item', { id });
 }

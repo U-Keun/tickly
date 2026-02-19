@@ -87,6 +87,14 @@ impl TodoService {
         TodoRepository::update_memo(conn, id, memo)
     }
 
+    pub fn update_linked_app(
+        conn: &Connection,
+        id: i64,
+        linked_app: Option<&str>,
+    ) -> Result<(), rusqlite::Error> {
+        TodoRepository::update_linked_app(conn, id, linked_app)
+    }
+
     pub fn update_repeat(
         conn: &Connection,
         id: i64,

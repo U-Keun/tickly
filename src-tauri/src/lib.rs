@@ -71,6 +71,7 @@ pub fn run() {
             check_and_auto_reset,
             process_repeats,
             update_item_reminder,
+            update_item_linked_app,
             // Category commands
             get_categories,
             add_category,
