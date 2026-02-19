@@ -231,6 +231,19 @@ jobs:
       - name: Initialize iOS project
         run: yarn tauri ios init --ci
 
+      - name: Remove duplicate libapp resource entries
+        run: |
+          PBXPROJ="src-tauri/gen/apple/tickly.xcodeproj/project.pbxproj"
+          echo "Before cleanup:"
+          rg -n "libapp\\.a in Resources" "$PBXPROJ" || true
+
+          # Keep libapp.a linked in Frameworks, but remove resource copy entries
+          # that cause "Multiple commands produce .../Tickly.app/libapp.a".
+          sed -i '' '/libapp\.a in Resources/d' "$PBXPROJ"
+
+          echo "After cleanup:"
+          rg -n "libapp\\.a in Resources" "$PBXPROJ" || true
+
       - name: Configure Xcode signing with provisioning profile
         run: |
           PBXPROJ="src-tauri/gen/apple/tickly.xcodeproj/project.pbxproj"
