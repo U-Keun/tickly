@@ -26,6 +26,7 @@ export interface TodoItem {
   last_completed_at: string | null;
   track_streak: boolean;
   reminder_at: string | null;
+  linked_app: string | null;
   // Sync fields (optional for dnd library compatibility)
   sync_id?: string | null;
   created_at?: string | null;

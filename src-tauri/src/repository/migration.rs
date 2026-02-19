@@ -15,6 +15,7 @@ pub fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
     migrate_create_sync_metadata(conn)?;
     migrate_create_tags(conn)?;
     migrate_create_todo_tags(conn)?;
+    migrate_add_linked_app(conn)?;
     Ok(())
 }
 
@@ -354,6 +355,20 @@ fn migrate_create_tags(conn: &Connection) -> Result<(), rusqlite::Error> {
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_tags_sync_id ON tags(sync_id)",
         [],
     )?;
+    Ok(())
+}
+
+fn migrate_add_linked_app(conn: &Connection) -> Result<(), rusqlite::Error> {
+    let column_exists: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='linked_app'",
+        [],
+        |row| row.get(0),
+    );
+
+    if let Ok(0) = column_exists {
+        conn.execute("ALTER TABLE todos ADD COLUMN linked_app TEXT", [])?;
+    }
+
     Ok(())
 }
 

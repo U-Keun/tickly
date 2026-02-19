@@ -36,6 +36,7 @@ export const en: Translations = {
   delete: 'Delete',
   edit: 'Edit',
   editName: 'Edit Name',
+  editItemTitle: 'Edit Item',
   categoryPlaceholder: 'Category name',
   addCategory: 'Add Category',
   categoryEditFailed: 'Failed to edit category: ',
@@ -189,6 +190,16 @@ export const en: Translations = {
   reminderSet: 'Reminder set',
   reminderPlaceholder: 'Select time...',
   reminderClear: 'Clear reminder',
+
+  // Linked app
+  linkedApp: 'Linked App',
+  linkedAppOpen: 'Open',
+  linkedAppNone: 'None',
+  linkedAppSelect: 'Select App',
+  linkedAppConnect: 'Link App',
+  linkedAppCustomAdd: 'Add Custom',
+  linkedAppNamePlaceholder: 'App name',
+  linkedAppUrlPlaceholder: 'URL (e.g. spotify://)',
 
   // Advanced settings
   advancedSettings: 'More Options',

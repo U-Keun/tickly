@@ -34,6 +34,17 @@ pub fn update_item_reminder(
 }
 
 #[tauri::command]
+pub fn update_item_linked_app(
+    id: i64,
+    linked_app: Option<String>,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    TodoService::update_linked_app(&db, id, linked_app.as_deref())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn get_items(category_id: Option<i64>, state: State<AppState>) -> Result<Vec<TodoItem>, String> {
     let db = state.db.lock().unwrap();
     TodoService::get_items(&db, category_id).map_err(|e| e.to_string())

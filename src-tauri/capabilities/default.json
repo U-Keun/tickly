@@ -6,6 +6,18 @@
   "permissions": [
     "core:default",
     "opener:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "weather://*" },
+        { "url": "calshow://*" },
+        { "url": "mobilenotes://*" },
+        { "url": "x-apple-reminderkit://*" },
+        { "url": "x-apple-health://*" },
+        { "url": "maps://*" },
+        { "url": "*://*" }
+      ]
+    },
     "os:default",
     "deep-link:default",
     "notification:default",

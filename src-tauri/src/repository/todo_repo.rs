@@ -8,7 +8,7 @@ impl TodoRepository {
     fn row_to_item(row: &rusqlite::Row) -> Result<TodoItem, rusqlite::Error> {
         let repeat_type_str: String = row.get(6)?;
         let track_streak_int: i32 = row.get(10)?;
-        let sync_status_str: Option<String> = row.get(15)?;
+        let sync_status_str: Option<String> = row.get(16)?;
         Ok(TodoItem {
             id: row.get(0)?,
             text: row.get(1)?,
@@ -22,16 +22,17 @@ impl TodoRepository {
             last_completed_at: row.get(9)?,
             track_streak: track_streak_int != 0,
             reminder_at: row.get(11)?,
-            sync_id: row.get(12)?,
-            created_at: row.get(13)?,
-            updated_at: row.get(14)?,
+            linked_app: row.get(12)?,
+            sync_id: row.get(13)?,
+            created_at: row.get(14)?,
+            updated_at: row.get(15)?,
             sync_status: sync_status_str
                 .map(|s| SyncStatus::from_str(&s))
                 .unwrap_or_default(),
         })
     }
 
-    const SELECT_COLUMNS: &'static str = "id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at, track_streak, reminder_at, sync_id, created_at, updated_at, sync_status";
+    const SELECT_COLUMNS: &'static str = "id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at, track_streak, reminder_at, linked_app, sync_id, created_at, updated_at, sync_status";
 
     pub fn get_by_category(
         conn: &Connection,
@@ -218,6 +219,7 @@ impl TodoRepository {
             last_completed_at: None,
             track_streak,
             reminder_at: reminder_at.map(|s| s.to_string()),
+            linked_app: None,
             sync_id: None,
             created_at: Some(now.clone()),
             updated_at: Some(now),
@@ -246,6 +248,19 @@ impl TodoRepository {
         conn.execute(
             "UPDATE todos SET reminder_at = ?1 WHERE id = ?2",
             params![reminder_at, id],
+        )?;
+        Self::mark_updated(conn, id)?;
+        Ok(())
+    }
+
+    pub fn update_linked_app(
+        conn: &Connection,
+        id: i64,
+        linked_app: Option<&str>,
+    ) -> Result<(), rusqlite::Error> {
+        conn.execute(
+            "UPDATE todos SET linked_app = ?1 WHERE id = ?2",
+            params![linked_app, id],
         )?;
         Self::mark_updated(conn, id)?;
         Ok(())

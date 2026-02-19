@@ -36,6 +36,7 @@ export const ja: Translations = {
   delete: '削除',
   edit: '編集',
   editName: '名前を編集',
+  editItemTitle: '項目を編集',
   categoryPlaceholder: 'カテゴリ名',
   addCategory: 'カテゴリを追加',
   categoryEditFailed: 'カテゴリの編集に失敗しました：',
@@ -189,6 +190,16 @@ export const ja: Translations = {
   reminderSet: 'リマインダー設定済み',
   reminderPlaceholder: '時間を選択...',
   reminderClear: 'リマインダー解除',
+
+  // Linked app
+  linkedApp: '連携アプリ',
+  linkedAppOpen: '開く',
+  linkedAppNone: 'なし',
+  linkedAppSelect: 'アプリ選択',
+  linkedAppConnect: 'アプリ連携',
+  linkedAppCustomAdd: 'カスタム追加',
+  linkedAppNamePlaceholder: 'アプリ名',
+  linkedAppUrlPlaceholder: 'URL（例：spotify://）',
 
   // Advanced settings
   advancedSettings: '詳細設定',

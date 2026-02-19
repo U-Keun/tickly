@@ -1,5 +1,6 @@
 <script lang="ts">
   import { flip } from 'svelte/animate';
+  import type { Snippet } from 'svelte';
   import { dndzone } from 'svelte-dnd-action';
   import { reorderCategories } from '../lib/api/categoryApi';
   import type { Category } from '../types';
@@ -7,7 +8,7 @@
   interface Props {
     categories: Category[];
     onCategoriesReorder: (categories: Category[]) => void;
-    children: any;
+    children: Snippet<[Category]>;
   }
 
   let { categories = $bindable([]), onCategoriesReorder, children }: Props = $props();
@@ -39,8 +40,7 @@
     dragDisabled: false,
     dropTargetStyle: {},
     dropTargetClasses: [],
-    dragHandle: '.drag-handle-zone',
-    touchStartDelay: 0,
+    delayTouchStart: 0,
     morphDisabled: false,
     centreDraggedOnCursor: false
   }}

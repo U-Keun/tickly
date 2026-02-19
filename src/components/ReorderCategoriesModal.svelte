@@ -33,7 +33,7 @@
     </div>
   {:else}
     <DragDropCategoryList {categories} onCategoriesReorder={onCategoriesReorder}>
-      {#snippet children(category)}
+      {#snippet children(category: Category)}
         <div class="list-item">
           <div class="drag-handle-zone">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
