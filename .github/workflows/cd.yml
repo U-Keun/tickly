@@ -221,6 +221,16 @@ jobs:
             fi
           done
 
+      - name: Ensure iOS URL scheme for OAuth callback
+        run: |
+          INFO_PLIST="src-tauri/gen/apple/tickly_iOS/Info.plist"
+          /usr/libexec/PlistBuddy -c "Delete :CFBundleURLTypes" "$INFO_PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string com.u-keunsong.tickly" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string tickly" "$INFO_PLIST"
+
       - name: Build iOS
         run: yarn tauri ios build --ci --export-method release-testing --verbose
 

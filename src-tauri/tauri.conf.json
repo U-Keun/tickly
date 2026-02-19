@@ -23,7 +23,8 @@
     "active": true,
     "targets": "all",
     "iOS": {
-      "developmentTeam": "3689L65YPY"
+      "developmentTeam": "3689L65YPY",
+      "infoPlist": "Info.ios.plist"
     },
     "icon": [
       "icons/32x32.png",
@@ -35,9 +36,6 @@
   },
   "plugins": {
     "deep-link": {
-      "mobile": [
-        { "host": "auth", "pathPrefix": ["/callback"] }
-      ],
       "desktop": {
         "schemes": ["tickly"]
       }
