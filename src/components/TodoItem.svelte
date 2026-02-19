@@ -11,7 +11,7 @@
   let { item, onToggle, onDelete, onEdit }: Props = $props();
   let isEditing = $state(false);
   let editText = $state('');
-  let inputElement: HTMLInputElement;
+  let inputElement = $state<HTMLInputElement | null>(null);
 
   function startEdit() {
     isEditing = true;

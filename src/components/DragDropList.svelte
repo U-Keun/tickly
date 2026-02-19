@@ -1,5 +1,6 @@
 <script lang="ts">
   import { flip } from 'svelte/animate';
+  import type { Snippet } from 'svelte';
   import { dndzone } from 'svelte-dnd-action';
   import { reorderItems } from '../lib/api/todoApi';
   import type { TodoItem } from '../types';
@@ -7,7 +8,7 @@
   interface Props {
     items: TodoItem[];
     onItemsReorder: (items: TodoItem[]) => void;
-    children: any;
+    children: Snippet<[TodoItem]>;
   }
 
   let { items = $bindable([]), onItemsReorder, children }: Props = $props();
@@ -42,8 +43,7 @@
     dragDisabled: false,
     dropTargetStyle: {},
     dropTargetClasses: [],
-    dragHandle: '.drag-handle-zone',
-    touchStartDelay: 0,
+    delayTouchStart: 0,
     morphDisabled: false,
     centreDraggedOnCursor: false
   }}

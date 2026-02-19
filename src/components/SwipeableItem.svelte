@@ -140,7 +140,7 @@
       class="swipe-delete-button"
       style="opacity: {Math.min(1, Math.abs(translateX) / DELETE_BUTTON_WIDTH)};
         transform: translateY(-50%) scale({Math.min(1, Math.abs(translateX) / DELETE_BUTTON_WIDTH)});
-        transition: {swipeState === 'idle' ? 'opacity 0.3s, transform 0.3s' : 'none'};"
+        transition: none;"
     >
       <button onclick={handleDelete} class="delete-button-inner" aria-label="삭제" title="삭제">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
