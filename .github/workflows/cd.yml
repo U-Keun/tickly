@@ -233,8 +233,53 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$INFO_PLIST"
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string tickly" "$INFO_PLIST"
 
-      - name: Build iOS
-        run: yarn tauri ios build --ci --target aarch64 --export-method release-testing --verbose
+      - name: Archive iOS app (xcodebuild)
+        run: |
+          ARCHIVE_PATH="$RUNNER_TEMP/tickly_iOS.xcarchive"
+          echo "IOS_ARCHIVE_PATH=$ARCHIVE_PATH" >> $GITHUB_ENV
+
+          xcodebuild \
+            -workspace src-tauri/gen/apple/tickly.xcodeproj/project.xcworkspace \
+            -scheme tickly_iOS \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -archivePath "$ARCHIVE_PATH" \
+            archive
+
+      - name: Export iOS IPA (xcodebuild)
+        run: |
+          EXPORT_PATH="$RUNNER_TEMP/ios-export"
+          EXPORT_OPTIONS_PLIST="$RUNNER_TEMP/ExportOptions.plist"
+          echo "IOS_EXPORT_PATH=$EXPORT_PATH" >> $GITHUB_ENV
+
+          cat > "$EXPORT_OPTIONS_PLIST" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>release-testing</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>teamID</key>
+            <string>${APPLE_DEVELOPMENT_TEAM}</string>
+            <key>signingCertificate</key>
+            <string>Apple Distribution</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.u-keunsong.tickly</key>
+              <string>${IOS_PROFILE_NAME}</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$IOS_ARCHIVE_PATH" \
+            -exportPath "$EXPORT_PATH" \
+            -exportOptionsPlist "$EXPORT_OPTIONS_PLIST"
 
       - name: Debug iOS signing settings (on failure)
         if: failure()
@@ -256,9 +301,9 @@ jobs:
       - name: Find IPA file
         id: find-ipa
         run: |
-          IPA_PATH=$(find src-tauri/gen/apple -name "*.ipa" -type f | head -1)
+          IPA_PATH=$(find "$IOS_EXPORT_PATH" -name "*.ipa" -type f | head -1)
           if [ -z "$IPA_PATH" ]; then
-            echo "No IPA file found in src-tauri/gen/apple"
+            echo "No IPA file found in $IOS_EXPORT_PATH"
             exit 1
           fi
           echo "ipa_path=$IPA_PATH" >> $GITHUB_OUTPUT
