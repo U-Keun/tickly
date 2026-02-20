@@ -4,7 +4,7 @@ import type {
   RealtimeConnectionState,
   RealtimeEvent
 } from '../../types';
-import { i18n } from '$lib/i18n';
+import { formatLastSyncedAt as formatLastSyncedAtLabel } from '$lib/sync/formatLastSynced';
 import { RealtimeBridge } from './syncStoreRealtime';
 import { appStore } from './appStore.svelte';
 import * as syncApi from '$lib/api/syncApi';
@@ -168,28 +168,7 @@ class SyncStore {
   }
 
   formatLastSyncedAt(): string {
-    if (!this.lastSyncedAt) {
-      return '';
-    }
-
-    try {
-      const date = new Date(this.lastSyncedAt);
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-
-      if (diffMins < 1) {
-        return i18n.t('justNow');
-      } else if (diffMins < 60) {
-        return i18n.t('minutesAgo')(diffMins);
-      } else if (diffMins < 1440) {
-        return i18n.t('hoursAgo')(Math.floor(diffMins / 60));
-      } else {
-        return date.toLocaleDateString();
-      }
-    } catch {
-      return this.lastSyncedAt;
-    }
+    return formatLastSyncedAtLabel(this.lastSyncedAt);
   }
 }
 
