@@ -25,21 +25,51 @@
   }
 
   async function handleWidgetDeepLink(parsedUrl: URL): Promise<boolean> {
-    if (parsedUrl.host !== 'widget' || parsedUrl.pathname !== '/toggle') {
+    if (parsedUrl.host !== 'widget') {
       return false;
     }
 
-    const itemIdParam = parsedUrl.searchParams.get('itemId') ?? parsedUrl.searchParams.get('id');
-    const itemId = Number(itemIdParam);
+    if (parsedUrl.pathname === '/toggle') {
+      const itemIdParam = parsedUrl.searchParams.get('itemId') ?? parsedUrl.searchParams.get('id');
+      const itemId = Number(itemIdParam);
 
-    if (!Number.isInteger(itemId) || itemId <= 0) {
-      console.error('Invalid widget item id:', itemIdParam);
+      if (!Number.isInteger(itemId) || itemId <= 0) {
+        console.error('Invalid widget item id:', itemIdParam);
+        return true;
+      }
+
+      await appStore.toggleItemFromWidget(itemId);
+      await goto('/');
       return true;
     }
 
-    await appStore.toggleItemFromWidget(itemId);
-    await goto('/');
-    return true;
+    if (parsedUrl.pathname === '/category') {
+      const categoryIdParam = parsedUrl.searchParams.get('categoryId') ?? parsedUrl.searchParams.get('id');
+      if (!categoryIdParam) {
+        await goto('/');
+        return true;
+      }
+
+      const categoryId = Number(categoryIdParam);
+      if (!Number.isInteger(categoryId) || categoryId <= 0) {
+        console.error('Invalid widget category id:', categoryIdParam);
+        return true;
+      }
+
+      await appStore.loadCategories();
+      const categoryExists = appStore.categories.some(category => category.id === categoryId);
+
+      if (categoryExists) {
+        await appStore.selectCategory(categoryId);
+      } else {
+        console.error('Widget category id does not exist:', categoryId);
+      }
+
+      await goto('/');
+      return true;
+    }
+
+    return false;
   }
 
   // Check session and set up deep link listener
@@ -49,6 +79,9 @@
 
     // Restore login state from saved session
     await authStore.checkSession();
+
+    // Apply widget-only check actions queued in app group storage
+    await appStore.processWidgetActions();
 
     // Connect to realtime if logged in
     await connectRealtimeIfLoggedIn();

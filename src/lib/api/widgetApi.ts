@@ -20,6 +20,12 @@ export async function toggleItemFromWidget(id: number, maxItems?: number): Promi
   });
 }
 
+export async function processWidgetActions(maxItems?: number): Promise<number> {
+  return invoke<number>('process_widget_actions', {
+    maxItems: maxItems ?? null,
+  });
+}
+
 export async function setWidgetCachePath(path: string): Promise<void> {
   return invoke<void>('set_widget_cache_path', { path });
 }

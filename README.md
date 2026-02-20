@@ -126,6 +126,8 @@ open src-tauri/gen/apple/tickly.xcodeproj
 
 위젯 App Group 기본값은 `group.com.u-keunsong.tickly` 입니다. 변경하려면 `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/Info.ios.plist`, `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/ios-widget/tickly_iOS.entitlements`, `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/ios-widget/TicklyWidgetExtension/Info.plist`, `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/ios-widget/TicklyWidgetExtension/TicklyWidgetExtension.entitlements`를 동일한 값으로 맞춰주세요.
 
+iOS 17 이상에서는 위젯에서 카테고리 체크 버튼을 눌러 앱을 열지 않고 항목을 완료 처리할 수 있습니다. 위젯에서 누른 액션은 App Group 큐 파일에 저장되고, 앱 실행 시 자동 반영됩니다.
+
 #### iOS 앱 빌드 및 설치
 
 ```bash

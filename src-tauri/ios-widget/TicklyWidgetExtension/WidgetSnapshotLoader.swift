@@ -2,6 +2,7 @@ import Foundation
 
 enum WidgetSnapshotLoader {
     static let cacheFileName = "widget-cache.json"
+    static let actionFileName = "widget-actions.json"
     static let defaultAppGroupId = "group.com.u-keunsong.tickly"
 
     static func load() -> WidgetSnapshot {
@@ -16,13 +17,22 @@ enum WidgetSnapshotLoader {
         return snapshot
     }
 
-    private static func cacheURL() -> URL? {
+    static func cacheURL() -> URL? {
         let appGroupId = configuredAppGroupId()
         guard !appGroupId.isEmpty else { return nil }
 
         return FileManager.default
             .containerURL(forSecurityApplicationGroupIdentifier: appGroupId)?
             .appendingPathComponent(cacheFileName, isDirectory: false)
+    }
+
+    static func actionQueueURL() -> URL? {
+        let appGroupId = configuredAppGroupId()
+        guard !appGroupId.isEmpty else { return nil }
+
+        return FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroupId)?
+            .appendingPathComponent(actionFileName, isDirectory: false)
     }
 
     private static func configuredAppGroupId() -> String {

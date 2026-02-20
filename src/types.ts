@@ -45,11 +45,21 @@ export interface WidgetTodoItem {
   updated_at: string | null;
 }
 
+export interface WidgetCategorySummary {
+  category_id: number | null;
+  category_name: string;
+  total_count: number;
+  pending_count: number;
+  first_pending_item_id: number | null;
+  pending_item_ids: number[];
+}
+
 export interface WidgetSnapshot {
   generated_at: string;
   total_count: number;
   pending_count: number;
   items: WidgetTodoItem[];
+  categories: WidgetCategorySummary[];
 }
 
 export interface Tag {

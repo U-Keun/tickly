@@ -6,7 +6,7 @@ mod service;
 use commands::{OAuthStateStore, RealtimeState, *};
 use repository::init_database;
 use rusqlite::Connection;
-use service::{SupabaseClient, SupabaseConfig};
+use service::{SupabaseClient, SupabaseConfig, WidgetService};
 use std::sync::Mutex;
 use tauri::Manager;
 
@@ -33,6 +33,9 @@ pub fn run() {
     builder
         .setup(|app| {
             let conn = init_database(app.handle())?;
+            if let Err(error) = WidgetService::process_pending_actions(&conn, app.handle(), None) {
+                log::error!("Failed to process widget actions on app startup: {}", error);
+            }
 
             // Initialize Supabase client if config is available
             let supabase = SupabaseConfig::from_env().map(SupabaseClient::new);
@@ -76,6 +79,7 @@ pub fn run() {
             get_widget_snapshot,
             refresh_widget_cache,
             toggle_item_from_widget,
+            process_widget_actions,
             set_widget_cache_path,
             get_widget_cache_path,
             set_widget_app_group_id,

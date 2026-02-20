@@ -26,6 +26,15 @@ async function refreshWidgetCache(): Promise<void> {
   }
 }
 
+async function processWidgetActions(): Promise<number> {
+  try {
+    return await widgetApi.processWidgetActions();
+  } catch (error) {
+    console.error('Failed to process widget actions:', error);
+    return 0;
+  }
+}
+
 async function loadCategories(): Promise<void> {
   try {
     categories = await categoryApi.getCategories();
@@ -403,6 +412,7 @@ export const appStore = {
   loadCategories,
   loadItems,
   refreshAll,
+  processWidgetActions,
 
   // Category actions
   selectCategory,

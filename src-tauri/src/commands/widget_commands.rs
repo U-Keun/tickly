@@ -35,6 +35,17 @@ pub fn toggle_item_from_widget(
 }
 
 #[tauri::command]
+pub fn process_widget_actions(
+    max_items: Option<i64>,
+    app: AppHandle,
+    state: State<AppState>,
+) -> Result<i64, String> {
+    let db = state.db.lock().unwrap();
+    WidgetService::process_pending_actions(&db, &app, normalize_limit(max_items))
+        .map(|processed| processed as i64)
+}
+
+#[tauri::command]
 pub fn set_widget_cache_path(path: String, state: State<AppState>) -> Result<(), String> {
     let db = state.db.lock().unwrap();
     WidgetService::set_cache_path(&db, &path).map_err(|e| e.to_string())

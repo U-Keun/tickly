@@ -143,35 +143,64 @@ impl RepeatService {
                 let _ = StreakService::remove_completion(conn, id);
             }
         } else {
-            // Checking: handle based on repeat type
-            let today = Local::now().format("%Y-%m-%d").to_string();
-
-            if item.repeat_type == RepeatType::None {
-                // No repeat: just toggle done to true
-                TodoRepository::set_done(conn, id, true, Some(&today), None)?;
-                item.done = true;
-                item.last_completed_at = Some(today);
-            } else {
-                // Has repeat: calculate next due date and mark as done
-                let today_date = Local::now().date_naive();
-                let next_due = Self::calculate_next_due(
-                    &item.repeat_type,
-                    item.repeat_detail.as_deref(),
-                    today_date,
-                );
-
-                TodoRepository::set_done(conn, id, true, Some(&today), next_due.as_deref())?;
-                item.done = true;
-                item.last_completed_at = Some(today);
-                item.next_due_at = next_due;
-            }
-            // Log completion for streak if tracking
-            if item.track_streak {
-                let _ = StreakService::log_completion(conn, id);
-            }
+            Self::apply_completion(conn, id, &mut item)?;
         }
 
         Ok(Some(item))
+    }
+
+    /// Complete an item and handle repeat logic.
+    /// If the item is already done, this is a no-op.
+    pub fn complete_with_repeat(
+        conn: &Connection,
+        id: i64,
+    ) -> Result<Option<TodoItem>, rusqlite::Error> {
+        let item = TodoRepository::get_by_id(conn, id)?;
+
+        let Some(mut item) = item else {
+            return Ok(None);
+        };
+
+        if item.done {
+            return Ok(Some(item));
+        }
+
+        Self::apply_completion(conn, id, &mut item)?;
+        Ok(Some(item))
+    }
+
+    fn apply_completion(
+        conn: &Connection,
+        id: i64,
+        item: &mut TodoItem,
+    ) -> Result<(), rusqlite::Error> {
+        let today = Local::now().format("%Y-%m-%d").to_string();
+
+        if item.repeat_type == RepeatType::None {
+            // No repeat: mark as done
+            TodoRepository::set_done(conn, id, true, Some(&today), None)?;
+            item.done = true;
+            item.last_completed_at = Some(today);
+        } else {
+            // Has repeat: calculate next due date and mark as done
+            let today_date = Local::now().date_naive();
+            let next_due = Self::calculate_next_due(
+                &item.repeat_type,
+                item.repeat_detail.as_deref(),
+                today_date,
+            );
+
+            TodoRepository::set_done(conn, id, true, Some(&today), next_due.as_deref())?;
+            item.done = true;
+            item.last_completed_at = Some(today);
+            item.next_due_at = next_due;
+        }
+
+        if item.track_streak {
+            let _ = StreakService::log_completion(conn, id);
+        }
+
+        Ok(())
     }
 
     /// Process all repeating items and reactivate those whose due date has arrived
