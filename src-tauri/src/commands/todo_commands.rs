@@ -1,5 +1,6 @@
 use tauri::{AppHandle, State};
 
+use super::with_db;
 use crate::models::{RepeatType, TodoItem};
 use crate::service::{RepeatService, ResetService, TodoService, WidgetService};
 use crate::AppState;
@@ -14,20 +15,20 @@ pub fn add_item(
     reminder_at: Option<String>,
     state: State<AppState>,
 ) -> Result<TodoItem, String> {
-    let db = state.db.lock().unwrap();
     let repeat = repeat_type
         .map(|s| RepeatType::from_str(&s))
         .unwrap_or(RepeatType::None);
-    TodoService::create_item(
-        &db,
-        &text,
-        category_id,
-        &repeat,
-        repeat_detail.as_deref(),
-        track_streak.unwrap_or(false),
-        reminder_at.as_deref(),
-    )
-    .map_err(|e| e.to_string())
+    with_db(&state, |db| {
+        TodoService::create_item(
+            db,
+            &text,
+            category_id,
+            &repeat,
+            repeat_detail.as_deref(),
+            track_streak.unwrap_or(false),
+            reminder_at.as_deref(),
+        )
+    })
 }
 
 #[tauri::command]
@@ -36,8 +37,7 @@ pub fn update_item_reminder(
     reminder_at: Option<String>,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
-    TodoService::update_reminder(&db, id, reminder_at.as_deref()).map_err(|e| e.to_string())
+    with_db(&state, |db| TodoService::update_reminder(db, id, reminder_at.as_deref()))
 }
 
 #[tauri::command]
@@ -46,8 +46,7 @@ pub fn update_item_linked_app(
     linked_app: Option<String>,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
-    TodoService::update_linked_app(&db, id, linked_app.as_deref()).map_err(|e| e.to_string())
+    with_db(&state, |db| TodoService::update_linked_app(db, id, linked_app.as_deref()))
 }
 
 #[tauri::command]
@@ -56,32 +55,30 @@ pub fn get_items(
     app: AppHandle,
     state: State<AppState>,
 ) -> Result<Vec<TodoItem>, String> {
-    let db = state.db.lock().unwrap();
-    if let Err(error) = WidgetService::process_pending_actions(&db, &app, None) {
-        log::error!(
-            "Failed to process widget actions before get_items: {}",
-            error
-        );
-    }
-    TodoService::get_items(&db, category_id).map_err(|e| e.to_string())
+    with_db(&state, |db| {
+        if let Err(error) = WidgetService::process_pending_actions(db, &app, None) {
+            log::error!(
+                "Failed to process widget actions before get_items: {}",
+                error
+            );
+        }
+        TodoService::get_items(db, category_id)
+    })
 }
 
 #[tauri::command]
 pub fn toggle_item(id: i64, state: State<AppState>) -> Result<Option<TodoItem>, String> {
-    let db = state.db.lock().unwrap();
-    TodoService::toggle_item(&db, id).map_err(|e| e.to_string())
+    with_db(&state, |db| TodoService::toggle_item(db, id))
 }
 
 #[tauri::command]
 pub fn delete_item(id: i64, state: State<AppState>) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
-    TodoService::delete_item(&db, id).map_err(|e| e.to_string())
+    with_db(&state, |db| TodoService::delete_item(db, id))
 }
 
 #[tauri::command]
 pub fn edit_item(id: i64, text: String, state: State<AppState>) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
-    TodoService::update_text(&db, id, &text).map_err(|e| e.to_string())
+    with_db(&state, |db| TodoService::update_text(db, id, &text))
 }
 
 #[tauri::command]
@@ -90,8 +87,7 @@ pub fn update_item_memo(
     memo: Option<String>,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
-    TodoService::update_memo(&db, id, memo.as_deref()).map_err(|e| e.to_string())
+    with_db(&state, |db| TodoService::update_memo(db, id, memo.as_deref()))
 }
 
 #[tauri::command]
@@ -101,32 +97,26 @@ pub fn update_item_repeat(
     repeat_detail: Option<String>,
     state: State<AppState>,
 ) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
     let repeat = RepeatType::from_str(&repeat_type);
-    TodoService::update_repeat(&db, id, &repeat, repeat_detail.as_deref())
-        .map_err(|e| e.to_string())
+    with_db(&state, |db| TodoService::update_repeat(db, id, &repeat, repeat_detail.as_deref()))
 }
 
 #[tauri::command]
 pub fn reorder_items(item_ids: Vec<i64>, state: State<AppState>) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
-    TodoService::reorder_items(&db, &item_ids).map_err(|e| e.to_string())
+    with_db(&state, |db| TodoService::reorder_items(db, &item_ids))
 }
 
 #[tauri::command]
 pub fn reset_all_items(category_id: Option<i64>, state: State<AppState>) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
-    ResetService::reset_items(&db, category_id).map_err(|e| e.to_string())
+    with_db(&state, |db| ResetService::reset_items(db, category_id))
 }
 
 #[tauri::command]
 pub fn check_and_auto_reset(state: State<AppState>) -> Result<bool, String> {
-    let db = state.db.lock().unwrap();
-    ResetService::check_and_auto_reset(&db).map_err(|e| e.to_string())
+    with_db(&state, |db| ResetService::check_and_auto_reset(db))
 }
 
 #[tauri::command]
 pub fn process_repeats(state: State<AppState>) -> Result<i32, String> {
-    let db = state.db.lock().unwrap();
-    RepeatService::process_repeats(&db).map_err(|e| e.to_string())
+    with_db(&state, |db| RepeatService::process_repeats(db))
 }

@@ -1,3 +1,8 @@
+use rusqlite::Connection;
+use tauri::State;
+
+use crate::AppState;
+
 mod auth_commands;
 mod category_commands;
 mod graph_commands;
@@ -8,6 +13,15 @@ mod sync_commands;
 mod tag_commands;
 mod todo_commands;
 mod widget_commands;
+
+pub(super) fn with_db<T, E, F>(state: &State<'_, AppState>, action: F) -> Result<T, String>
+where
+    E: ToString,
+    F: FnOnce(&Connection) -> Result<T, E>,
+{
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    action(&db).map_err(|e| e.to_string())
+}
 
 pub use auth_commands::*;
 pub use category_commands::*;

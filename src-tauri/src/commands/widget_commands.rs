@@ -1,5 +1,6 @@
 use tauri::{AppHandle, State};
 
+use super::with_db;
 use crate::models::WidgetSnapshot;
 use crate::service::WidgetService;
 use crate::AppState;
@@ -9,8 +10,7 @@ pub fn get_widget_snapshot(
     max_items: Option<i64>,
     state: State<AppState>,
 ) -> Result<WidgetSnapshot, String> {
-    let db = state.db.lock().unwrap();
-    WidgetService::get_snapshot(&db, normalize_limit(max_items)).map_err(|e| e.to_string())
+    with_db(&state, |db| WidgetService::get_snapshot(db, normalize_limit(max_items)))
 }
 
 #[tauri::command]
@@ -19,8 +19,7 @@ pub fn refresh_widget_cache(
     app: AppHandle,
     state: State<AppState>,
 ) -> Result<WidgetSnapshot, String> {
-    let db = state.db.lock().unwrap();
-    WidgetService::refresh_cache(&db, &app, normalize_limit(max_items))
+    with_db(&state, |db| WidgetService::refresh_cache(db, &app, normalize_limit(max_items)))
 }
 
 #[tauri::command]
@@ -30,8 +29,9 @@ pub fn toggle_item_from_widget(
     app: AppHandle,
     state: State<AppState>,
 ) -> Result<WidgetSnapshot, String> {
-    let db = state.db.lock().unwrap();
-    WidgetService::toggle_item_and_refresh(&db, &app, id, normalize_limit(max_items))
+    with_db(&state, |db| {
+        WidgetService::toggle_item_and_refresh(db, &app, id, normalize_limit(max_items))
+    })
 }
 
 #[tauri::command]
@@ -40,33 +40,30 @@ pub fn process_widget_actions(
     app: AppHandle,
     state: State<AppState>,
 ) -> Result<i64, String> {
-    let db = state.db.lock().unwrap();
-    WidgetService::process_pending_actions(&db, &app, normalize_limit(max_items))
-        .map(|processed| processed as i64)
+    with_db(&state, |db| {
+        WidgetService::process_pending_actions(db, &app, normalize_limit(max_items))
+            .map(|processed| processed as i64)
+    })
 }
 
 #[tauri::command]
 pub fn set_widget_cache_path(path: String, state: State<AppState>) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
-    WidgetService::set_cache_path(&db, &path).map_err(|e| e.to_string())
+    with_db(&state, |db| WidgetService::set_cache_path(db, &path))
 }
 
 #[tauri::command]
 pub fn set_widget_app_group_id(app_group_id: String, state: State<AppState>) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
-    WidgetService::set_app_group_id(&db, &app_group_id).map_err(|e| e.to_string())
+    with_db(&state, |db| WidgetService::set_app_group_id(db, &app_group_id))
 }
 
 #[tauri::command]
 pub fn get_widget_cache_path(app: AppHandle, state: State<AppState>) -> Result<String, String> {
-    let db = state.db.lock().unwrap();
-    WidgetService::get_cache_path(&db, &app)
+    with_db(&state, |db| WidgetService::get_cache_path(db, &app))
 }
 
 #[tauri::command]
 pub fn get_widget_app_group_id(state: State<AppState>) -> Result<String, String> {
-    let db = state.db.lock().unwrap();
-    WidgetService::get_app_group_id(&db)
+    with_db(&state, |db| WidgetService::get_app_group_id(db))
 }
 
 fn normalize_limit(max_items: Option<i64>) -> Option<usize> {

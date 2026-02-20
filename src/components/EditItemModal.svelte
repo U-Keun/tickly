@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { TodoItem, RepeatType, Tag } from '../types';
   import { i18n } from '$lib/i18n';
+  import { parseRepeatDetail, stringifyRepeatDetail } from '$lib/repeatDetail';
   import ModalWrapper from './ModalWrapper.svelte';
   import RepeatSelector from './RepeatSelector.svelte';
   import TagInput from './TagInput.svelte';
@@ -57,7 +58,7 @@
       editText = item.text;
       memoText = item.memo || '';
       repeatType = item.repeat_type;
-      repeatDetail = item.repeat_detail ? JSON.parse(item.repeat_detail) : [];
+      repeatDetail = parseRepeatDetail(item.repeat_detail);
       trackStreak = item.track_streak;
       reminderTime = item.reminder_at || '';
       linkedApp = item.linked_app || null;
@@ -84,7 +85,7 @@
         updates.push(onSaveMemo(item.id, trimmedMemo));
       }
 
-      const newRepeatDetail = repeatDetail.length > 0 ? JSON.stringify(repeatDetail) : null;
+      const newRepeatDetail = stringifyRepeatDetail(repeatDetail);
       if (repeatType !== item.repeat_type || newRepeatDetail !== item.repeat_detail) {
         updates.push(onUpdateRepeat(item.id, repeatType, newRepeatDetail));
       }

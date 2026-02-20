@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { TodoItem, Tag } from '../types';
   import { i18n } from '$lib/i18n';
+  import { parseRepeatDetail } from '$lib/repeatDetail';
   import TagChip from './TagChip.svelte';
   import { getAppByKey, getAppLabel, openApp } from '$lib/linkedApps';
 
@@ -16,13 +17,13 @@
     if (item.repeat_type === 'none') return i18n.t('repeatNone');
     if (item.repeat_type === 'daily') return i18n.t('repeatDaily');
     if (item.repeat_type === 'weekly') {
-      const days = item.repeat_detail ? JSON.parse(item.repeat_detail) as number[] : [];
+      const days = parseRepeatDetail(item.repeat_detail);
       const dayNames: Array<'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat'> = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
       const dayLabels = days.map(d => i18n.t(dayNames[d])).join(', ');
       return `${i18n.t('repeatWeekly')} (${dayLabels})`;
     }
     if (item.repeat_type === 'monthly') {
-      const dates = item.repeat_detail ? JSON.parse(item.repeat_detail) as number[] : [];
+      const dates = parseRepeatDetail(item.repeat_detail);
       return `${i18n.t('repeatMonthly')} (${dates.join(', ')})`;
     }
     return '';

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { RepeatType, Tag } from '../types';
   import { i18n } from '$lib/i18n';
+  import { stringifyRepeatDetail } from '$lib/repeatDetail';
   import ModalWrapper from './ModalWrapper.svelte';
   import RepeatSelector from './RepeatSelector.svelte';
   import TagInput from './TagInput.svelte';
@@ -83,7 +84,7 @@
     isSaving = true;
     try {
       const trimmedMemo = memo.trim() || null;
-      const repeatDetailJson = repeatDetail.length > 0 ? JSON.stringify(repeatDetail) : null;
+      const repeatDetailJson = stringifyRepeatDetail(repeatDetail);
       const tagNames = pendingTags.map(t => t.name);
       const reminderAt = reminderTime || null;
       await onAdd(trimmedText, trimmedMemo, repeatType, repeatDetailJson, trackStreak, tagNames, reminderAt, linkedApp);

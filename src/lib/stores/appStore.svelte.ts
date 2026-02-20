@@ -17,6 +17,28 @@ let activeTagFilter = $state<number | null>(null);
 let filteredItems = $state<TodoItem[]>([]);
 let itemTagsMap = $state<Record<number, Tag[]>>({});
 
+function sortItemsByDoneAndOrder(itemList: TodoItem[]): TodoItem[] {
+  return [...itemList].sort((a, b) => {
+    if (a.done !== b.done) {
+      return a.done ? 1 : -1;
+    }
+    return a.display_order - b.display_order;
+  });
+}
+
+function replaceItem(id: number, nextItem: TodoItem): void {
+  items = items.map((item) => (item.id === id ? nextItem : item));
+}
+
+function patchItem(id: number, patch: Partial<TodoItem>): void {
+  items = items.map((item) => (item.id === id ? { ...item, ...patch } : item));
+}
+
+async function finalizeMutation(): Promise<void> {
+  await refreshWidgetCache();
+  syncStore.scheduleSync();
+}
+
 // Actions
 async function refreshWidgetCache(): Promise<void> {
   try {
@@ -49,7 +71,7 @@ async function loadCategories(): Promise<void> {
 async function loadItems(): Promise<void> {
   try {
     // Check and perform auto-reset if needed before loading items
-    const didReset = await todoApi.checkAndAutoReset();
+    await todoApi.checkAndAutoReset();
     items = await todoApi.getItems(selectedCategoryId);
     await refreshWidgetCache();
   } catch (error) {
@@ -68,8 +90,7 @@ async function addCategory(name: string): Promise<void> {
     const newCategory = await categoryApi.addCategory(name);
     categories = [...categories, newCategory];
     await selectCategory(newCategory.id);
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to add category:', error);
   }
@@ -81,8 +102,7 @@ async function editCategory(id: number, name: string): Promise<void> {
     categories = categories.map(cat =>
       cat.id === id ? { ...cat, name } : cat
     );
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to edit category:', error);
   }
@@ -100,8 +120,7 @@ async function deleteCategory(id: number): Promise<boolean> {
     if (selectedCategoryId === id) {
       await selectCategory(categories[0].id);
     }
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    await finalizeMutation();
     return true;
   } catch (error) {
     console.error('Failed to delete category:', error);
@@ -141,8 +160,7 @@ async function addItem(
       itemTagsMap = { ...itemTagsMap, [newItem.id]: tags };
       await loadAllTags();
     }
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to add item:', error);
   }
@@ -152,16 +170,9 @@ async function toggleItem(id: number): Promise<void> {
   try {
     const updatedItem = await todoApi.toggleItem(id);
     if (updatedItem) {
-      items = items.map(item =>
-        item.id === id ? updatedItem : item
-      );
-      // Re-sort items (done items go to bottom)
-      items = [...items].sort((a, b) => {
-        if (a.done !== b.done) return a.done ? 1 : -1;
-        return a.display_order - b.display_order;
-      });
-      await refreshWidgetCache();
-      syncStore.scheduleSync();
+      replaceItem(id, updatedItem);
+      items = sortItemsByDoneAndOrder(items);
+      await finalizeMutation();
     }
   } catch (error) {
     console.error('Failed to toggle item:', error);
@@ -182,8 +193,7 @@ async function deleteItem(id: number): Promise<void> {
   try {
     await todoApi.deleteItem(id);
     items = items.filter(item => item.id !== id);
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to delete item:', error);
   }
@@ -192,11 +202,8 @@ async function deleteItem(id: number): Promise<void> {
 async function editItem(id: number, text: string): Promise<void> {
   try {
     await todoApi.editItem(id, text);
-    items = items.map(item =>
-      item.id === id ? { ...item, text } : item
-    );
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    patchItem(id, { text });
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to edit item:', error);
   }
@@ -205,11 +212,8 @@ async function editItem(id: number, text: string): Promise<void> {
 async function updateMemo(id: number, memo: string | null): Promise<void> {
   try {
     await todoApi.updateItemMemo(id, memo);
-    items = items.map(item =>
-      item.id === id ? { ...item, memo } : item
-    );
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    patchItem(id, { memo });
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to update memo:', error);
   }
@@ -222,11 +226,8 @@ async function updateRepeat(
 ): Promise<void> {
   try {
     await todoApi.updateItemRepeat(id, repeatType, repeatDetail);
-    items = items.map(item =>
-      item.id === id ? { ...item, repeat_type: repeatType, repeat_detail: repeatDetail } : item
-    );
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    patchItem(id, { repeat_type: repeatType, repeat_detail: repeatDetail });
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to update repeat:', error);
   }
@@ -235,11 +236,8 @@ async function updateRepeat(
 async function updateTrackStreak(id: number, trackStreak: boolean): Promise<void> {
   try {
     await streakApi.updateTrackStreak(id, trackStreak);
-    items = items.map(item =>
-      item.id === id ? { ...item, track_streak: trackStreak } : item
-    );
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    patchItem(id, { track_streak: trackStreak });
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to update track_streak:', error);
   }
@@ -248,11 +246,8 @@ async function updateTrackStreak(id: number, trackStreak: boolean): Promise<void
 async function updateLinkedApp(id: number, linkedApp: string | null): Promise<void> {
   try {
     await todoApi.updateItemLinkedApp(id, linkedApp);
-    items = items.map(item =>
-      item.id === id ? { ...item, linked_app: linkedApp } : item
-    );
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    patchItem(id, { linked_app: linkedApp });
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to update linked app:', error);
   }
@@ -261,11 +256,8 @@ async function updateLinkedApp(id: number, linkedApp: string | null): Promise<vo
 async function updateReminder(id: number, reminderAt: string | null): Promise<void> {
   try {
     await todoApi.updateItemReminder(id, reminderAt);
-    items = items.map(item =>
-      item.id === id ? { ...item, reminder_at: reminderAt } : item
-    );
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    patchItem(id, { reminder_at: reminderAt });
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to update reminder:', error);
   }
@@ -275,8 +267,7 @@ async function resetAllItems(): Promise<void> {
   try {
     await todoApi.resetAllItems(selectedCategoryId);
     items = items.map(item => ({ ...item, done: false }));
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to reset items:', error);
   }
@@ -301,9 +292,13 @@ async function loadAllTags(): Promise<void> {
 
 async function loadTagsForItems(itemList: TodoItem[]): Promise<void> {
   try {
+    const entries = await Promise.all(
+      itemList.map(async (item) => [item.id, await tagApi.getTagsForItem(item.id)] as const)
+    );
+
     const map: Record<number, Tag[]> = { ...itemTagsMap };
-    for (const item of itemList) {
-      map[item.id] = await tagApi.getTagsForItem(item.id);
+    for (const [itemId, tags] of entries) {
+      map[itemId] = tags;
     }
     itemTagsMap = map;
   } catch (error) {
@@ -321,8 +316,7 @@ async function addTagToItem(itemId: number, tagName: string): Promise<Tag | null
     }
     // Refresh allTags in case a new tag was created
     await loadAllTags();
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    await finalizeMutation();
     return tag;
   } catch (error) {
     console.error('Failed to add tag to item:', error);
@@ -335,8 +329,7 @@ async function removeTagFromItem(itemId: number, tagId: number): Promise<void> {
     await tagApi.removeTagFromItem(itemId, tagId);
     const currentTags = itemTagsMap[itemId] || [];
     itemTagsMap = { ...itemTagsMap, [itemId]: currentTags.filter(t => t.id !== tagId) };
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to remove tag from item:', error);
   }
@@ -356,8 +349,7 @@ async function deleteTagGlobal(tagId: number): Promise<void> {
       activeTagFilter = null;
       filteredItems = [];
     }
-    await refreshWidgetCache();
-    syncStore.scheduleSync();
+    await finalizeMutation();
   } catch (error) {
     console.error('Failed to delete tag:', error);
   }
