@@ -156,6 +156,7 @@ impl WidgetService {
 
         let snapshot_json = serde_json::to_string(&snapshot).map_err(|e| e.to_string())?;
         fs::write(&cache_path, snapshot_json).map_err(|e| e.to_string())?;
+        Self::request_widget_reload();
 
         Ok(snapshot)
     }
@@ -316,6 +317,13 @@ impl WidgetService {
         }
         fs::write(actions_path, "[]").map_err(|e| e.to_string())
     }
+
+    fn request_widget_reload() {
+        #[cfg(target_os = "ios")]
+        {
+            request_ios_widget_reload();
+        }
+    }
 }
 
 #[cfg(target_os = "ios")]
@@ -328,4 +336,34 @@ fn resolve_ios_app_group_cache_path(app_group_id: &str) -> Option<PathBuf> {
         file_manager.containerURLForSecurityApplicationGroupIdentifier(&group_identifier)?;
     let container_path = container_url.path()?;
     Some(PathBuf::from(container_path.to_string()).join(DEFAULT_WIDGET_CACHE_FILE))
+}
+
+#[cfg(target_os = "ios")]
+fn request_ios_widget_reload() {
+    use objc2::runtime::{AnyClass, AnyObject};
+    use objc2::msg_send;
+    use std::ffi::CString;
+
+    let class_name = match CString::new("WidgetCenter") {
+        Ok(name) => name,
+        Err(error) => {
+            log::error!("Failed to build WidgetCenter class name: {}", error);
+            return;
+        }
+    };
+
+    let Some(widget_center_class) = AnyClass::get(class_name.as_c_str()) else {
+        log::warn!("WidgetCenter class not found while reloading widget timelines");
+        return;
+    };
+
+    let shared_center_ptr: *mut AnyObject = unsafe { msg_send![widget_center_class, sharedCenter] };
+    let Some(shared_center) = (unsafe { shared_center_ptr.as_ref() }) else {
+        log::warn!("WidgetCenter.sharedCenter returned null");
+        return;
+    };
+
+    unsafe {
+        let _: () = msg_send![shared_center, reloadAllTimelines];
+    }
 }
