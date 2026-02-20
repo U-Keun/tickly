@@ -1,5 +1,6 @@
-import { getSetting, setSetting } from './api/settingsApi';
 import type { ThemeColors, ThemePreset } from '../types';
+import { getSetting, setSetting } from './api/settingsApi';
+import * as widgetApi from './api/widgetApi';
 
 // Default theme (기본)
 const defaultColors: ThemeColors = {
@@ -129,6 +130,11 @@ export interface SavedTheme {
 export async function saveTheme(theme: SavedTheme): Promise<void> {
   try {
     await setSetting('theme', JSON.stringify(theme));
+    try {
+      await widgetApi.refreshWidgetCache();
+    } catch (error) {
+      console.error('Failed to refresh widget cache after theme change:', error);
+    }
   } catch (error) {
     console.error('Failed to save theme:', error);
   }

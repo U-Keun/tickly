@@ -5,8 +5,7 @@ use crate::models::{SyncStatus, Tag};
 pub struct TagRepository;
 
 impl TagRepository {
-    const SELECT_COLUMNS: &'static str =
-        "id, name, sync_id, created_at, updated_at, sync_status";
+    const SELECT_COLUMNS: &'static str = "id, name, sync_id, created_at, updated_at, sync_status";
 
     fn row_to_tag(row: &rusqlite::Row) -> Result<Tag, rusqlite::Error> {
         let sync_status_str: Option<String> = row.get(5)?;
@@ -117,7 +116,10 @@ impl TagRepository {
         conn: &Connection,
         sync_id: &str,
     ) -> Result<Option<Tag>, rusqlite::Error> {
-        let sql = format!("SELECT {} FROM tags WHERE sync_id = ?1", Self::SELECT_COLUMNS);
+        let sql = format!(
+            "SELECT {} FROM tags WHERE sync_id = ?1",
+            Self::SELECT_COLUMNS
+        );
         let mut stmt = conn.prepare(&sql)?;
         let mut rows = stmt.query_map(params![sync_id], Self::row_to_tag)?;
         if let Some(tag) = rows.next() {

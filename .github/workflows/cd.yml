@@ -160,6 +160,13 @@ jobs:
 
       - run: yarn install --frozen-lockfile
 
+      - name: Ensure xcodegen is available
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-ios
@@ -251,6 +258,9 @@ jobs:
 
       - name: Initialize iOS project
         run: yarn tauri ios init --ci
+
+      - name: Sync iOS widget project files
+        run: yarn ios:widget:setup
 
       - name: Apply custom iOS app icon
         run: |

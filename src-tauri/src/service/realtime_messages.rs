@@ -53,14 +53,8 @@ impl PhoenixMessage {
         Ok(Self {
             join_ref: arr[0].as_str().map(|s| s.to_string()),
             msg_ref: arr[1].as_str().map(|s| s.to_string()),
-            topic: arr[2]
-                .as_str()
-                .ok_or("Topic must be a string")?
-                .to_string(),
-            event: arr[3]
-                .as_str()
-                .ok_or("Event must be a string")?
-                .to_string(),
+            topic: arr[2].as_str().ok_or("Topic must be a string")?.to_string(),
+            event: arr[3].as_str().ok_or("Event must be a string")?.to_string(),
             payload: arr[4].clone(),
         })
     }
@@ -163,9 +157,7 @@ impl RealtimeSubscribePayload {
                 broadcast: BroadcastConfig {
                     self_broadcast: false,
                 },
-                presence: PresenceConfig {
-                    key: String::new(),
-                },
+                presence: PresenceConfig { key: String::new() },
                 postgres_changes,
             },
         }

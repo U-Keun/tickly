@@ -89,7 +89,10 @@ impl AuthService {
         Ok(session)
     }
 
-    pub async fn sign_out_remote(client: &SupabaseClient, access_token: &str) -> Result<(), String> {
+    pub async fn sign_out_remote(
+        client: &SupabaseClient,
+        access_token: &str,
+    ) -> Result<(), String> {
         // Try to sign out from Supabase, but don't fail if it doesn't work
         let _ = client.sign_out(access_token).await;
         Ok(())

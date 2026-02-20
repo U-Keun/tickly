@@ -62,11 +62,8 @@ fn create_tables(conn: &Connection) -> Result<(), rusqlite::Error> {
 fn create_default_category(conn: &Connection) -> Result<(), rusqlite::Error> {
     use rusqlite::params;
 
-    let category_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM categories",
-        [],
-        |row| row.get(0),
-    )?;
+    let category_count: i64 =
+        conn.query_row("SELECT COUNT(*) FROM categories", [], |row| row.get(0))?;
 
     if category_count == 0 {
         conn.execute(

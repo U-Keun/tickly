@@ -10,6 +10,7 @@ pub mod supabase_client;
 mod sync_service;
 mod tag_service;
 mod todo_service;
+mod widget_service;
 
 pub use auth_service::AuthService;
 pub use category_service::CategoryService;
@@ -22,3 +23,4 @@ pub use supabase_client::{SupabaseClient, SupabaseConfig};
 pub use sync_service::SyncService;
 pub use tag_service::TagService;
 pub use todo_service::TodoService;
+pub use widget_service::WidgetService;

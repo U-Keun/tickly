@@ -19,6 +19,7 @@ Tickly 배포 자동화는 GitHub Actions의 CI/CD 워크플로우로 구성됩�
     - 시크릿 사전 검증 (Desktop/iOS 분리)
     - Desktop( macOS / Windows / Linux ) 아티팩트 빌드
     - iOS IPA 빌드 + TestFlight 업로드
+    - iOS 위젯 템플릿 동기화 (`yarn ios:widget:setup`)
     - 태그 기준 GitHub Draft Release 생성
 
 ## Required GitHub Secrets
@@ -71,3 +72,6 @@ CD 워크플로우는 수동 실행 시 아래 옵션을 제공합니다.
   - Preflight job 로그에서 누락된 키 이름 확인
 - iOS 서명 실패
   - 인증서/프로비저닝 프로파일 base64 인코딩 값 재확인
+- iOS 위젯 변경 미반영
+  - CD 로그에서 `Sync iOS widget project files` 단계 성공 여부 확인
+  - 로컬에서도 `yarn ios:widget:setup` 실행 후 빌드

@@ -181,7 +181,10 @@ impl RealtimeService {
                             "realtime-event",
                             RealtimeEvent {
                                 event_type: RealtimeEventType::Reconnecting,
-                                message: Some(format!("Attempt {} of {}", attempts, MAX_RECONNECT_ATTEMPTS)),
+                                message: Some(format!(
+                                    "Attempt {} of {}",
+                                    attempts, MAX_RECONNECT_ATTEMPTS
+                                )),
                             },
                         );
 
@@ -385,10 +388,13 @@ impl RealtimeService {
 
         match msg.event.as_str() {
             "phx_reply" => {
-                if let Ok(reply) = serde_json::from_value::<SystemReplyPayload>(msg.payload.clone()) {
+                if let Ok(reply) = serde_json::from_value::<SystemReplyPayload>(msg.payload.clone())
+                {
                     if reply.status == "ok" {
                         // Check if this is a join reply (join_ref = "1" and msg_ref = "1")
-                        if msg.join_ref.as_deref() == Some("1") && msg.msg_ref.as_deref() == Some("1") {
+                        if msg.join_ref.as_deref() == Some("1")
+                            && msg.msg_ref.as_deref() == Some("1")
+                        {
                             log::info!("Realtime channel join successful");
 
                             // Update internal state to Connected
@@ -420,7 +426,9 @@ impl RealtimeService {
             }
             "postgres_changes" => {
                 // Payload has nested "data" field
-                if let Ok(wrapper) = serde_json::from_value::<PostgresChangesEventPayload>(msg.payload.clone()) {
+                if let Ok(wrapper) =
+                    serde_json::from_value::<PostgresChangesEventPayload>(msg.payload.clone())
+                {
                     let change = wrapper.data;
                     let change_type = match change.change_type.as_str() {
                         "INSERT" => DataChangeType::Insert,
@@ -470,8 +478,12 @@ impl RealtimeService {
     }
 
     fn emit_event(&self, event_type: RealtimeEventType, message: Option<String>) {
-        let _ = self
-            .app_handle
-            .emit("realtime-event", RealtimeEvent { event_type, message });
+        let _ = self.app_handle.emit(
+            "realtime-event",
+            RealtimeEvent {
+                event_type,
+                message,
+            },
+        );
     }
 }

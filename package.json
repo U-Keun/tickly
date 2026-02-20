@@ -1,6 +1,6 @@
 {
   "name": "tickly",
-  "version": "0.7.18",
+  "version": "0.8.0",
   "description": "Simple checklist app for items to remember when going out",
   "type": "module",
   "scripts": {
@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "ios:widget:setup": "bash src-tauri/scripts/setup-ios-widget.sh",
     "tauri": "tauri"
   },
   "license": "MIT",

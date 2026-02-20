@@ -34,6 +34,53 @@ export interface TodoItem {
   sync_status?: SyncStatus;
 }
 
+export interface WidgetTodoItem {
+  id: number;
+  text: string;
+  done: boolean;
+  category_id: number | null;
+  category_name: string | null;
+  display_order: number;
+  reminder_at: string | null;
+  updated_at: string | null;
+}
+
+export interface WidgetCategorySummary {
+  category_id: number | null;
+  category_name: string;
+  total_count: number;
+  pending_count: number;
+  first_pending_item_id: number | null;
+  pending_item_ids: number[];
+  pending_items: WidgetCategoryPendingItem[];
+}
+
+export interface WidgetCategoryPendingItem {
+  id: number;
+  text: string;
+  display_order: number;
+  tags: string[];
+}
+
+export interface WidgetTheme {
+  paper: string;
+  canvas: string;
+  stroke: string;
+  ink: string;
+  ink_muted: string;
+  accent_sky: string;
+  accent_sky_strong: string;
+}
+
+export interface WidgetSnapshot {
+  generated_at: string;
+  total_count: number;
+  pending_count: number;
+  items: WidgetTodoItem[];
+  categories: WidgetCategorySummary[];
+  theme: WidgetTheme;
+}
+
 export interface Tag {
   id: number;
   name: string;

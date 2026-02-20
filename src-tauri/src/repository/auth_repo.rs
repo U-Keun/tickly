@@ -46,5 +46,4 @@ impl AuthRepository {
         conn.execute("DELETE FROM auth_session WHERE id = 1", [])?;
         Ok(())
     }
-
 }

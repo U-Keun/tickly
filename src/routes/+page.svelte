@@ -122,8 +122,10 @@
   // Handle visibility change (app coming to foreground)
   async function handleVisibilityChange() {
     if (document.visibilityState === 'visible') {
-      await checkAndPerformAutoReset();
+      await appStore.loadItems();
+      await appStore.loadTagsForItems(appStore.items);
       await processRepeatsAndReload();
+      await rescheduleAll(appStore.items);
     }
   }
 

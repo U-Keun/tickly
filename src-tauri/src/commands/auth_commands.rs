@@ -17,10 +17,7 @@ pub async fn sign_in_with_apple(
     id_token: String,
     nonce: Option<String>,
 ) -> Result<AuthSession, String> {
-    let client = state
-        .supabase
-        .as_ref()
-        .ok_or("Supabase not configured")?;
+    let client = state.supabase.as_ref().ok_or("Supabase not configured")?;
 
     // Perform async operation first (no lock held)
     let session = AuthService::sign_in_with_apple(client, &id_token, nonce.as_deref()).await?;
@@ -37,10 +34,7 @@ pub async fn sign_in_with_google(
     state: State<'_, AppState>,
     id_token: String,
 ) -> Result<AuthSession, String> {
-    let client = state
-        .supabase
-        .as_ref()
-        .ok_or("Supabase not configured")?;
+    let client = state.supabase.as_ref().ok_or("Supabase not configured")?;
 
     // Perform async operation first (no lock held)
     let session = AuthService::sign_in_with_google(client, &id_token).await?;
@@ -60,10 +54,7 @@ pub fn get_current_session(state: State<'_, AppState>) -> Result<Option<AuthSess
 
 #[tauri::command]
 pub async fn refresh_session(state: State<'_, AppState>) -> Result<AuthSession, String> {
-    let client = state
-        .supabase
-        .as_ref()
-        .ok_or("Supabase not configured")?;
+    let client = state.supabase.as_ref().ok_or("Supabase not configured")?;
 
     // Get current session without holding lock across await
     let current_session = {
@@ -88,16 +79,12 @@ pub async fn refresh_session(state: State<'_, AppState>) -> Result<AuthSession, 
 
 #[tauri::command]
 pub async fn sign_out(state: State<'_, AppState>) -> Result<(), String> {
-    let client = state
-        .supabase
-        .as_ref()
-        .ok_or("Supabase not configured")?;
+    let client = state.supabase.as_ref().ok_or("Supabase not configured")?;
 
     // Get access token without holding lock across await
     let access_token = {
         let conn = state.db.lock().map_err(|e| e.to_string())?;
-        AuthService::get_current_session(&conn)?
-            .map(|s| s.access_token)
+        AuthService::get_current_session(&conn)?.map(|s| s.access_token)
     };
 
     // Sign out from remote if we have a token
@@ -193,7 +180,13 @@ pub async fn is_logged_in(state: State<'_, AppState>) -> Result<bool, String> {
             if AuthService::is_session_expired(&session) {
                 // Try to refresh the session
                 if let Some(client) = client_opt {
-                    match AuthService::refresh_token(&client, &session.refresh_token, session.provider.clone()).await {
+                    match AuthService::refresh_token(
+                        &client,
+                        &session.refresh_token,
+                        session.provider.clone(),
+                    )
+                    .await
+                    {
                         Ok(new_session) => {
                             // Save the refreshed session
                             let conn = state.db.lock().map_err(|e| e.to_string())?;
@@ -225,10 +218,7 @@ pub fn start_mobile_google_oauth(
     state: State<'_, AppState>,
     oauth_state: State<'_, OAuthStateStore>,
 ) -> Result<String, String> {
-    let client = state
-        .supabase
-        .as_ref()
-        .ok_or("Supabase not configured")?;
+    let client = state.supabase.as_ref().ok_or("Supabase not configured")?;
 
     // Use deep link as redirect URL
     let redirect_url = "tickly://auth/callback";
@@ -257,10 +247,7 @@ pub async fn complete_mobile_google_oauth(
     oauth_state: State<'_, OAuthStateStore>,
     code: String,
 ) -> Result<AuthSession, String> {
-    let client = state
-        .supabase
-        .as_ref()
-        .ok_or("Supabase not configured")?;
+    let client = state.supabase.as_ref().ok_or("Supabase not configured")?;
 
     // Get the stored code verifier
     let code_verifier = oauth_state
@@ -292,15 +279,15 @@ pub async fn start_google_oauth(
     state: State<'_, AppState>,
     oauth_state: State<'_, OAuthStateStore>,
 ) -> Result<String, String> {
-    let client = state
-        .supabase
-        .as_ref()
-        .ok_or("Supabase not configured")?;
+    let client = state.supabase.as_ref().ok_or("Supabase not configured")?;
 
     let (oauth_url, code_verifier, port) = OAuthService::start_google_oauth(client).await?;
 
     // Store the code verifier and port for later
-    *oauth_state.code_verifier.lock().map_err(|e| e.to_string())? = Some(code_verifier);
+    *oauth_state
+        .code_verifier
+        .lock()
+        .map_err(|e| e.to_string())? = Some(code_verifier);
     *oauth_state.port.lock().map_err(|e| e.to_string())? = Some(port);
 
     Ok(oauth_url)
@@ -312,10 +299,7 @@ pub async fn complete_google_oauth(
     state: State<'_, AppState>,
     oauth_state: State<'_, OAuthStateStore>,
 ) -> Result<AuthSession, String> {
-    let client = state
-        .supabase
-        .as_ref()
-        .ok_or("Supabase not configured")?;
+    let client = state.supabase.as_ref().ok_or("Supabase not configured")?;
 
     // Get the stored code verifier and port
     let code_verifier = oauth_state

@@ -18,11 +18,7 @@ impl TodoTagRepository {
         })
     }
 
-    pub fn add_tag(
-        conn: &Connection,
-        todo_id: i64,
-        tag_id: i64,
-    ) -> Result<(), rusqlite::Error> {
+    pub fn add_tag(conn: &Connection, todo_id: i64, tag_id: i64) -> Result<(), rusqlite::Error> {
         let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         conn.execute(
             "INSERT OR IGNORE INTO todo_tags (todo_id, tag_id, created_at, sync_status) VALUES (?1, ?2, ?3, 'pending')",
@@ -31,11 +27,7 @@ impl TodoTagRepository {
         Ok(())
     }
 
-    pub fn remove_tag(
-        conn: &Connection,
-        todo_id: i64,
-        tag_id: i64,
-    ) -> Result<(), rusqlite::Error> {
+    pub fn remove_tag(conn: &Connection, todo_id: i64, tag_id: i64) -> Result<(), rusqlite::Error> {
         conn.execute(
             "DELETE FROM todo_tags WHERE todo_id = ?1 AND tag_id = ?2",
             params![todo_id, tag_id],
@@ -55,10 +47,7 @@ impl TodoTagRepository {
         Ok(())
     }
 
-    pub fn get_tags_for_item(
-        conn: &Connection,
-        todo_id: i64,
-    ) -> Result<Vec<Tag>, rusqlite::Error> {
+    pub fn get_tags_for_item(conn: &Connection, todo_id: i64) -> Result<Vec<Tag>, rusqlite::Error> {
         let mut stmt = conn.prepare(
             "SELECT t.id, t.name, t.sync_id, t.created_at, t.updated_at, t.sync_status
              FROM tags t
@@ -155,11 +144,7 @@ impl TodoTagRepository {
     }
 
     #[allow(dead_code)]
-    pub fn delete(
-        conn: &Connection,
-        todo_id: i64,
-        tag_id: i64,
-    ) -> Result<(), rusqlite::Error> {
+    pub fn delete(conn: &Connection, todo_id: i64, tag_id: i64) -> Result<(), rusqlite::Error> {
         conn.execute(
             "DELETE FROM todo_tags WHERE todo_id = ?1 AND tag_id = ?2",
             params![todo_id, tag_id],

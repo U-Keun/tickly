@@ -15,11 +15,7 @@ impl SyncRepository {
         }
     }
 
-    pub fn set_metadata(
-        conn: &Connection,
-        key: &str,
-        value: &str,
-    ) -> Result<(), rusqlite::Error> {
+    pub fn set_metadata(conn: &Connection, key: &str, value: &str) -> Result<(), rusqlite::Error> {
         conn.execute(
             "INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?1, ?2)",
             params![key, value],
