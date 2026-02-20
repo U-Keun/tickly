@@ -20,6 +20,7 @@ const INITIAL_RECONNECT_DELAY_MS: u64 = 1000;
 const MAX_RECONNECT_DELAY_MS: u64 = 30000;
 
 mod connection;
+mod message;
 
 /// Configuration for realtime connection
 #[derive(Debug, Clone)]
