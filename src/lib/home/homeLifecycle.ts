@@ -1,4 +1,5 @@
 import type { TodoItem } from '../../types';
+import { createHomeResetScheduler } from './homeResetScheduler';
 
 interface HomeLifecycleDeps {
   loadItems: () => Promise<void>;
@@ -12,7 +13,6 @@ interface HomeLifecycleDeps {
 
 export function createHomeLifecycle(deps: HomeLifecycleDeps) {
   let lastProcessedDate = '';
-  let resetTimer: ReturnType<typeof setTimeout> | null = null;
 
   async function processRepeatsAndReload(): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
@@ -43,42 +43,10 @@ export function createHomeLifecycle(deps: HomeLifecycleDeps) {
     }
   }
 
-  function getMsUntilResetTime(resetTime: string): number {
-    const [hours, minutes] = resetTime.split(':').map(Number);
-    const now = new Date();
-    const resetDate = new Date();
-    resetDate.setHours(hours, minutes, 0, 0);
-
-    if (resetDate <= now) {
-      resetDate.setDate(resetDate.getDate() + 1);
-    }
-
-    return resetDate.getTime() - now.getTime();
-  }
-
-  function clearResetTimer(): void {
-    if (resetTimer) {
-      clearTimeout(resetTimer);
-      resetTimer = null;
-    }
-  }
-
-  async function scheduleResetTimer(): Promise<void> {
-    clearResetTimer();
-
-    try {
-      const resetTime = await deps.getResetTime();
-      if (!resetTime) return;
-
-      const msUntilReset = getMsUntilResetTime(resetTime);
-      resetTimer = setTimeout(async () => {
-        await checkAndPerformAutoReset();
-        await scheduleResetTimer();
-      }, msUntilReset);
-    } catch (error) {
-      console.error('Failed to schedule reset timer:', error);
-    }
-  }
+  const { scheduleResetTimer, clearResetTimer } = createHomeResetScheduler({
+    getResetTime: deps.getResetTime,
+    onReset: checkAndPerformAutoReset
+  });
 
   async function handleVisibilityChange(): Promise<void> {
     if (document.visibilityState !== 'visible') {
