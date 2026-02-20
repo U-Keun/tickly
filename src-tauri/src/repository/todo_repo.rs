@@ -32,49 +32,33 @@ impl TodoRepository {
         })
     }
 
-    const SELECT_COLUMNS: &'static str = "id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at, track_streak, reminder_at, linked_app, sync_id, created_at, updated_at, sync_status";
-
-    pub fn get_by_category(
-        conn: &Connection,
-        category_id: Option<i64>,
-    ) -> Result<Vec<TodoItem>, rusqlite::Error> {
-        let mut items = Vec::new();
-
-        if let Some(id) = category_id {
-            let sql = format!(
-                "SELECT {} FROM todos WHERE category_id = ?1 AND (sync_status != 'deleted' OR sync_status IS NULL) ORDER BY done ASC, display_order ASC",
-                Self::SELECT_COLUMNS
-            );
-            let mut stmt = conn.prepare(&sql)?;
-
-            let rows = stmt.query_map(params![id], Self::row_to_item)?;
-
-            for item in rows {
-                items.push(item?);
-            }
-        } else {
-            let sql = format!(
-                "SELECT {} FROM todos WHERE sync_status != 'deleted' OR sync_status IS NULL ORDER BY done ASC, display_order ASC",
-                Self::SELECT_COLUMNS
-            );
-            let mut stmt = conn.prepare(&sql)?;
-
-            let rows = stmt.query_map([], Self::row_to_item)?;
-
-            for item in rows {
-                items.push(item?);
-            }
-        }
-
-        Ok(items)
+    fn now_iso() -> String {
+        chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
     }
 
-    pub fn get_by_id(conn: &Connection, id: i64) -> Result<Option<TodoItem>, rusqlite::Error> {
-        let sql = format!("SELECT {} FROM todos WHERE id = ?1", Self::SELECT_COLUMNS);
-        let mut stmt = conn.prepare(&sql)?;
+    fn collect_items<P>(
+        conn: &Connection,
+        sql: &str,
+        query_params: P,
+    ) -> Result<Vec<TodoItem>, rusqlite::Error>
+    where
+        P: rusqlite::Params,
+    {
+        let mut stmt = conn.prepare(sql)?;
+        let rows = stmt.query_map(query_params, Self::row_to_item)?;
+        rows.collect()
+    }
 
-        let mut rows = stmt.query_map(params![id], Self::row_to_item)?;
-
+    fn get_optional_item<P>(
+        conn: &Connection,
+        sql: &str,
+        query_params: P,
+    ) -> Result<Option<TodoItem>, rusqlite::Error>
+    where
+        P: rusqlite::Params,
+    {
+        let mut stmt = conn.prepare(sql)?;
+        let mut rows = stmt.query_map(query_params, Self::row_to_item)?;
         if let Some(item) = rows.next() {
             Ok(Some(item?))
         } else {
@@ -82,19 +66,41 @@ impl TodoRepository {
         }
     }
 
+    const SELECT_COLUMNS: &'static str = "id, text, done, category_id, display_order, memo, repeat_type, repeat_detail, next_due_at, last_completed_at, track_streak, reminder_at, linked_app, sync_id, created_at, updated_at, sync_status";
+
+    pub fn get_by_category(
+        conn: &Connection,
+        category_id: Option<i64>,
+    ) -> Result<Vec<TodoItem>, rusqlite::Error> {
+        match category_id {
+            Some(id) => {
+                let sql = format!(
+                    "SELECT {} FROM todos WHERE category_id = ?1 AND (sync_status != 'deleted' OR sync_status IS NULL) ORDER BY done ASC, display_order ASC",
+                    Self::SELECT_COLUMNS
+                );
+                Self::collect_items(conn, &sql, params![id])
+            }
+            None => {
+                let sql = format!(
+                    "SELECT {} FROM todos WHERE sync_status != 'deleted' OR sync_status IS NULL ORDER BY done ASC, display_order ASC",
+                    Self::SELECT_COLUMNS
+                );
+                Self::collect_items(conn, &sql, [])
+            }
+        }
+    }
+
+    pub fn get_by_id(conn: &Connection, id: i64) -> Result<Option<TodoItem>, rusqlite::Error> {
+        let sql = format!("SELECT {} FROM todos WHERE id = ?1", Self::SELECT_COLUMNS);
+        Self::get_optional_item(conn, &sql, params![id])
+    }
+
     pub fn get_all(conn: &Connection) -> Result<Vec<TodoItem>, rusqlite::Error> {
         let sql = format!(
             "SELECT {} FROM todos WHERE sync_status != 'deleted' OR sync_status IS NULL ORDER BY display_order ASC",
             Self::SELECT_COLUMNS
         );
-        let mut stmt = conn.prepare(&sql)?;
-
-        let rows = stmt.query_map([], Self::row_to_item)?;
-        let mut items = Vec::new();
-        for item in rows {
-            items.push(item?);
-        }
-        Ok(items)
+        Self::collect_items(conn, &sql, [])
     }
 
     /// Get all todos including deleted ones (for sync purposes)
@@ -104,14 +110,7 @@ impl TodoRepository {
             "SELECT {} FROM todos ORDER BY display_order ASC",
             Self::SELECT_COLUMNS
         );
-        let mut stmt = conn.prepare(&sql)?;
-
-        let rows = stmt.query_map([], Self::row_to_item)?;
-        let mut items = Vec::new();
-        for item in rows {
-            items.push(item?);
-        }
-        Ok(items)
+        Self::collect_items(conn, &sql, [])
     }
 
     pub fn get_pending_sync(conn: &Connection) -> Result<Vec<TodoItem>, rusqlite::Error> {
@@ -119,14 +118,7 @@ impl TodoRepository {
             "SELECT {} FROM todos WHERE sync_status = 'pending' OR sync_status = 'deleted' OR sync_status IS NULL",
             Self::SELECT_COLUMNS
         );
-        let mut stmt = conn.prepare(&sql)?;
-
-        let rows = stmt.query_map([], Self::row_to_item)?;
-        let mut items = Vec::new();
-        for item in rows {
-            items.push(item?);
-        }
-        Ok(items)
+        Self::collect_items(conn, &sql, [])
     }
 
     #[allow(dead_code)]
@@ -138,15 +130,7 @@ impl TodoRepository {
             "SELECT {} FROM todos WHERE sync_id = ?1",
             Self::SELECT_COLUMNS
         );
-        let mut stmt = conn.prepare(&sql)?;
-
-        let mut rows = stmt.query_map(params![sync_id], Self::row_to_item)?;
-
-        if let Some(item) = rows.next() {
-            Ok(Some(item?))
-        } else {
-            Ok(None)
-        }
+        Self::get_optional_item(conn, &sql, params![sync_id])
     }
 
     pub fn get_tracked_items(conn: &Connection) -> Result<Vec<TrackedItem>, rusqlite::Error> {
@@ -197,7 +181,7 @@ impl TodoRepository {
 
         let display_order = max_order + 1000;
         let repeat_type_str = repeat_type.to_str();
-        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+        let now = Self::now_iso();
 
         conn.execute(
             "INSERT INTO todos (text, done, category_id, display_order, repeat_type, repeat_detail, next_due_at, track_streak, reminder_at, created_at, updated_at, sync_status) VALUES (?1, 0, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'pending')",
@@ -267,7 +251,7 @@ impl TodoRepository {
     }
 
     pub fn mark_updated(conn: &Connection, id: i64) -> Result<(), rusqlite::Error> {
-        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+        let now = Self::now_iso();
         conn.execute(
             "UPDATE todos SET updated_at = ?1, sync_status = 'pending' WHERE id = ?2",
             params![now, id],
@@ -318,7 +302,7 @@ impl TodoRepository {
     }
 
     pub fn mark_deleted(conn: &Connection, id: i64) -> Result<(), rusqlite::Error> {
-        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+        let now = Self::now_iso();
         conn.execute(
             "UPDATE todos SET sync_status = 'deleted', updated_at = ?1 WHERE id = ?2",
             params![now, id],
@@ -371,7 +355,7 @@ impl TodoRepository {
     pub fn reorder(conn: &Connection, item_ids: &[i64]) -> Result<(), rusqlite::Error> {
         conn.execute("BEGIN TRANSACTION", [])?;
 
-        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+        let now = Self::now_iso();
         for (index, item_id) in item_ids.iter().enumerate() {
             let new_order = (index as i64 + 1) * 1000;
             if let Err(e) = conn.execute(
