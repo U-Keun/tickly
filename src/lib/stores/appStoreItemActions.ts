@@ -27,6 +27,10 @@ function sortItemsByDoneAndOrder(itemList: TodoItem[]): TodoItem[] {
   });
 }
 
+function patchItem(itemList: TodoItem[], id: number, patch: Partial<TodoItem>): TodoItem[] {
+  return itemList.map((item) => (item.id === id ? { ...item, ...patch } : item));
+}
+
 export function createItemActions(context: ItemActionsContext) {
   async function addItem(
     text: string,
@@ -120,9 +124,7 @@ export function createItemActions(context: ItemActionsContext) {
   async function editItem(id: number, text: string): Promise<void> {
     try {
       await todoApi.editItem(id, text);
-      context.setItems(
-        context.getItems().map((item) => (item.id === id ? { ...item, text } : item))
-      );
+      context.setItems(patchItem(context.getItems(), id, { text }));
       await context.finalizeMutation();
     } catch (error) {
       console.error('Failed to edit item:', error);
@@ -132,9 +134,7 @@ export function createItemActions(context: ItemActionsContext) {
   async function updateMemo(id: number, memo: string | null): Promise<void> {
     try {
       await todoApi.updateItemMemo(id, memo);
-      context.setItems(
-        context.getItems().map((item) => (item.id === id ? { ...item, memo } : item))
-      );
+      context.setItems(patchItem(context.getItems(), id, { memo }));
       await context.finalizeMutation();
     } catch (error) {
       console.error('Failed to update memo:', error);
@@ -149,15 +149,10 @@ export function createItemActions(context: ItemActionsContext) {
     try {
       await todoApi.updateItemRepeat(id, repeatType, repeatDetail);
       context.setItems(
-        context.getItems().map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                repeat_type: repeatType,
-                repeat_detail: repeatDetail
-              }
-            : item
-        )
+        patchItem(context.getItems(), id, {
+          repeat_type: repeatType,
+          repeat_detail: repeatDetail
+        })
       );
       await context.finalizeMutation();
     } catch (error) {
@@ -168,11 +163,7 @@ export function createItemActions(context: ItemActionsContext) {
   async function updateTrackStreak(id: number, trackStreak: boolean): Promise<void> {
     try {
       await streakApi.updateTrackStreak(id, trackStreak);
-      context.setItems(
-        context
-          .getItems()
-          .map((item) => (item.id === id ? { ...item, track_streak: trackStreak } : item))
-      );
+      context.setItems(patchItem(context.getItems(), id, { track_streak: trackStreak }));
       await context.finalizeMutation();
     } catch (error) {
       console.error('Failed to update track_streak:', error);
@@ -182,9 +173,7 @@ export function createItemActions(context: ItemActionsContext) {
   async function updateLinkedApp(id: number, linkedApp: string | null): Promise<void> {
     try {
       await todoApi.updateItemLinkedApp(id, linkedApp);
-      context.setItems(
-        context.getItems().map((item) => (item.id === id ? { ...item, linked_app: linkedApp } : item))
-      );
+      context.setItems(patchItem(context.getItems(), id, { linked_app: linkedApp }));
       await context.finalizeMutation();
     } catch (error) {
       console.error('Failed to update linked app:', error);
@@ -194,9 +183,7 @@ export function createItemActions(context: ItemActionsContext) {
   async function updateReminder(id: number, reminderAt: string | null): Promise<void> {
     try {
       await todoApi.updateItemReminder(id, reminderAt);
-      context.setItems(
-        context.getItems().map((item) => (item.id === id ? { ...item, reminder_at: reminderAt } : item))
-      );
+      context.setItems(patchItem(context.getItems(), id, { reminder_at: reminderAt }));
       await context.finalizeMutation();
     } catch (error) {
       console.error('Failed to update reminder:', error);
