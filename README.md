@@ -13,7 +13,7 @@
 </p>
 
 **Tickly**는 심플한 체크리스트 앱입니다. 복잡한 기능 없이 빠르고 간단하게 사용할 수 있도록 설계되었습니다.
-현재 릴리즈 버전은 **v0.7.17**입니다.
+현재 릴리즈 버전은 **v0.7.18**입니다.
 
 ### 주요 기능
 
@@ -127,6 +127,18 @@ open src-tauri/gen/apple/tickly.xcodeproj
 위젯 App Group 기본값은 `group.com.u-keunsong.tickly` 입니다. 변경하려면 `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/Info.ios.plist`, `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/ios-widget/tickly_iOS.entitlements`, `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/ios-widget/TicklyWidgetExtension/Info.plist`, `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/ios-widget/TicklyWidgetExtension/TicklyWidgetExtension.entitlements`를 동일한 값으로 맞춰주세요.
 
 iOS 17 이상에서는 위젯에서 카테고리 체크 버튼을 눌러 앱을 열지 않고 항목을 완료 처리할 수 있습니다. 위젯에서 누른 액션은 App Group 큐 파일에 저장되고, 앱 실행 시 자동 반영됩니다.
+
+#### 카테고리 위젯 동작
+
+- 지원 사이즈: Small / Medium / Large
+- Small: 카테고리 이름 + 리프레시 버튼 + 체크 가능한 항목 + `완료/전체` + `+N more`
+- Medium / Large: 카테고리 이름 + 리프레시 버튼 + 체크 가능한 항목 + `% done` + `완료/전체`
+- 항목 태그: 위젯 항목에 태그를 표시 (`#태그`, 다수일 때 `#첫태그 +N`)
+- 테마 연동: 앱 테마(프리셋/커스텀 색상)가 위젯 배경/텍스트 색상에 동기화
+
+#### 위젯 개발 시 주의
+
+- `src-tauri/ios-widget/` 아래 템플릿을 수정한 뒤에는 반드시 `yarn ios:widget:setup`을 실행해야 `src-tauri/gen/apple/` 생성본에 반영됩니다.
 
 #### iOS 앱 빌드 및 설치
 
