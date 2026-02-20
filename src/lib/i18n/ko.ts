@@ -157,6 +157,9 @@ export const ko = {
   syncNow: '지금 동기화',
   syncing: '동기화 중...',
   never: '없음',
+  justNow: '방금 전',
+  minutesAgo: (minutes: number) => `${minutes}분 전`,
+  hoursAgo: (hours: number) => `${hours}시간 전`,
   cloudSync: '클라우드 동기화',
 
   // Realtime sync

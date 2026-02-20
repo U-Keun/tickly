@@ -1,5 +1,3 @@
-import * as syncApi from '$lib/api/syncApi';
-import * as realtimeApi from '$lib/api/realtimeApi';
 import type {
   SyncResult,
   SyncStatusInfo,
@@ -7,7 +5,10 @@ import type {
   RealtimeEvent,
   DataChangedEvent,
 } from '../../types';
+import { i18n } from '$lib/i18n';
 import { appStore } from './appStore.svelte';
+import * as realtimeApi from '$lib/api/realtimeApi';
+import * as syncApi from '$lib/api/syncApi';
 
 // Supabase config - loaded from environment at build time
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
@@ -15,6 +16,10 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 // Debounce delay for auto-sync (in milliseconds)
 const SYNC_DEBOUNCE_MS = 2000;
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 class SyncStore {
   // Manual sync state
@@ -48,14 +53,18 @@ class SyncStore {
     this.realtimeError = error;
   }
 
+  private applySyncStatus(status: SyncStatusInfo): void {
+    this.isEnabled = status.is_enabled;
+    this.isSyncing = status.is_syncing;
+    this.isOnline = status.is_online;
+    this.lastSyncedAt = status.last_synced_at;
+    this.pendingCount = status.pending_count;
+  }
+
   async loadStatus(): Promise<void> {
     try {
       const status = await syncApi.getSyncStatus();
-      this.isEnabled = status.is_enabled;
-      this.isSyncing = status.is_syncing;
-      this.isOnline = status.is_online;
-      this.lastSyncedAt = status.last_synced_at;
-      this.pendingCount = status.pending_count;
+      this.applySyncStatus(status);
       this.error = null;
 
       // Also load realtime status
@@ -64,7 +73,7 @@ class SyncStore {
       this.setRealtimeError(realtimeStatus.last_error ?? null);
     } catch (error) {
       console.error('Failed to load sync status:', error);
-      this.error = error instanceof Error ? error.message : String(error);
+      this.error = getErrorMessage(error);
     }
   }
 
@@ -88,7 +97,7 @@ class SyncStore {
       return result;
     } catch (error) {
       console.error('Sync failed:', error);
-      this.error = error instanceof Error ? error.message : String(error);
+      this.error = getErrorMessage(error);
       return null;
     } finally {
       this.isSyncing = false;
@@ -154,7 +163,7 @@ class SyncStore {
       await realtimeApi.connectRealtime(SUPABASE_URL, SUPABASE_ANON_KEY, accessToken, userId);
     } catch (error) {
       console.error('Failed to connect realtime:', error);
-      this.setRealtimeError(error instanceof Error ? error.message : String(error));
+      this.setRealtimeError(getErrorMessage(error));
       this.setRealtimeState('disconnected');
     }
   }
@@ -207,9 +216,8 @@ class SyncStore {
       });
 
       // Listen for data change events
-      this.dataChangedUnlisten = await listen<DataChangedEvent>('data-changed', async (event) => {
-        const { table, change_type } = event.payload;
-        await this.handleDataChange(table, change_type);
+      this.dataChangedUnlisten = await listen<DataChangedEvent>('data-changed', async (_event) => {
+        await this.handleDataChange();
       });
     } catch (error) {
       console.error('Failed to set up realtime listeners:', error);
@@ -219,7 +227,7 @@ class SyncStore {
   /**
    * Handle data change from realtime subscription
    */
-  private async handleDataChange(table: string, changeType: string): Promise<void> {
+  private async handleDataChange(): Promise<void> {
     try {
       // Trigger sync to pull latest data from server
       // This updates the local DB, then refreshes the UI
@@ -255,11 +263,11 @@ class SyncStore {
       const diffMins = Math.floor(diffMs / 60000);
 
       if (diffMins < 1) {
-        return '방금 전';
+        return i18n.t('justNow');
       } else if (diffMins < 60) {
-        return `${diffMins}분 전`;
+        return i18n.t('minutesAgo')(diffMins);
       } else if (diffMins < 1440) {
-        return `${Math.floor(diffMins / 60)}시간 전`;
+        return i18n.t('hoursAgo')(Math.floor(diffMins / 60));
       } else {
         return date.toLocaleDateString();
       }

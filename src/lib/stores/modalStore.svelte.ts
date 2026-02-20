@@ -1,116 +1,138 @@
 import type { Category } from '../../types';
 
 // Modal state
-let showResetConfirm = $state(false);
-let showCategoryMenu = $state(false);
-let showDeleteCategoryConfirm = $state(false);
-let showAddItemModal = $state(false);
-let showReorderModal = $state(false);
-let showReorderCategoriesModal = $state(false);
-let showStreakModal = $state(false);
-let showTagFilterModal = $state(false);
+type ModalFlag =
+  | 'showResetConfirm'
+  | 'showCategoryMenu'
+  | 'showDeleteCategoryConfirm'
+  | 'showAddItemModal'
+  | 'showReorderModal'
+  | 'showReorderCategoriesModal'
+  | 'showStreakModal'
+  | 'showTagFilterModal';
+
+const modalKeys: ModalFlag[] = [
+  'showResetConfirm',
+  'showCategoryMenu',
+  'showDeleteCategoryConfirm',
+  'showAddItemModal',
+  'showReorderModal',
+  'showReorderCategoriesModal',
+  'showStreakModal',
+  'showTagFilterModal',
+];
+
+let modalState = $state<Record<ModalFlag, boolean>>({
+  showResetConfirm: false,
+  showCategoryMenu: false,
+  showDeleteCategoryConfirm: false,
+  showAddItemModal: false,
+  showReorderModal: false,
+  showReorderCategoriesModal: false,
+  showStreakModal: false,
+  showTagFilterModal: false,
+});
 let selectedCategoryForMenu = $state<Category | null>(null);
+
+function setModalOpen(key: ModalFlag, isOpen: boolean): void {
+  modalState[key] = isOpen;
+}
 
 // Reset confirm modal actions
 function openResetConfirm(): void {
-  showResetConfirm = true;
+  setModalOpen('showResetConfirm', true);
 }
 
 function closeResetConfirm(): void {
-  showResetConfirm = false;
+  setModalOpen('showResetConfirm', false);
 }
 
 // Add item modal actions
 function openAddItemModal(): void {
-  showAddItemModal = true;
+  setModalOpen('showAddItemModal', true);
 }
 
 function closeAddItemModal(): void {
-  showAddItemModal = false;
+  setModalOpen('showAddItemModal', false);
 }
 
 // Reorder modal actions
 function openReorderModal(): void {
-  showReorderModal = true;
+  setModalOpen('showReorderModal', true);
 }
 
 function closeReorderModal(): void {
-  showReorderModal = false;
+  setModalOpen('showReorderModal', false);
 }
 
 // Reorder categories modal actions
 function openReorderCategoriesModal(): void {
-  showReorderCategoriesModal = true;
+  setModalOpen('showReorderCategoriesModal', true);
 }
 
 function closeReorderCategoriesModal(): void {
-  showReorderCategoriesModal = false;
+  setModalOpen('showReorderCategoriesModal', false);
 }
 
 // Streak modal actions
 function openStreakModal(): void {
-  showStreakModal = true;
+  setModalOpen('showStreakModal', true);
 }
 
 function closeStreakModal(): void {
-  showStreakModal = false;
+  setModalOpen('showStreakModal', false);
 }
 
 // Tag filter modal actions
 function openTagFilterModal(): void {
-  showTagFilterModal = true;
+  setModalOpen('showTagFilterModal', true);
 }
 
 function closeTagFilterModal(): void {
-  showTagFilterModal = false;
+  setModalOpen('showTagFilterModal', false);
 }
 
 // Category menu modal actions
 function openCategoryMenu(category: Category): void {
   selectedCategoryForMenu = category;
-  showCategoryMenu = true;
+  setModalOpen('showCategoryMenu', true);
 }
 
 function closeCategoryMenu(): void {
-  showCategoryMenu = false;
+  setModalOpen('showCategoryMenu', false);
   selectedCategoryForMenu = null;
 }
 
 // Delete category confirm modal actions
 function openDeleteCategoryConfirm(): void {
-  showCategoryMenu = false;
-  showDeleteCategoryConfirm = true;
+  setModalOpen('showCategoryMenu', false);
+  setModalOpen('showDeleteCategoryConfirm', true);
 }
 
 function closeDeleteCategoryConfirm(): void {
-  showDeleteCategoryConfirm = false;
+  setModalOpen('showDeleteCategoryConfirm', false);
   selectedCategoryForMenu = null;
 }
 
 // Utility to close all modals
 function closeAllModals(): void {
-  showResetConfirm = false;
-  showCategoryMenu = false;
-  showDeleteCategoryConfirm = false;
-  showAddItemModal = false;
-  showReorderModal = false;
-  showReorderCategoriesModal = false;
-  showStreakModal = false;
-  showTagFilterModal = false;
+  for (const key of modalKeys) {
+    setModalOpen(key, false);
+  }
   selectedCategoryForMenu = null;
 }
 
 // Export store with getters and actions
 export const modalStore = {
   // Getters (reactive)
-  get showResetConfirm() { return showResetConfirm; },
-  get showCategoryMenu() { return showCategoryMenu; },
-  get showDeleteCategoryConfirm() { return showDeleteCategoryConfirm; },
-  get showAddItemModal() { return showAddItemModal; },
-  get showReorderModal() { return showReorderModal; },
-  get showReorderCategoriesModal() { return showReorderCategoriesModal; },
-  get showStreakModal() { return showStreakModal; },
-  get showTagFilterModal() { return showTagFilterModal; },
+  get showResetConfirm() { return modalState.showResetConfirm; },
+  get showCategoryMenu() { return modalState.showCategoryMenu; },
+  get showDeleteCategoryConfirm() { return modalState.showDeleteCategoryConfirm; },
+  get showAddItemModal() { return modalState.showAddItemModal; },
+  get showReorderModal() { return modalState.showReorderModal; },
+  get showReorderCategoriesModal() { return modalState.showReorderCategoriesModal; },
+  get showStreakModal() { return modalState.showStreakModal; },
+  get showTagFilterModal() { return modalState.showTagFilterModal; },
   get selectedCategoryForMenu() { return selectedCategoryForMenu; },
 
   // Reset confirm modal

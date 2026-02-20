@@ -159,6 +159,9 @@ export const ja: Translations = {
   syncNow: '今すぐ同期',
   syncing: '同期中...',
   never: 'なし',
+  justNow: 'たった今',
+  minutesAgo: (minutes: number) => `${minutes}分前`,
+  hoursAgo: (hours: number) => `${hours}時間前`,
   cloudSync: 'クラウド同期',
 
   // Realtime sync

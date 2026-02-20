@@ -159,6 +159,9 @@ export const en: Translations = {
   syncNow: 'Sync now',
   syncing: 'Syncing...',
   never: 'Never',
+  justNow: 'Just now',
+  minutesAgo: (minutes: number) => `${minutes}m ago`,
+  hoursAgo: (hours: number) => `${hours}h ago`,
   cloudSync: 'Cloud Sync',
 
   // Realtime sync
