@@ -1,9 +1,8 @@
 import type { TodoItem, Category, RepeatType, Tag } from '../../types';
 import { createCategoryActions } from './appStoreCategoryActions';
+import { createItemActions } from './appStoreItemActions';
 import { createTagActions } from './appStoreTagActions';
 import { syncStore } from './syncStore.svelte';
-import * as streakApi from '../api/streakApi';
-import * as tagApi from '../api/tagApi';
 import * as todoApi from '../api/todoApi';
 import * as widgetApi from '../api/widgetApi';
 
@@ -17,23 +16,6 @@ let allTags = $state<Tag[]>([]);
 let activeTagFilter = $state<number | null>(null);
 let filteredItems = $state<TodoItem[]>([]);
 let itemTagsMap = $state<Record<number, Tag[]>>({});
-
-function sortItemsByDoneAndOrder(itemList: TodoItem[]): TodoItem[] {
-  return [...itemList].sort((a, b) => {
-    if (a.done !== b.done) {
-      return a.done ? 1 : -1;
-    }
-    return a.display_order - b.display_order;
-  });
-}
-
-function replaceItem(id: number, nextItem: TodoItem): void {
-  items = items.map((item) => (item.id === id ? nextItem : item));
-}
-
-function patchItem(id: number, patch: Partial<TodoItem>): void {
-  items = items.map((item) => (item.id === id ? { ...item, ...patch } : item));
-}
 
 async function finalizeMutation(): Promise<void> {
   await refreshWidgetCache();
@@ -103,154 +85,6 @@ const categoryActions = createCategoryActions({
   finalizeMutation
 });
 
-async function addItem(
-  text: string,
-  memo: string | null = null,
-  repeatType: RepeatType = 'none',
-  repeatDetail: string | null = null,
-  trackStreak: boolean = false,
-  tagNames: string[] = [],
-  reminderAt: string | null = null,
-  linkedApp: string | null = null
-): Promise<void> {
-  try {
-    const newItem = await todoApi.addItem(text, selectedCategoryId, repeatType, repeatDetail, trackStreak, reminderAt);
-    if (memo) {
-      await todoApi.updateItemMemo(newItem.id, memo);
-      newItem.memo = memo;
-    }
-    if (linkedApp) {
-      await todoApi.updateItemLinkedApp(newItem.id, linkedApp);
-      newItem.linked_app = linkedApp;
-    }
-    items = [...items, newItem];
-    // Attach tags if provided
-    if (tagNames.length > 0) {
-      const tags: Tag[] = [];
-      for (const name of tagNames) {
-        const tag = await tagApi.addTagToItem(newItem.id, name);
-        tags.push(tag);
-      }
-      itemTagsMap = { ...itemTagsMap, [newItem.id]: tags };
-      await tagActions.loadAllTags();
-    }
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to add item:', error);
-  }
-}
-
-async function toggleItem(id: number): Promise<void> {
-  try {
-    const updatedItem = await todoApi.toggleItem(id);
-    if (updatedItem) {
-      replaceItem(id, updatedItem);
-      items = sortItemsByDoneAndOrder(items);
-      await finalizeMutation();
-    }
-  } catch (error) {
-    console.error('Failed to toggle item:', error);
-  }
-}
-
-async function toggleItemFromWidget(id: number): Promise<void> {
-  try {
-    await widgetApi.toggleItemFromWidget(id);
-    await refreshAll();
-    syncStore.scheduleSync();
-  } catch (error) {
-    console.error('Failed to toggle item from widget:', error);
-  }
-}
-
-async function deleteItem(id: number): Promise<void> {
-  try {
-    await todoApi.deleteItem(id);
-    items = items.filter(item => item.id !== id);
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to delete item:', error);
-  }
-}
-
-async function editItem(id: number, text: string): Promise<void> {
-  try {
-    await todoApi.editItem(id, text);
-    patchItem(id, { text });
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to edit item:', error);
-  }
-}
-
-async function updateMemo(id: number, memo: string | null): Promise<void> {
-  try {
-    await todoApi.updateItemMemo(id, memo);
-    patchItem(id, { memo });
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to update memo:', error);
-  }
-}
-
-async function updateRepeat(
-  id: number,
-  repeatType: RepeatType,
-  repeatDetail: string | null
-): Promise<void> {
-  try {
-    await todoApi.updateItemRepeat(id, repeatType, repeatDetail);
-    patchItem(id, { repeat_type: repeatType, repeat_detail: repeatDetail });
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to update repeat:', error);
-  }
-}
-
-async function updateTrackStreak(id: number, trackStreak: boolean): Promise<void> {
-  try {
-    await streakApi.updateTrackStreak(id, trackStreak);
-    patchItem(id, { track_streak: trackStreak });
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to update track_streak:', error);
-  }
-}
-
-async function updateLinkedApp(id: number, linkedApp: string | null): Promise<void> {
-  try {
-    await todoApi.updateItemLinkedApp(id, linkedApp);
-    patchItem(id, { linked_app: linkedApp });
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to update linked app:', error);
-  }
-}
-
-async function updateReminder(id: number, reminderAt: string | null): Promise<void> {
-  try {
-    await todoApi.updateItemReminder(id, reminderAt);
-    patchItem(id, { reminder_at: reminderAt });
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to update reminder:', error);
-  }
-}
-
-async function resetAllItems(): Promise<void> {
-  try {
-    await todoApi.resetAllItems(selectedCategoryId);
-    items = items.map(item => ({ ...item, done: false }));
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to reset items:', error);
-  }
-}
-
-function setItems(newItems: TodoItem[]): void {
-  items = newItems;
-}
-
 async function refreshAll(): Promise<void> {
   await categoryActions.loadCategories();
 
@@ -265,6 +99,22 @@ async function refreshAll(): Promise<void> {
   await loadItems();
   await tagActions.loadAllTags();
 }
+
+const itemActions = createItemActions({
+  getItems: () => items,
+  setItems: (nextItems) => {
+    items = nextItems;
+  },
+  getSelectedCategoryId: () => selectedCategoryId,
+  getItemTagsMap: () => itemTagsMap,
+  setItemTagsMap: (nextMap) => {
+    itemTagsMap = nextMap;
+  },
+  loadAllTags: tagActions.loadAllTags,
+  refreshAll,
+  finalizeMutation,
+  scheduleSync: () => syncStore.scheduleSync()
+});
 
 // Export store with getters and actions
 export const appStore = {
@@ -294,18 +144,18 @@ export const appStore = {
   goToFirstCategory: categoryActions.goToFirstCategory,
 
   // Item actions
-  addItem,
-  toggleItem,
-  toggleItemFromWidget,
-  deleteItem,
-  editItem,
-  updateMemo,
-  updateRepeat,
-  updateTrackStreak,
-  updateLinkedApp,
-  updateReminder,
-  resetAllItems,
-  setItems,
+  addItem: itemActions.addItem,
+  toggleItem: itemActions.toggleItem,
+  toggleItemFromWidget: itemActions.toggleItemFromWidget,
+  deleteItem: itemActions.deleteItem,
+  editItem: itemActions.editItem,
+  updateMemo: itemActions.updateMemo,
+  updateRepeat: itemActions.updateRepeat,
+  updateTrackStreak: itemActions.updateTrackStreak,
+  updateLinkedApp: itemActions.updateLinkedApp,
+  updateReminder: itemActions.updateReminder,
+  resetAllItems: itemActions.resetAllItems,
+  setItems: itemActions.setItems,
 
   // Tag actions
   loadAllTags: tagActions.loadAllTags,
