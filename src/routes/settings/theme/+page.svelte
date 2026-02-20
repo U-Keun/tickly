@@ -14,46 +14,15 @@
   import ThemePreview from '../../../components/ThemePreview.svelte';
   import SettingsLayout from '../../../components/SettingsLayout.svelte';
   import SaveFooter from '../../../components/SaveFooter.svelte';
+  import {
+    getThemeColorLabel,
+    getThemePresetName,
+    themeColorKeys,
+    type ThemeColorKey
+  } from '../../../lib/settings/themeLabels';
   import { i18n } from '$lib/i18n';
 
-  type ColorKey = keyof ThemeColors;
-
-  // Color key to i18n key mapping
-  const colorKeyMap: Record<ColorKey, string> = {
-    paper: 'colorPaper',
-    canvas: 'colorCanvas',
-    mist: 'colorMist',
-    stroke: 'colorStroke',
-    ink: 'colorInk',
-    inkMuted: 'colorInkMuted',
-    accentSky: 'colorAccentSky',
-    accentSkyStrong: 'colorAccentSkyStrong',
-    accentMint: 'colorAccentMint',
-    accentMintStrong: 'colorAccentMintStrong',
-    accentPeach: 'colorAccentPeach',
-    accentPeachStrong: 'colorAccentPeachStrong',
-    white: 'colorWhite',
-    border: 'colorBorder',
-  };
-
-  // Preset ID to i18n key mapping
-  const presetNameMap: Record<string, string> = {
-    default: 'themeDefault',
-    dark: 'themeDark',
-    ocean: 'themeOcean',
-    forest: 'themeForest',
-    sunset: 'themeSunset',
-  };
-
-  function getPresetName(presetId: string): string {
-    const key = presetNameMap[presetId];
-    return key ? i18n.t(key as keyof typeof i18n.t) : presetId;
-  }
-
-  function getColorLabel(colorKey: ColorKey): string {
-    const key = colorKeyMap[colorKey];
-    return key ? i18n.t(key as keyof typeof i18n.t) : colorKey;
-  }
+  const translateLabel = (key: string) => i18n.t(key as keyof typeof i18n.t);
 
   let selectedPresetId = $state<string | null>('default');
   let isCustomMode = $state(false);
@@ -91,7 +60,7 @@
     selectedPresetId = null;
   }
 
-  function handleColorChange(key: ColorKey, value: string) {
+  function handleColorChange(key: ThemeColorKey, value: string) {
     currentColors = { ...currentColors, [key]: value };
     applyTheme(currentColors);
   }
@@ -139,7 +108,7 @@
             class="preset-preview"
             style="background: linear-gradient(135deg, {preset.colors.paper} 0%, {preset.colors.canvas} 50%, {preset.colors.accentSky} 100%);"
           ></div>
-          <span class="preset-name">{getPresetName(preset.id)}</span>
+          <span class="preset-name">{getThemePresetName(preset.id, translateLabel)}</span>
         </button>
       {/each}
       <button
@@ -168,11 +137,11 @@
     <section class="section">
       <h2 class="section-title">{i18n.t('customColors')}</h2>
       <div class="color-list">
-        {#each Object.keys(colorKeyMap) as key}
+        {#each themeColorKeys as key}
           <ColorPicker
-            label={getColorLabel(key as ColorKey)}
-            value={currentColors[key as ColorKey]}
-            onChange={(value) => handleColorChange(key as ColorKey, value)}
+            label={getThemeColorLabel(key, translateLabel)}
+            value={currentColors[key]}
+            onChange={(value) => handleColorChange(key, value)}
           />
         {/each}
       </div>
