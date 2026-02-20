@@ -52,6 +52,13 @@ export interface WidgetCategorySummary {
   pending_count: number;
   first_pending_item_id: number | null;
   pending_item_ids: number[];
+  pending_items: WidgetCategoryPendingItem[];
+}
+
+export interface WidgetCategoryPendingItem {
+  id: number;
+  text: string;
+  display_order: number;
 }
 
 export interface WidgetSnapshot {

@@ -49,6 +49,7 @@ enum WidgetActionStore {
 
         if hadPendingItem {
             category.pendingItemIds.removeAll { $0 == itemId }
+            category.pendingItems.removeAll { $0.id == itemId }
             category.pendingCount = max(0, category.pendingCount - 1)
             snapshot.pendingCount = max(0, snapshot.pendingCount - 1)
             changed = true
@@ -66,7 +67,7 @@ enum WidgetActionStore {
         }
 
         if changed {
-            category.firstPendingItemId = category.pendingItemIds.first
+            category.firstPendingItemId = category.pendingItems.first?.id ?? category.pendingItemIds.first
             snapshot.categories[categoryIndex] = category
         }
 

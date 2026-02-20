@@ -16,4 +16,6 @@ pub use realtime::{
 pub use sync::{AuthProvider, AuthSession, SyncResult, SyncStatus, SyncStatusInfo, UserProfile};
 pub use tag::{Tag, TodoTag};
 pub use todo_item::{RepeatType, TodoItem};
-pub use widget::{WidgetCategorySummary, WidgetSnapshot, WidgetTodoItem};
+pub use widget::{
+    WidgetCategoryPendingItem, WidgetCategorySummary, WidgetSnapshot, WidgetTodoItem,
+};

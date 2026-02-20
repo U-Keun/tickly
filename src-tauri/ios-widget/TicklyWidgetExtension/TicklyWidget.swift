@@ -1,188 +1,218 @@
 import SwiftUI
 import WidgetKit
 
+@available(iOSApplicationExtension 17.0, *)
 struct TicklyTimelineEntry: TimelineEntry {
     let date: Date
     let snapshot: WidgetSnapshot
+    let selectedCategoryIdentifier: String?
 }
 
-struct TicklyTimelineProvider: TimelineProvider {
+@available(iOSApplicationExtension 17.0, *)
+struct TicklyTimelineProvider: AppIntentTimelineProvider {
+    typealias Intent = CategoryWidgetConfigurationIntent
+
     func placeholder(in context: Context) -> TicklyTimelineEntry {
         TicklyTimelineEntry(
             date: Date(),
             snapshot: WidgetSnapshot(
                 generatedAt: "",
-                totalCount: 9,
-                pendingCount: 5,
+                totalCount: 7,
+                pendingCount: 4,
                 items: [],
                 categories: [
                     WidgetCategorySummary(
                         categoryId: 1,
                         categoryName: "Essentials",
-                        totalCount: 3,
-                        pendingCount: 2,
+                        totalCount: 4,
+                        pendingCount: 3,
                         firstPendingItemId: 101,
-                        pendingItemIds: [101, 102]
+                        pendingItemIds: [101, 102, 103],
+                        pendingItems: [
+                            WidgetCategoryPendingItem(id: 101, text: "Wallet", displayOrder: 1000),
+                            WidgetCategoryPendingItem(id: 102, text: "Keys", displayOrder: 2000),
+                            WidgetCategoryPendingItem(id: 103, text: "Phone charger", displayOrder: 3000),
+                        ]
                     ),
                     WidgetCategorySummary(
                         categoryId: 2,
                         categoryName: "Work",
                         totalCount: 3,
-                        pendingCount: 2,
-                        firstPendingItemId: 202,
-                        pendingItemIds: [202, 203]
-                    ),
-                    WidgetCategorySummary(
-                        categoryId: 3,
-                        categoryName: "Gym",
-                        totalCount: 2,
                         pendingCount: 1,
-                        firstPendingItemId: 303,
-                        pendingItemIds: [303]
+                        firstPendingItemId: 201,
+                        pendingItemIds: [201],
+                        pendingItems: [
+                            WidgetCategoryPendingItem(id: 201, text: "Prepare report", displayOrder: 1000),
+                        ]
                     ),
-                    WidgetCategorySummary(
-                        categoryId: nil,
-                        categoryName: "Uncategorized",
-                        totalCount: 2,
-                        pendingCount: 0,
-                        firstPendingItemId: nil,
-                        pendingItemIds: []
-                    )
                 ]
-            )
+            ),
+            selectedCategoryIdentifier: WidgetCategoryIdentifier.make(from: 1)
         )
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (TicklyTimelineEntry) -> Void) {
-        let entry = TicklyTimelineEntry(
-            date: Date(),
-            snapshot: WidgetSnapshotLoader.load()
-        )
-        completion(entry)
+    func snapshot(
+        for configuration: CategoryWidgetConfigurationIntent,
+        in context: Context
+    ) async -> TicklyTimelineEntry {
+        makeEntry(configuration: configuration)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<TicklyTimelineEntry>) -> Void) {
-        let entry = TicklyTimelineEntry(
-            date: Date(),
-            snapshot: WidgetSnapshotLoader.load()
-        )
+    func timeline(
+        for configuration: CategoryWidgetConfigurationIntent,
+        in context: Context
+    ) async -> Timeline<TicklyTimelineEntry> {
+        let entry = makeEntry(configuration: configuration)
+        let refreshDate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())
+            ?? Date().addingTimeInterval(900)
+        return Timeline(entries: [entry], policy: .after(refreshDate))
+    }
 
-        let refreshDate = Calendar.current.date(byAdding: .minute, value: 15, to: Date()) ?? Date().addingTimeInterval(900)
-        completion(Timeline(entries: [entry], policy: .after(refreshDate)))
+    private func makeEntry(configuration: CategoryWidgetConfigurationIntent) -> TicklyTimelineEntry {
+        TicklyTimelineEntry(
+            date: Date(),
+            snapshot: WidgetSnapshotLoader.load(),
+            selectedCategoryIdentifier: configuration.category?.id
+        )
     }
 }
 
+@available(iOSApplicationExtension 17.0, *)
 struct TicklyWidgetEntryView: View {
     @Environment(\.widgetFamily) private var family
     var entry: TicklyTimelineProvider.Entry
 
-    private var categoryColumns: [GridItem] {
-        if family == .systemLarge {
-            return [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+    private var selectedCategory: WidgetCategorySummary? {
+        if let selectedCategoryIdentifier = entry.selectedCategoryIdentifier {
+            if let category = entry.snapshot.categories.first(
+                where: { WidgetCategoryIdentifier.make(from: $0.categoryId) == selectedCategoryIdentifier }
+            ) {
+                return category
+            }
         }
-        return [GridItem(.flexible(), spacing: 8)]
+
+        return entry.snapshot.categories.first
+    }
+
+    private var maxVisibleItems: Int {
+        if family == .systemLarge {
+            return 8
+        }
+        return 4
+    }
+
+    private var visiblePendingItems: [WidgetCategoryPendingItem] {
+        guard let selectedCategory else {
+            return []
+        }
+
+        return Array(selectedCategory.pendingItems.prefix(maxVisibleItems))
     }
 
     private var completionRate: Int {
-        guard entry.snapshot.totalCount > 0 else { return 0 }
-        let doneCount = entry.snapshot.totalCount - entry.snapshot.pendingCount
-        return Int((Double(doneCount) / Double(entry.snapshot.totalCount) * 100).rounded())
+        guard let selectedCategory, selectedCategory.totalCount > 0 else {
+            return 0
+        }
+
+        let doneCount = selectedCategory.totalCount - selectedCategory.pendingCount
+        let completion = Double(doneCount) / Double(selectedCategory.totalCount) * 100
+        return Int(completion.rounded())
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Tickly")
-                        .font(.headline)
-                    Text("By category")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(entry.snapshot.pendingCount) left")
-                        .font(.headline)
-                    Text("\(completionRate)% done")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
+            if let selectedCategory {
+                header(category: selectedCategory)
 
-            if entry.snapshot.categories.isEmpty {
+                if visiblePendingItems.isEmpty {
+                    Spacer()
+                    Text("All done")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                } else {
+                    ForEach(visiblePendingItems) { item in
+                        pendingItemRow(item: item, categoryId: selectedCategory.categoryId)
+                    }
+
+                    if selectedCategory.pendingItems.count > maxVisibleItems {
+                        Text("+\(selectedCategory.pendingItems.count - maxVisibleItems) more")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            } else {
                 Spacer()
                 Text("No categories")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                 Spacer()
-            } else {
-                LazyVGrid(columns: categoryColumns, alignment: .leading, spacing: 6) {
-                    ForEach(entry.snapshot.categories) { category in
-                        HStack(spacing: 6) {
-                            if let pendingItemId = category.firstPendingItemId {
-                                if #available(iOSApplicationExtension 17.0, *) {
-                                    Button(
-                                        intent: ToggleTodoIntent(
-                                            itemId: Int(pendingItemId),
-                                            categoryId: category.categoryId.map { Int($0) }
-                                        )
-                                    ) {
-                                        Image(systemName: "circle")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .buttonStyle(.plain)
-                                } else {
-                                    Link(destination: toggleURL(itemId: pendingItemId)) {
-                                        Image(systemName: "circle")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                            } else {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundColor(.green)
-                            }
-
-                            Text(category.categoryName)
-                                .font(.caption)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-
-                            Spacer(minLength: 4)
-
-                            Text("\(category.pendingCount)/\(category.totalCount)")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundColor(category.pendingCount > 0 ? .primary : .secondary)
-                        }
-                    }
-                }
-                Spacer(minLength: 0)
             }
         }
         .padding()
     }
 
-    private func toggleURL(itemId: Int64) -> URL {
-        var components = URLComponents()
-        components.scheme = "tickly"
-        components.host = "widget"
-        components.path = "/toggle"
-        components.queryItems = [URLQueryItem(name: "itemId", value: String(itemId))]
-        return components.url ?? URL(string: "tickly://widget")!
+    @ViewBuilder
+    private func header(category: WidgetCategorySummary) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(category.categoryName)
+                    .font(.headline)
+                    .lineLimit(1)
+                Text("Category widget")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(category.pendingCount)/\(category.totalCount)")
+                    .font(.headline)
+                Text("\(completionRate)% done")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func pendingItemRow(item: WidgetCategoryPendingItem, categoryId: Int64?) -> some View {
+        HStack(spacing: 8) {
+            Button(
+                intent: ToggleTodoIntent(
+                    itemId: Int(item.id),
+                    categoryId: categoryId.map { Int($0) }
+                )
+            ) {
+                Image(systemName: "circle")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.plain)
+
+            Text(item.text)
+                .font(.caption)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+
+            Spacer(minLength: 0)
+        }
     }
 }
 
+@available(iOSApplicationExtension 17.0, *)
 struct TicklyWidget: Widget {
     let kind: String = "TicklyWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: TicklyTimelineProvider()) { entry in
+        AppIntentConfiguration(
+            kind: kind,
+            intent: CategoryWidgetConfigurationIntent.self,
+            provider: TicklyTimelineProvider()
+        ) { entry in
             TicklyWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("Tickly Categories")
-        .description("Check pending tasks by category.")
+        .configurationDisplayName("Tickly Category")
+        .description("Show and check tasks in one category.")
         .supportedFamilies([.systemMedium, .systemLarge])
     }
 }

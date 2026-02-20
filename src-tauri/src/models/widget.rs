@@ -13,6 +13,13 @@ pub struct WidgetTodoItem {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WidgetCategoryPendingItem {
+    pub id: i64,
+    pub text: String,
+    pub display_order: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WidgetCategorySummary {
     pub category_id: Option<i64>,
     pub category_name: String,
@@ -20,6 +27,7 @@ pub struct WidgetCategorySummary {
     pub pending_count: usize,
     pub first_pending_item_id: Option<i64>,
     pub pending_item_ids: Vec<i64>,
+    pub pending_items: Vec<WidgetCategoryPendingItem>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

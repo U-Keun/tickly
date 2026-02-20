@@ -6,7 +6,9 @@ use rusqlite::Connection;
 use serde::Deserialize;
 use tauri::{AppHandle, Manager};
 
-use crate::models::{WidgetCategorySummary, WidgetSnapshot, WidgetTodoItem};
+use crate::models::{
+    WidgetCategoryPendingItem, WidgetCategorySummary, WidgetSnapshot, WidgetTodoItem,
+};
 use crate::repository::{CategoryRepository, SettingsRepository, TodoRepository};
 
 pub struct WidgetService;
@@ -58,12 +60,21 @@ impl WidgetService {
         });
 
         let mut pending_item_ids_map: HashMap<Option<i64>, Vec<i64>> = HashMap::new();
+        let mut pending_items_map: HashMap<Option<i64>, Vec<WidgetCategoryPendingItem>> =
+            HashMap::new();
         for todo in &todos {
             if !todo.done {
                 pending_item_ids_map
                     .entry(todo.category_id)
                     .or_default()
                     .push(todo.id);
+                pending_items_map.entry(todo.category_id).or_default().push(
+                    WidgetCategoryPendingItem {
+                        id: todo.id,
+                        text: todo.text.clone(),
+                        display_order: todo.display_order,
+                    },
+                );
             }
         }
 
@@ -96,6 +107,10 @@ impl WidgetService {
                     .get(&category_id)
                     .cloned()
                     .unwrap_or_default();
+                let pending_items = pending_items_map
+                    .get(&category_id)
+                    .cloned()
+                    .unwrap_or_default();
 
                 WidgetCategorySummary {
                     category_id,
@@ -104,6 +119,7 @@ impl WidgetService {
                     pending_count,
                     first_pending_item_id: pending_item_ids.first().copied(),
                     pending_item_ids,
+                    pending_items,
                 }
             })
             .collect();
