@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 use tauri::State;
 
+use super::with_db;
 use crate::models::{AuthProvider, AuthSession, UserProfile};
 use crate::service::{AuthService, OAuthService};
 use crate::AppState;
@@ -23,8 +24,7 @@ pub async fn sign_in_with_apple(
     let session = AuthService::sign_in_with_apple(client, &id_token, nonce.as_deref()).await?;
 
     // Then save to database
-    let conn = state.db.lock().map_err(|e| e.to_string())?;
-    AuthService::save_session(&conn, &session)?;
+    with_db(&state, |conn| AuthService::save_session(conn, &session))?;
 
     Ok(session)
 }
@@ -40,16 +40,14 @@ pub async fn sign_in_with_google(
     let session = AuthService::sign_in_with_google(client, &id_token).await?;
 
     // Then save to database
-    let conn = state.db.lock().map_err(|e| e.to_string())?;
-    AuthService::save_session(&conn, &session)?;
+    with_db(&state, |conn| AuthService::save_session(conn, &session))?;
 
     Ok(session)
 }
 
 #[tauri::command]
 pub fn get_current_session(state: State<'_, AppState>) -> Result<Option<AuthSession>, String> {
-    let conn = state.db.lock().map_err(|e| e.to_string())?;
-    AuthService::get_current_session(&conn)
+    with_db(&state, |conn| AuthService::get_current_session(conn))
 }
 
 #[tauri::command]
@@ -57,10 +55,9 @@ pub async fn refresh_session(state: State<'_, AppState>) -> Result<AuthSession, 
     let client = state.supabase.as_ref().ok_or("Supabase not configured")?;
 
     // Get current session without holding lock across await
-    let current_session = {
-        let conn = state.db.lock().map_err(|e| e.to_string())?;
-        AuthService::get_current_session(&conn)?.ok_or("No session found")?
-    };
+    let current_session = with_db(&state, |conn| {
+        AuthService::get_current_session(conn)?.ok_or_else(|| "No session found".to_string())
+    })?;
 
     // Perform async operation
     let new_session = AuthService::refresh_token(
@@ -71,8 +68,7 @@ pub async fn refresh_session(state: State<'_, AppState>) -> Result<AuthSession, 
     .await?;
 
     // Save new session
-    let conn = state.db.lock().map_err(|e| e.to_string())?;
-    AuthService::save_session(&conn, &new_session)?;
+    with_db(&state, |conn| AuthService::save_session(conn, &new_session))?;
 
     Ok(new_session)
 }
@@ -82,10 +78,9 @@ pub async fn sign_out(state: State<'_, AppState>) -> Result<(), String> {
     let client = state.supabase.as_ref().ok_or("Supabase not configured")?;
 
     // Get access token without holding lock across await
-    let access_token = {
-        let conn = state.db.lock().map_err(|e| e.to_string())?;
-        AuthService::get_current_session(&conn)?.map(|s| s.access_token)
-    };
+    let access_token = with_db(&state, |conn| {
+        AuthService::get_current_session(conn).map(|session| session.map(|s| s.access_token))
+    })?;
 
     // Sign out from remote if we have a token
     if let Some(token) = access_token {
@@ -93,8 +88,7 @@ pub async fn sign_out(state: State<'_, AppState>) -> Result<(), String> {
     }
 
     // Delete local session
-    let conn = state.db.lock().map_err(|e| e.to_string())?;
-    AuthService::delete_session(&conn)?;
+    with_db(&state, |conn| AuthService::delete_session(conn))?;
 
     Ok(())
 }
@@ -104,10 +98,7 @@ pub async fn get_user_profile(state: State<'_, AppState>) -> Result<Option<UserP
     let client = state.supabase.as_ref();
 
     // Get session without holding lock
-    let session = {
-        let conn = state.db.lock().map_err(|e| e.to_string())?;
-        AuthService::get_current_session(&conn)?
-    };
+    let session = with_db(&state, |conn| AuthService::get_current_session(conn))?;
 
     match (session, client) {
         (Some(session), Some(client)) => {
@@ -168,12 +159,8 @@ pub async fn get_user_profile(state: State<'_, AppState>) -> Result<Option<UserP
 
 #[tauri::command]
 pub async fn is_logged_in(state: State<'_, AppState>) -> Result<bool, String> {
-    let (session_opt, client_opt) = {
-        let conn = state.db.lock().map_err(|e| e.to_string())?;
-        let session = AuthService::get_current_session(&conn)?;
-        let client = state.supabase.clone();
-        (session, client)
-    };
+    let session_opt = with_db(&state, |conn| AuthService::get_current_session(conn))?;
+    let client_opt = state.supabase.clone();
 
     match session_opt {
         Some(session) => {
@@ -189,8 +176,7 @@ pub async fn is_logged_in(state: State<'_, AppState>) -> Result<bool, String> {
                     {
                         Ok(new_session) => {
                             // Save the refreshed session
-                            let conn = state.db.lock().map_err(|e| e.to_string())?;
-                            AuthService::save_session(&conn, &new_session)?;
+                            with_db(&state, |conn| AuthService::save_session(conn, &new_session))?;
                             Ok(true)
                         }
                         Err(_) => {
@@ -264,8 +250,7 @@ pub async fn complete_mobile_google_oauth(
     let session = AuthService::create_session_from_response(response, AuthProvider::Google);
 
     // Save to database
-    let conn = state.db.lock().map_err(|e| e.to_string())?;
-    AuthService::save_session(&conn, &session)?;
+    with_db(&state, |conn| AuthService::save_session(conn, &session))?;
 
     Ok(session)
 }
@@ -326,8 +311,7 @@ pub async fn complete_google_oauth(
     let session = AuthService::create_session_from_response(response, AuthProvider::Google);
 
     // Save to database
-    let conn = state.db.lock().map_err(|e| e.to_string())?;
-    AuthService::save_session(&conn, &session)?;
+    with_db(&state, |conn| AuthService::save_session(conn, &session))?;
 
     Ok(session)
 }
