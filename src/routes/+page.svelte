@@ -1,6 +1,5 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { flip } from 'svelte/animate';
   import { onDestroy, onMount } from 'svelte';
 
   import type { Category, RepeatType, TodoItem } from '../types';
@@ -9,10 +8,8 @@
   import CategoryTabs from '../components/CategoryTabs.svelte';
   import FloatingActions from '../components/FloatingActions.svelte';
   import HomeModals from '../components/HomeModals.svelte';
+  import HomeTodoList from '../components/HomeTodoList.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
-  import LeafTodoItem from '../components/LeafTodoItem.svelte';
-  import MemoDrawer from '../components/MemoDrawer.svelte';
-  import SwipeableItem from '../components/SwipeableItem.svelte';
   import { initializeFonts } from '../lib/fonts';
   import { createHomeItemActions } from '../lib/home/homeItemActions';
   import { createHomeLifecycle } from '../lib/home/homeLifecycle';
@@ -182,40 +179,14 @@
       onClear={appStore.clearTagFilter}
     />
 
-    <!-- Scrollable Todo List -->
-    <div class="todo-list-scroll">
-      {#if displayItems.length === 0}
-        <div class="p-8 text-center text-ink-muted">
-          <p>{i18n.t('emptyListTitle')}</p>
-          <p class="text-sm mt-1">{i18n.t('emptyListSubtitle')}</p>
-        </div>
-      {:else}
-        <div class="item-list">
-          {#each displayItems as item (item.id)}
-            <div animate:flip={{ duration: 300 }} class="item-wrapper">
-              <SwipeableItem {item} onDelete={handleDeleteItem}>
-                {#snippet children()}
-                  <LeafTodoItem
-                    {item}
-                    itemTags={appStore.itemTagsMap[item.id] ?? []}
-                    onToggle={handleToggleItem}
-                    onEdit={appStore.editItem}
-                  >
-                    {#snippet drawerContent({ item: drawerItem, closeDrawer })}
-                      <MemoDrawer
-                        item={drawerItem}
-                        itemTags={appStore.itemTagsMap[drawerItem.id] ?? []}
-                        onOpenEdit={(item) => openEditModal(item, closeDrawer)}
-                      />
-                    {/snippet}
-                  </LeafTodoItem>
-                {/snippet}
-              </SwipeableItem>
-            </div>
-          {/each}
-        </div>
-      {/if}
-    </div>
+    <HomeTodoList
+      {displayItems}
+      itemTagsMap={appStore.itemTagsMap}
+      onDeleteItem={handleDeleteItem}
+      onToggleItem={handleToggleItem}
+      onEditItem={appStore.editItem}
+      onOpenEditModal={openEditModal}
+    />
   </main>
 
   <!-- Floating Action Buttons -->
