@@ -18,6 +18,11 @@
 	<string>0.1.0</string>
 	<key>CFBundleVersion</key>
 	<string>0.1.0</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.widgetkit-extension</string>
+	</dict>
 	<key>TICKLY_APP_GROUP_ID</key>
 	<string>group.com.u-keunsong.tickly</string>
 </dict>

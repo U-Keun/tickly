@@ -65,6 +65,9 @@ targets:
         TICKLY_APP_GROUP_ID: group.com.u-keunsong.tickly
     entitlements:
       path: tickly_iOS/tickly_iOS.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.u-keunsong.tickly
     scheme:
       environmentVariables:
         RUST_BACKTRACE: full
@@ -109,9 +112,14 @@ targets:
       properties:
         CFBundleShortVersionString: 0.1.0
         CFBundleVersion: "0.1.0"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
         TICKLY_APP_GROUP_ID: group.com.u-keunsong.tickly
     entitlements:
       path: TicklyWidgetExtension/TicklyWidgetExtension.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.u-keunsong.tickly
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: true

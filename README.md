@@ -124,7 +124,7 @@ open src-tauri/gen/apple/tickly.xcodeproj
 # Signing & Capabilities > Team 선택
 ```
 
-위젯 App Group 기본값은 `group.com.u-keunsong.tickly` 입니다. 변경하려면 `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/Info.ios.plist`와 `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/ios-widget/TicklyWidgetExtension/Info.plist`를 동일한 값으로 맞춰주세요.
+위젯 App Group 기본값은 `group.com.u-keunsong.tickly` 입니다. 변경하려면 `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/Info.ios.plist`, `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/ios-widget/tickly_iOS.entitlements`, `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/ios-widget/TicklyWidgetExtension/Info.plist`, `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/ios-widget/TicklyWidgetExtension/TicklyWidgetExtension.entitlements`를 동일한 값으로 맞춰주세요.
 
 #### iOS 앱 빌드 및 설치
 
