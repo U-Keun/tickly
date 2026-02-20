@@ -33,10 +33,15 @@ Tickly 배포 자동화는 GitHub Actions의 CI/CD 워크플로우로 구성됩�
 
 - `IOS_CERTIFICATE_P12` (base64)
 - `IOS_CERTIFICATE_PASSWORD`
-- `IOS_PROVISIONING_PROFILE` (base64)
+- `IOS_PROVISIONING_PROFILE` (base64, `com.u-keunsong.tickly`)
+- `IOS_WIDGET_PROVISIONING_PROFILE` (base64, `com.u-keunsong.tickly.widget`)
 - `APP_STORE_CONNECT_API_ISSUER_ID`
 - `APP_STORE_CONNECT_API_KEY_ID`
 - `APP_STORE_CONNECT_API_KEY_CONTENT`
+
+두 provisioning profile 모두 아래 조건이 필요합니다.
+- Distribution(App Store) 프로파일 (`get-task-allow = false`)
+- `group.com.u-keunsong.tickly` App Group entitlement 포함
 
 ## Standard Release Flow
 
@@ -72,6 +77,8 @@ CD 워크플로우는 수동 실행 시 아래 옵션을 제공합니다.
   - Preflight job 로그에서 누락된 키 이름 확인
 - iOS 서명 실패
   - 인증서/프로비저닝 프로파일 base64 인코딩 값 재확인
+  - `IOS_PROVISIONING_PROFILE`(앱)과 `IOS_WIDGET_PROVISIONING_PROFILE`(위젯) 둘 다 등록되어 있는지 확인
+  - 두 프로파일 모두 `group.com.u-keunsong.tickly` App Group entitlement 포함 여부 확인
 - iOS 위젯 변경 미반영
   - CD 로그에서 `Sync iOS widget project files` 단계 성공 여부 확인
   - 로컬에서도 `yarn ios:widget:setup` 실행 후 빌드

@@ -97,6 +97,7 @@ jobs:
       IOS_CERTIFICATE_P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
       IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
       IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+      IOS_WIDGET_PROVISIONING_PROFILE: ${{ secrets.IOS_WIDGET_PROVISIONING_PROFILE }}
       APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
       APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
       APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
@@ -109,6 +110,7 @@ jobs:
           [[ -n "${IOS_CERTIFICATE_P12}" ]] || missing+=("IOS_CERTIFICATE_P12")
           [[ -n "${IOS_CERTIFICATE_PASSWORD}" ]] || missing+=("IOS_CERTIFICATE_PASSWORD")
           [[ -n "${IOS_PROVISIONING_PROFILE}" ]] || missing+=("IOS_PROVISIONING_PROFILE")
+          [[ -n "${IOS_WIDGET_PROVISIONING_PROFILE}" ]] || missing+=("IOS_WIDGET_PROVISIONING_PROFILE")
           [[ -n "${APP_STORE_CONNECT_API_ISSUER_ID}" ]] || missing+=("APP_STORE_CONNECT_API_ISSUER_ID")
           [[ -n "${APP_STORE_CONNECT_API_KEY_ID}" ]] || missing+=("APP_STORE_CONNECT_API_KEY_ID")
           [[ -n "${APP_STORE_CONNECT_API_KEY_CONTENT}" ]] || missing+=("APP_STORE_CONNECT_API_KEY_CONTENT")
@@ -129,6 +131,7 @@ jobs:
       IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE_P12 }}
       IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
       IOS_MOBILE_PROVISION: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+      IOS_WIDGET_MOBILE_PROVISION: ${{ secrets.IOS_WIDGET_PROVISIONING_PROFILE }}
     steps:
       - uses: actions/checkout@v4
 
@@ -218,43 +221,100 @@ jobs:
             exit 1
           fi
 
-      - name: Validate provisioning profile for App Store export
+      - name: Validate provisioning profiles for App Store export
         run: |
-          PROFILE_PATH=$RUNNER_TEMP/profile.mobileprovision
-          echo -n "$IOS_MOBILE_PROVISION" | base64 --decode > "$PROFILE_PATH"
-          security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
+          APP_PROFILE_PATH="$RUNNER_TEMP/profile-app.mobileprovision"
+          WIDGET_PROFILE_PATH="$RUNNER_TEMP/profile-widget.mobileprovision"
+          APP_PLIST_PATH="$RUNNER_TEMP/profile-app.plist"
+          WIDGET_PLIST_PATH="$RUNNER_TEMP/profile-widget.plist"
+          REQUIRED_APP_GROUP="group.com.u-keunsong.tickly"
+          APP_BUNDLE_ID="com.u-keunsong.tickly"
+          WIDGET_BUNDLE_ID="com.u-keunsong.tickly.widget"
 
-          TEAM_ID=$(/usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" "$RUNNER_TEMP/profile.plist")
-          if [ -z "$TEAM_ID" ]; then
-            echo "Failed to extract TeamIdentifier from provisioning profile"
+          echo -n "$IOS_MOBILE_PROVISION" | base64 --decode > "$APP_PROFILE_PATH"
+          echo -n "$IOS_WIDGET_MOBILE_PROVISION" | base64 --decode > "$WIDGET_PROFILE_PATH"
+          security cms -D -i "$APP_PROFILE_PATH" > "$APP_PLIST_PATH"
+          security cms -D -i "$WIDGET_PROFILE_PATH" > "$WIDGET_PLIST_PATH"
+
+          extract_required() {
+            local label="$1"
+            local plist="$2"
+            local key="$3"
+            local value
+            value=$(/usr/libexec/PlistBuddy -c "Print $key" "$plist" 2>/dev/null || true)
+            if [ -z "$value" ]; then
+              echo "Failed to extract $key from $label provisioning profile"
+              exit 1
+            fi
+            printf '%s' "$value"
+          }
+
+          verify_distribution_profile() {
+            local label="$1"
+            local plist="$2"
+            local get_task_allow
+            get_task_allow=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:get-task-allow" "$plist" 2>/dev/null || echo "unknown")
+            if [ "$get_task_allow" = "true" ]; then
+              echo "$label appears to be a Development profile."
+              echo "Use an App Store / Distribution provisioning profile."
+              exit 1
+            fi
+          }
+
+          verify_app_group_entitlement() {
+            local label="$1"
+            local plist="$2"
+            local groups
+            groups=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.security.application-groups" "$plist" 2>/dev/null || true)
+            if [ -z "$groups" ]; then
+              echo "$label does not include the App Groups entitlement."
+              exit 1
+            fi
+            if ! echo "$groups" | grep -q "$REQUIRED_APP_GROUP"; then
+              echo "$label does not include required App Group: $REQUIRED_APP_GROUP"
+              exit 1
+            fi
+          }
+
+          APP_TEAM_ID=$(extract_required "app" "$APP_PLIST_PATH" ":TeamIdentifier:0")
+          WIDGET_TEAM_ID=$(extract_required "widget" "$WIDGET_PLIST_PATH" ":TeamIdentifier:0")
+          if [ "$APP_TEAM_ID" != "$WIDGET_TEAM_ID" ]; then
+            echo "App and widget profiles must share the same TeamIdentifier."
+            echo "app=$APP_TEAM_ID widget=$WIDGET_TEAM_ID"
             exit 1
           fi
-          echo "APPLE_DEVELOPMENT_TEAM=$TEAM_ID" >> $GITHUB_ENV
+          echo "APPLE_DEVELOPMENT_TEAM=$APP_TEAM_ID" >> $GITHUB_ENV
 
-          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" "$RUNNER_TEMP/profile.plist")
-          if [ -z "$PROFILE_UUID" ]; then
-            echo "Failed to extract UUID from provisioning profile"
+          APP_PROFILE_UUID=$(extract_required "app" "$APP_PLIST_PATH" ":UUID")
+          APP_PROFILE_NAME=$(extract_required "app" "$APP_PLIST_PATH" ":Name")
+          WIDGET_PROFILE_UUID=$(extract_required "widget" "$WIDGET_PLIST_PATH" ":UUID")
+          WIDGET_PROFILE_NAME=$(extract_required "widget" "$WIDGET_PLIST_PATH" ":Name")
+          echo "IOS_PROFILE_UUID=$APP_PROFILE_UUID" >> $GITHUB_ENV
+          echo "IOS_PROFILE_NAME=$APP_PROFILE_NAME" >> $GITHUB_ENV
+          echo "IOS_WIDGET_PROFILE_UUID=$WIDGET_PROFILE_UUID" >> $GITHUB_ENV
+          echo "IOS_WIDGET_PROFILE_NAME=$WIDGET_PROFILE_NAME" >> $GITHUB_ENV
+
+          APP_APPLICATION_ID=$(extract_required "app" "$APP_PLIST_PATH" ":Entitlements:application-identifier")
+          WIDGET_APPLICATION_ID=$(extract_required "widget" "$WIDGET_PLIST_PATH" ":Entitlements:application-identifier")
+          if [ "$APP_APPLICATION_ID" != "$APP_TEAM_ID.$APP_BUNDLE_ID" ]; then
+            echo "App profile application-identifier mismatch: $APP_APPLICATION_ID"
+            echo "Expected: $APP_TEAM_ID.$APP_BUNDLE_ID"
             exit 1
           fi
-          echo "IOS_PROFILE_UUID=$PROFILE_UUID" >> $GITHUB_ENV
-
-          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" "$RUNNER_TEMP/profile.plist")
-          if [ -z "$PROFILE_NAME" ]; then
-            echo "Failed to extract Name from provisioning profile"
+          if [ "$WIDGET_APPLICATION_ID" != "$WIDGET_TEAM_ID.$WIDGET_BUNDLE_ID" ]; then
+            echo "Widget profile application-identifier mismatch: $WIDGET_APPLICATION_ID"
+            echo "Expected: $WIDGET_TEAM_ID.$WIDGET_BUNDLE_ID"
             exit 1
           fi
-          echo "IOS_PROFILE_NAME=$PROFILE_NAME" >> $GITHUB_ENV
 
-          # TestFlight/App Store export needs a distribution profile (not development).
-          GET_TASK_ALLOW=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:get-task-allow" "$RUNNER_TEMP/profile.plist" 2>/dev/null || echo "unknown")
-          if [ "$GET_TASK_ALLOW" = "true" ]; then
-            echo "Provided IOS_PROVISIONING_PROFILE appears to be a Development profile."
-            echo "Use an App Store / Distribution provisioning profile for TestFlight export."
-            exit 1
-          fi
+          verify_distribution_profile "IOS_PROVISIONING_PROFILE" "$APP_PLIST_PATH"
+          verify_distribution_profile "IOS_WIDGET_PROVISIONING_PROFILE" "$WIDGET_PLIST_PATH"
+          verify_app_group_entitlement "IOS_PROVISIONING_PROFILE" "$APP_PLIST_PATH"
+          verify_app_group_entitlement "IOS_WIDGET_PROVISIONING_PROFILE" "$WIDGET_PLIST_PATH"
 
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+          cp "$APP_PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+          cp "$WIDGET_PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
 
       - name: Initialize iOS project
         run: yarn tauri ios init --ci
@@ -321,7 +381,7 @@ jobs:
           CONFIG_IDS=$(/usr/libexec/PlistBuddy -c "Print :objects" "$PBXPROJ" | awk '/ = Dict/ {k=$1} /isa = XCBuildConfiguration/ {gsub("=", "", k); print k}')
           for id in $CONFIG_IDS; do
             bundle_id=$(/usr/libexec/PlistBuddy -c "Print :objects:$id:buildSettings:PRODUCT_BUNDLE_IDENTIFIER" "$PBXPROJ" 2>/dev/null || true)
-            if [ "$bundle_id" = "com.u-keunsong.tickly" ]; then
+            if [ "$bundle_id" = "com.u-keunsong.tickly" ] || [ "$bundle_id" = "com.u-keunsong.tickly.widget" ]; then
               set_or_add ":objects:$id:buildSettings:CODE_SIGN_STYLE" "Manual"
               set_or_add ":objects:$id:buildSettings:DEVELOPMENT_TEAM" "$APPLE_DEVELOPMENT_TEAM"
               set_or_add ":objects:$id:buildSettings:CODE_SIGN_IDENTITY" "Apple Distribution"
@@ -332,8 +392,13 @@ jobs:
               # runtime selection via manual OTHER_LDFLAGS.
               set_or_add ":objects:$id:buildSettings:LIBRARY_SEARCH_PATHS" '$(inherited) /Applications/Xcode_26.2.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME)'
               /usr/libexec/PlistBuddy -c "Delete :objects:$id:buildSettings:OTHER_LDFLAGS" "$PBXPROJ" 2>/dev/null || true
-              set_or_add ":objects:$id:buildSettings:PROVISIONING_PROFILE" "$IOS_PROFILE_UUID"
-              set_or_add ":objects:$id:buildSettings:PROVISIONING_PROFILE_SPECIFIER" "$IOS_PROFILE_NAME"
+              if [ "$bundle_id" = "com.u-keunsong.tickly" ]; then
+                set_or_add ":objects:$id:buildSettings:PROVISIONING_PROFILE" "$IOS_PROFILE_UUID"
+                set_or_add ":objects:$id:buildSettings:PROVISIONING_PROFILE_SPECIFIER" "$IOS_PROFILE_NAME"
+              else
+                set_or_add ":objects:$id:buildSettings:PROVISIONING_PROFILE" "$IOS_WIDGET_PROFILE_UUID"
+                set_or_add ":objects:$id:buildSettings:PROVISIONING_PROFILE_SPECIFIER" "$IOS_WIDGET_PROFILE_NAME"
+              fi
               set_or_add ":objects:$id:buildSettings:MARKETING_VERSION" "$APP_VERSION"
               set_or_add ":objects:$id:buildSettings:CURRENT_PROJECT_VERSION" "$IOS_BUILD_NUMBER"
               set_or_add ":objects:$id:buildSettings:SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD" "NO"
@@ -408,6 +473,8 @@ jobs:
             <dict>
               <key>com.u-keunsong.tickly</key>
               <string>${IOS_PROFILE_NAME}</string>
+              <key>com.u-keunsong.tickly.widget</key>
+              <string>${IOS_WIDGET_PROFILE_NAME}</string>
             </dict>
           </dict>
           </plist>
