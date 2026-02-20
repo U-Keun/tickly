@@ -1,9 +1,18 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { Application, Graphics, Text, TextStyle, Container } from 'pixi.js';
-  import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide } from 'd3-force';
-  import type { Simulation, SimulationNodeDatum, SimulationLinkDatum } from 'd3-force';
+  import { onDestroy, onMount } from 'svelte';
+  import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from 'd3-force';
+  import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
+
+  import type { Simulation } from 'd3-force';
   import type { GraphData } from '$lib/api/graphApi';
+  import type { SimLink, SimNode } from '$lib/graph/graphCanvasUtils';
+  import {
+    buildSimulationData,
+    hexToNum,
+    readGraphThemeColors,
+    TAP_THRESHOLD,
+    truncateLabel,
+  } from '$lib/graph/graphCanvasUtils';
 
   let {
     data,
@@ -21,54 +30,13 @@
   let animFrameId: number | null = null;
   let destroyed = false;
 
-  interface SimNode extends SimulationNodeDatum {
-    id: string;
-    rawId: number;
-    nodeType: 'item' | 'tag' | 'category';
-    label: string;
-    categoryId: number | null;
-    done: boolean | null;
-    radius: number;
-    graphics: Graphics | null;
-    textObj: Text | null;
-  }
-
-  interface SimLink extends SimulationLinkDatum<SimNode> {
-    source: SimNode;
-    target: SimNode;
-  }
-
-  function getCssVar(name: string): string {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  }
-
-  function hexToNum(hex: string): number {
-    return parseInt(hex.replace('#', ''), 16);
-  }
-
-  function truncateLabel(label: string, maxLen: number): string {
-    if (label.length <= maxLen) return label;
-    return label.slice(0, maxLen - 1) + '…';
-  }
-
-  // Tap detection threshold (pixels)
-  const TAP_THRESHOLD = 6;
-
   onMount(async () => {
     if (destroyed) return;
 
     const width = canvasContainer.clientWidth;
     const height = canvasContainer.clientHeight;
 
-    // Read theme colors
-    const paperColor = getCssVar('--color-paper') || '#f8f7f3';
-    const skyColor = getCssVar('--color-accent-sky-strong') || '#8ea9cf';
-    const skyStrongColor = getCssVar('--color-accent-sky') || '#a8bddb';
-    const mintColor = getCssVar('--color-accent-mint') || '#bfd9c8';
-    const peachColor = getCssVar('--color-accent-peach') || '#e9c1ad';
-    const inkColor = getCssVar('--color-ink') || '#5b5852';
-    const inkMutedColor = getCssVar('--color-ink-muted') || '#7a776f';
-    const canvasColor = getCssVar('--color-canvas') || '#f2efe8';
+    const theme = readGraphThemeColors();
 
     // Create PixiJS application (force WebGL for iOS WKWebView compatibility)
     app = new Application();
@@ -76,7 +44,7 @@
       preference: 'webgl',
       width,
       height,
-      backgroundColor: hexToNum(paperColor),
+      backgroundColor: hexToNum(theme.paper),
       antialias: true,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
@@ -104,54 +72,25 @@
     // Tag highlight state
     let highlightedTagId: string | null = null;
 
-    // Build simulation nodes
-    const radiusMap = { category: 12, tag: 10, item: 8 };
-    const simNodes: SimNode[] = data.nodes.map((n) => ({
-      id: `${n.node_type}-${n.id}`,
-      rawId: n.id,
-      nodeType: n.node_type,
-      label: n.label,
-      categoryId: n.category_id,
-      done: n.done,
-      radius: radiusMap[n.node_type] ?? 9,
-      graphics: null,
-      textObj: null,
-      x: width / 2 + (Math.random() - 0.5) * 80,
-      y: height / 2 + (Math.random() - 0.5) * 80,
-    }));
-
-    const nodeMap = new Map<string, SimNode>();
-    for (const n of simNodes) {
-      nodeMap.set(n.id, n);
-    }
-
-    // Build simulation links from string-based source/target
-    const simLinks: SimLink[] = [];
-    for (const edge of data.edges) {
-      const source = nodeMap.get(edge.source);
-      const target = nodeMap.get(edge.target);
-      if (source && target) {
-        simLinks.push({ source, target });
-      }
-    }
+    const { simNodes, simLinks } = buildSimulationData(data, width, height);
 
     // Helper: redraw a single node graphic
     function redrawNode(node: SimNode) {
       if (!node.graphics) return;
       const g = node.graphics;
       g.clear();
-      const borderColor = hexToNum(inkMutedColor);
+      const borderColor = hexToNum(theme.inkMuted);
 
       if (node.nodeType === 'category') {
         g.circle(0, 0, node.radius);
-        g.fill({ color: hexToNum(mintColor) });
+        g.fill({ color: hexToNum(theme.mint) });
         g.stroke({ color: borderColor, width: 1.5, alpha: 0.4 });
       } else if (node.nodeType === 'tag') {
         g.circle(0, 0, node.radius);
-        g.fill({ color: hexToNum(skyColor) });
+        g.fill({ color: hexToNum(theme.sky) });
         g.stroke({ color: borderColor, width: 1.5, alpha: 0.4 });
       } else {
-        const color = node.done ? hexToNum(peachColor) : hexToNum(canvasColor);
+        const color = node.done ? hexToNum(theme.peach) : hexToNum(theme.canvas);
         g.circle(0, 0, node.radius);
         g.fill({ color });
         g.stroke({ color: borderColor, width: 1.5, alpha: 0.4 });
@@ -162,16 +101,16 @@
     const categoryTextStyle = new TextStyle({
       fontSize: 12,
       fontWeight: 'bold',
-      fill: hexToNum(inkColor),
+      fill: hexToNum(theme.ink),
     });
     const tagTextStyle = new TextStyle({
       fontSize: 11,
       fontWeight: 'bold',
-      fill: hexToNum(inkColor),
+      fill: hexToNum(theme.ink),
     });
     const itemTextStyle = new TextStyle({
       fontSize: 10,
-      fill: hexToNum(inkMutedColor),
+      fill: hexToNum(theme.inkMuted),
     });
 
     for (const node of simNodes) {
@@ -318,7 +257,7 @@
         edgeGraphics.lineTo(p.tx, p.ty);
       }
       edgeGraphics.stroke({
-        color: hexToNum(inkMutedColor),
+        color: hexToNum(theme.inkMuted),
         width: 1.5,
         alpha: highlightedTagId ? 0.12 : 0.4,
       });
@@ -330,7 +269,7 @@
           highlightEdgeGraphics.lineTo(p.tx, p.ty);
         }
         highlightEdgeGraphics.stroke({
-          color: hexToNum(skyStrongColor),
+          color: hexToNum(theme.skyStrong),
           width: 2.5,
           alpha: 0.8,
         });
