@@ -19,14 +19,16 @@ pub fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
     Ok(())
 }
 
-fn migrate_add_category_id(conn: &Connection) -> Result<(), rusqlite::Error> {
-    let column_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='category_id'",
-        [],
-        |row| row.get(0),
+fn should_add_column(conn: &Connection, table: &str, column: &str) -> bool {
+    let query = format!(
+        "SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = ?1"
     );
+    let column_exists: Result<i64, _> = conn.query_row(&query, [column], |row| row.get(0));
+    matches!(column_exists, Ok(0))
+}
 
-    if let Ok(0) = column_exists {
+fn migrate_add_category_id(conn: &Connection) -> Result<(), rusqlite::Error> {
+    if should_add_column(conn, "todos", "category_id") {
         conn.execute("ALTER TABLE todos ADD COLUMN category_id INTEGER", [])?;
     }
 
@@ -34,13 +36,7 @@ fn migrate_add_category_id(conn: &Connection) -> Result<(), rusqlite::Error> {
 }
 
 fn migrate_add_display_order_to_todos(conn: &Connection) -> Result<(), rusqlite::Error> {
-    let order_column_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='display_order'",
-        [],
-        |row| row.get(0),
-    );
-
-    if let Ok(0) = order_column_exists {
+    if should_add_column(conn, "todos", "display_order") {
         conn.execute(
             "ALTER TABLE todos ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0",
             [],
@@ -54,13 +50,7 @@ fn migrate_add_display_order_to_todos(conn: &Connection) -> Result<(), rusqlite:
 }
 
 fn migrate_add_memo(conn: &Connection) -> Result<(), rusqlite::Error> {
-    let memo_column_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='memo'",
-        [],
-        |row| row.get(0),
-    );
-
-    if let Ok(0) = memo_column_exists {
+    if should_add_column(conn, "todos", "memo") {
         conn.execute("ALTER TABLE todos ADD COLUMN memo TEXT", [])?;
     }
 
@@ -68,13 +58,7 @@ fn migrate_add_memo(conn: &Connection) -> Result<(), rusqlite::Error> {
 }
 
 fn migrate_add_display_order_to_categories(conn: &Connection) -> Result<(), rusqlite::Error> {
-    let cat_order_column_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('categories') WHERE name='display_order'",
-        [],
-        |row| row.get(0),
-    );
-
-    if let Ok(0) = cat_order_column_exists {
+    if should_add_column(conn, "categories", "display_order") {
         conn.execute(
             "ALTER TABLE categories ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0",
             [],
@@ -88,13 +72,7 @@ fn migrate_add_display_order_to_categories(conn: &Connection) -> Result<(), rusq
 }
 
 fn migrate_add_reminder_at(conn: &Connection) -> Result<(), rusqlite::Error> {
-    let reminder_column_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='reminder_at'",
-        [],
-        |row| row.get(0),
-    );
-
-    if let Ok(0) = reminder_column_exists {
+    if should_add_column(conn, "todos", "reminder_at") {
         conn.execute("ALTER TABLE todos ADD COLUMN reminder_at TEXT", [])?;
     }
 
@@ -103,12 +81,7 @@ fn migrate_add_reminder_at(conn: &Connection) -> Result<(), rusqlite::Error> {
 
 fn migrate_add_repeat_columns(conn: &Connection) -> Result<(), rusqlite::Error> {
     // Add repeat_type column (none/daily/weekly/monthly)
-    let repeat_type_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='repeat_type'",
-        [],
-        |row| row.get(0),
-    );
-    if let Ok(0) = repeat_type_exists {
+    if should_add_column(conn, "todos", "repeat_type") {
         conn.execute(
             "ALTER TABLE todos ADD COLUMN repeat_type TEXT NOT NULL DEFAULT 'none'",
             [],
@@ -116,32 +89,17 @@ fn migrate_add_repeat_columns(conn: &Connection) -> Result<(), rusqlite::Error> 
     }
 
     // Add repeat_detail column (JSON: weekly [0,3,5], monthly [1,15])
-    let repeat_detail_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='repeat_detail'",
-        [],
-        |row| row.get(0),
-    );
-    if let Ok(0) = repeat_detail_exists {
+    if should_add_column(conn, "todos", "repeat_detail") {
         conn.execute("ALTER TABLE todos ADD COLUMN repeat_detail TEXT", [])?;
     }
 
     // Add next_due_at column (YYYY-MM-DD format)
-    let next_due_at_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='next_due_at'",
-        [],
-        |row| row.get(0),
-    );
-    if let Ok(0) = next_due_at_exists {
+    if should_add_column(conn, "todos", "next_due_at") {
         conn.execute("ALTER TABLE todos ADD COLUMN next_due_at TEXT", [])?;
     }
 
     // Add last_completed_at column (YYYY-MM-DD format)
-    let last_completed_at_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='last_completed_at'",
-        [],
-        |row| row.get(0),
-    );
-    if let Ok(0) = last_completed_at_exists {
+    if should_add_column(conn, "todos", "last_completed_at") {
         conn.execute("ALTER TABLE todos ADD COLUMN last_completed_at TEXT", [])?;
     }
 
@@ -160,13 +118,7 @@ fn migrate_create_completion_logs(conn: &Connection) -> Result<(), rusqlite::Err
 }
 
 fn migrate_add_track_streak(conn: &Connection) -> Result<(), rusqlite::Error> {
-    let track_streak_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='track_streak'",
-        [],
-        |row| row.get(0),
-    );
-
-    if let Ok(0) = track_streak_exists {
+    if should_add_column(conn, "todos", "track_streak") {
         conn.execute(
             "ALTER TABLE todos ADD COLUMN track_streak INTEGER NOT NULL DEFAULT 0",
             [],
@@ -178,13 +130,7 @@ fn migrate_add_track_streak(conn: &Connection) -> Result<(), rusqlite::Error> {
 
 fn migrate_completion_logs_add_item_id(conn: &Connection) -> Result<(), rusqlite::Error> {
     // Check if item_id column already exists
-    let item_id_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('completion_logs') WHERE name='item_id'",
-        [],
-        |row| row.get(0),
-    );
-
-    if let Ok(0) = item_id_exists {
+    if should_add_column(conn, "completion_logs", "item_id") {
         // Drop old table and create new one with item_id
         // (We don't need to preserve old data since we're switching to per-item tracking)
         conn.execute("DROP TABLE IF EXISTS completion_logs", [])?;
@@ -204,12 +150,7 @@ fn migrate_completion_logs_add_item_id(conn: &Connection) -> Result<(), rusqlite
 
 fn migrate_add_sync_fields(conn: &Connection) -> Result<(), rusqlite::Error> {
     // Add sync fields to todos table
-    let sync_id_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='sync_id'",
-        [],
-        |row| row.get(0),
-    );
-    if let Ok(0) = sync_id_exists {
+    if should_add_column(conn, "todos", "sync_id") {
         conn.execute("ALTER TABLE todos ADD COLUMN sync_id TEXT", [])?;
     }
 
@@ -218,12 +159,7 @@ fn migrate_add_sync_fields(conn: &Connection) -> Result<(), rusqlite::Error> {
         [],
     )?;
 
-    let created_at_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='created_at'",
-        [],
-        |row| row.get(0),
-    );
-    if let Ok(0) = created_at_exists {
+    if should_add_column(conn, "todos", "created_at") {
         conn.execute("ALTER TABLE todos ADD COLUMN created_at TEXT", [])?;
         conn.execute(
             "UPDATE todos SET created_at = datetime('now') WHERE created_at IS NULL",
@@ -231,12 +167,7 @@ fn migrate_add_sync_fields(conn: &Connection) -> Result<(), rusqlite::Error> {
         )?;
     }
 
-    let updated_at_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='updated_at'",
-        [],
-        |row| row.get(0),
-    );
-    if let Ok(0) = updated_at_exists {
+    if should_add_column(conn, "todos", "updated_at") {
         conn.execute("ALTER TABLE todos ADD COLUMN updated_at TEXT", [])?;
         conn.execute(
             "UPDATE todos SET updated_at = datetime('now') WHERE updated_at IS NULL",
@@ -244,12 +175,7 @@ fn migrate_add_sync_fields(conn: &Connection) -> Result<(), rusqlite::Error> {
         )?;
     }
 
-    let sync_status_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='sync_status'",
-        [],
-        |row| row.get(0),
-    );
-    if let Ok(0) = sync_status_exists {
+    if should_add_column(conn, "todos", "sync_status") {
         conn.execute(
             "ALTER TABLE todos ADD COLUMN sync_status TEXT DEFAULT 'pending'",
             [],
@@ -257,12 +183,7 @@ fn migrate_add_sync_fields(conn: &Connection) -> Result<(), rusqlite::Error> {
     }
 
     // Add sync fields to categories table
-    let cat_sync_id_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('categories') WHERE name='sync_id'",
-        [],
-        |row| row.get(0),
-    );
-    if let Ok(0) = cat_sync_id_exists {
+    if should_add_column(conn, "categories", "sync_id") {
         conn.execute("ALTER TABLE categories ADD COLUMN sync_id TEXT", [])?;
     }
 
@@ -271,12 +192,7 @@ fn migrate_add_sync_fields(conn: &Connection) -> Result<(), rusqlite::Error> {
         [],
     )?;
 
-    let cat_created_at_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('categories') WHERE name='created_at'",
-        [],
-        |row| row.get(0),
-    );
-    if let Ok(0) = cat_created_at_exists {
+    if should_add_column(conn, "categories", "created_at") {
         conn.execute("ALTER TABLE categories ADD COLUMN created_at TEXT", [])?;
         conn.execute(
             "UPDATE categories SET created_at = datetime('now') WHERE created_at IS NULL",
@@ -284,12 +200,7 @@ fn migrate_add_sync_fields(conn: &Connection) -> Result<(), rusqlite::Error> {
         )?;
     }
 
-    let cat_updated_at_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('categories') WHERE name='updated_at'",
-        [],
-        |row| row.get(0),
-    );
-    if let Ok(0) = cat_updated_at_exists {
+    if should_add_column(conn, "categories", "updated_at") {
         conn.execute("ALTER TABLE categories ADD COLUMN updated_at TEXT", [])?;
         conn.execute(
             "UPDATE categories SET updated_at = datetime('now') WHERE updated_at IS NULL",
@@ -297,12 +208,7 @@ fn migrate_add_sync_fields(conn: &Connection) -> Result<(), rusqlite::Error> {
         )?;
     }
 
-    let cat_sync_status_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('categories') WHERE name='sync_status'",
-        [],
-        |row| row.get(0),
-    );
-    if let Ok(0) = cat_sync_status_exists {
+    if should_add_column(conn, "categories", "sync_status") {
         conn.execute(
             "ALTER TABLE categories ADD COLUMN sync_status TEXT DEFAULT 'pending'",
             [],
@@ -358,13 +264,7 @@ fn migrate_create_tags(conn: &Connection) -> Result<(), rusqlite::Error> {
 }
 
 fn migrate_add_linked_app(conn: &Connection) -> Result<(), rusqlite::Error> {
-    let column_exists: Result<i64, _> = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('todos') WHERE name='linked_app'",
-        [],
-        |row| row.get(0),
-    );
-
-    if let Ok(0) = column_exists {
+    if should_add_column(conn, "todos", "linked_app") {
         conn.execute("ALTER TABLE todos ADD COLUMN linked_app TEXT", [])?;
     }
 
