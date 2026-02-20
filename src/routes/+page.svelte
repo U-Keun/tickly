@@ -11,6 +11,7 @@
   import HomeTodoList from '../components/HomeTodoList.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
   import { createHomeCategoryActions } from '../lib/home/homeCategoryActions';
+  import { createHomeEditModalActions } from '../lib/home/homeEditModalActions';
   import { initializeFonts } from '../lib/fonts';
   import { createHomeItemActions } from '../lib/home/homeItemActions';
   import { createHomeLifecycle } from '../lib/home/homeLifecycle';
@@ -29,27 +30,21 @@
   let editingItem = $state<TodoItem | null>(null);
   let showEditModal = $state(false);
   let capturedCloseDrawer = $state<(() => void) | null>(null);
-
-  function openEditModal(item: TodoItem, closeDrawer: () => void) {
-    editingItem = item;
-    capturedCloseDrawer = closeDrawer;
-    showEditModal = true;
-    isEditingItem = true;
-  }
-
-  function handleEditSave() {
-    showEditModal = false;
-    isEditingItem = false;
-    capturedCloseDrawer?.();
-    capturedCloseDrawer = null;
-    editingItem = null;
-  }
-
-  function handleEditCancel() {
-    showEditModal = false;
-    isEditingItem = false;
-    editingItem = null;
-  }
+  const { openEditModal, handleEditSave, handleEditCancel } = createHomeEditModalActions({
+    getCapturedCloseDrawer: () => capturedCloseDrawer,
+    setCapturedCloseDrawer: (handler) => {
+      capturedCloseDrawer = handler;
+    },
+    setEditingItem: (item) => {
+      editingItem = item;
+    },
+    setShowEditModal: (show) => {
+      showEditModal = show;
+    },
+    setIsEditingItem: (editing) => {
+      isEditingItem = editing;
+    }
+  });
 
   // Computed display items (tag filter aware)
   let displayItems = $derived(
