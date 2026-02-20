@@ -1,10 +1,11 @@
 import type { TodoItem, Category, RepeatType, Tag } from '../../types';
+import { createTagActions } from './appStoreTagActions';
+import { syncStore } from './syncStore.svelte';
 import * as categoryApi from '../api/categoryApi';
 import * as streakApi from '../api/streakApi';
 import * as tagApi from '../api/tagApi';
 import * as todoApi from '../api/todoApi';
 import * as widgetApi from '../api/widgetApi';
-import { syncStore } from './syncStore.svelte';
 
 // Core app state
 let items = $state<TodoItem[]>([]);
@@ -38,6 +39,25 @@ async function finalizeMutation(): Promise<void> {
   await refreshWidgetCache();
   syncStore.scheduleSync();
 }
+
+const tagActions = createTagActions({
+  getItemTagsMap: () => itemTagsMap,
+  setItemTagsMap: (nextMap) => {
+    itemTagsMap = nextMap;
+  },
+  getAllTags: () => allTags,
+  setAllTags: (nextTags) => {
+    allTags = nextTags;
+  },
+  getActiveTagFilter: () => activeTagFilter,
+  setActiveTagFilter: (nextFilter) => {
+    activeTagFilter = nextFilter;
+  },
+  setFilteredItems: (nextItems) => {
+    filteredItems = nextItems;
+  },
+  finalizeMutation
+});
 
 // Actions
 async function refreshWidgetCache(): Promise<void> {
@@ -82,7 +102,7 @@ async function loadItems(): Promise<void> {
 async function selectCategory(categoryId: number): Promise<void> {
   selectedCategoryId = categoryId;
   await loadItems();
-  await loadTagsForItems(items);
+  await tagActions.loadTagsForItems(items);
 }
 
 async function addCategory(name: string): Promise<void> {
@@ -158,7 +178,7 @@ async function addItem(
         tags.push(tag);
       }
       itemTagsMap = { ...itemTagsMap, [newItem.id]: tags };
-      await loadAllTags();
+      await tagActions.loadAllTags();
     }
     await finalizeMutation();
   } catch (error) {
@@ -281,94 +301,6 @@ function setCategories(newCategories: Category[]): void {
   categories = newCategories;
 }
 
-// Tag actions
-async function loadAllTags(): Promise<void> {
-  try {
-    allTags = await tagApi.getAllTags();
-  } catch (error) {
-    console.error('Failed to load tags:', error);
-  }
-}
-
-async function loadTagsForItems(itemList: TodoItem[]): Promise<void> {
-  try {
-    const entries = await Promise.all(
-      itemList.map(async (item) => [item.id, await tagApi.getTagsForItem(item.id)] as const)
-    );
-
-    const map: Record<number, Tag[]> = { ...itemTagsMap };
-    for (const [itemId, tags] of entries) {
-      map[itemId] = tags;
-    }
-    itemTagsMap = map;
-  } catch (error) {
-    console.error('Failed to load item tags:', error);
-  }
-}
-
-async function addTagToItem(itemId: number, tagName: string): Promise<Tag | null> {
-  try {
-    const tag = await tagApi.addTagToItem(itemId, tagName);
-    // Update local tag maps
-    const currentTags = itemTagsMap[itemId] || [];
-    if (!currentTags.find(t => t.id === tag.id)) {
-      itemTagsMap = { ...itemTagsMap, [itemId]: [...currentTags, tag] };
-    }
-    // Refresh allTags in case a new tag was created
-    await loadAllTags();
-    await finalizeMutation();
-    return tag;
-  } catch (error) {
-    console.error('Failed to add tag to item:', error);
-    return null;
-  }
-}
-
-async function removeTagFromItem(itemId: number, tagId: number): Promise<void> {
-  try {
-    await tagApi.removeTagFromItem(itemId, tagId);
-    const currentTags = itemTagsMap[itemId] || [];
-    itemTagsMap = { ...itemTagsMap, [itemId]: currentTags.filter(t => t.id !== tagId) };
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to remove tag from item:', error);
-  }
-}
-
-async function deleteTagGlobal(tagId: number): Promise<void> {
-  try {
-    await tagApi.deleteTag(tagId);
-    allTags = allTags.filter(t => t.id !== tagId);
-    // Remove from all item tag maps
-    const newMap: Record<number, Tag[]> = {};
-    for (const [id, tags] of Object.entries(itemTagsMap)) {
-      newMap[Number(id)] = tags.filter(t => t.id !== tagId);
-    }
-    itemTagsMap = newMap;
-    if (activeTagFilter === tagId) {
-      activeTagFilter = null;
-      filteredItems = [];
-    }
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to delete tag:', error);
-  }
-}
-
-async function setTagFilter(tagId: number): Promise<void> {
-  try {
-    activeTagFilter = tagId;
-    filteredItems = await tagApi.getItemsByTag(tagId);
-  } catch (error) {
-    console.error('Failed to filter by tag:', error);
-  }
-}
-
-function clearTagFilter(): void {
-  activeTagFilter = null;
-  filteredItems = [];
-}
-
 function goToFirstCategory(): void {
   if (categories.length > 0) {
     selectCategory(categories[0].id);
@@ -387,7 +319,7 @@ async function refreshAll(): Promise<void> {
   }
 
   await loadItems();
-  await loadAllTags();
+  await tagActions.loadAllTags();
 }
 
 // Export store with getters and actions
@@ -432,11 +364,11 @@ export const appStore = {
   setItems,
 
   // Tag actions
-  loadAllTags,
-  loadTagsForItems,
-  addTagToItem,
-  removeTagFromItem,
-  deleteTag: deleteTagGlobal,
-  setTagFilter,
-  clearTagFilter,
+  loadAllTags: tagActions.loadAllTags,
+  loadTagsForItems: tagActions.loadTagsForItems,
+  addTagToItem: tagActions.addTagToItem,
+  removeTagFromItem: tagActions.removeTagFromItem,
+  deleteTag: tagActions.deleteTag,
+  setTagFilter: tagActions.setTagFilter,
+  clearTagFilter: tagActions.clearTagFilter,
 };
