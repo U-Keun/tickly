@@ -13,48 +13,12 @@
   import FontPreview from '../../../components/FontPreview.svelte';
   import SettingsLayout from '../../../components/SettingsLayout.svelte';
   import SaveFooter from '../../../components/SaveFooter.svelte';
+  import {
+    getFontPresetName,
+    getFontSizeName
+  } from '../../../lib/settings/fontLabels';
   import { i18n } from '$lib/i18n';
-
-  // Preset ID to i18n key mapping
-  const presetNameMap: Record<string, string> = {
-    system: 'fontSystem',
-    'noto-sans': 'fontNotoSans',
-    pretendard: 'fontPretendard',
-    monospace: 'fontMonospace',
-  };
-
-  // Size to i18n key mapping
-  const sizeNameMap: Record<FontSize, string> = {
-    small: 'fontSizeSmall',
-    medium: 'fontSizeMedium',
-    large: 'fontSizeLarge',
-  };
-
-  function getSystemFontName(): string {
-    const platform = navigator.platform.toLowerCase();
-    if (platform.includes('mac') || platform.includes('iphone') || platform.includes('ipad')) {
-      return 'San Francisco';
-    } else if (platform.includes('win')) {
-      return 'Segoe UI';
-    } else if (/android/i.test(navigator.userAgent)) {
-      return 'Roboto';
-    }
-    return 'System';
-  }
-
-  function getPresetName(presetId: string): string {
-    if (presetId === 'system') {
-      const systemFont = getSystemFontName();
-      return `${i18n.t('fontSystem')} (${systemFont})`;
-    }
-    const key = presetNameMap[presetId];
-    return key ? i18n.t(key as keyof typeof i18n.t) : presetId;
-  }
-
-  function getSizeName(size: FontSize): string {
-    const key = sizeNameMap[size];
-    return key ? i18n.t(key as keyof typeof i18n.t) : size;
-  }
+  const translateLabel = (key: string) => i18n.t(key as keyof typeof i18n.t);
 
   let currentSettings = $state<FontSettings>(getDefaultFontSettings());
   let originalSettings = $state<FontSettings | null>(null);
@@ -105,7 +69,7 @@
           onclick={() => selectPreset(preset.id)}
         >
           <span class="preset-name" style="font-family: {preset.fontFamily};">
-            {getPresetName(preset.id)}
+            {getFontPresetName(preset.id, translateLabel)}
           </span>
           {#if currentSettings.presetId === preset.id}
             <svg class="check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,7 +92,7 @@
           onclick={() => selectSize(size as FontSize)}
         >
           <span class="size-value">{config.base}px</span>
-          <span class="size-label">{getSizeName(size as FontSize)}</span>
+          <span class="size-label">{getFontSizeName(size as FontSize, translateLabel)}</span>
         </button>
       {/each}
     </div>
