@@ -116,10 +116,15 @@ yarn tauri dev
 # iOS 프로젝트 초기화
 yarn tauri ios init
 
+# 위젯 타깃/설정 동기화
+yarn ios:widget:setup
+
 # Xcode에서 개발팀 설정
 open src-tauri/gen/apple/tickly.xcodeproj
 # Signing & Capabilities > Team 선택
 ```
+
+위젯 App Group 기본값은 `group.com.u-keunsong.tickly` 입니다. 변경하려면 `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/Info.ios.plist`와 `/Users/u-keunsong/Desktop/Projects/Tickly/src-tauri/ios-widget/TicklyWidgetExtension/Info.plist`를 동일한 값으로 맞춰주세요.
 
 #### iOS 앱 빌드 및 설치
 

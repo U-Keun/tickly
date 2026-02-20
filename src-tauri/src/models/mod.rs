@@ -5,6 +5,7 @@ mod realtime;
 mod sync;
 mod tag;
 mod todo_item;
+mod widget;
 
 pub use category::Category;
 pub use completion_log::{CompletionLog, HeatmapData, TrackedItem};
@@ -15,3 +16,4 @@ pub use realtime::{
 pub use sync::{AuthProvider, AuthSession, SyncResult, SyncStatus, SyncStatusInfo, UserProfile};
 pub use tag::{Tag, TodoTag};
 pub use todo_item::{RepeatType, TodoItem};
+pub use widget::{WidgetSnapshot, WidgetTodoItem};

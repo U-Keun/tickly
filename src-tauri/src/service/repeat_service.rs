@@ -68,7 +68,8 @@ impl RepeatService {
                 // Fallback: return the first day in the next week
                 let first_day = days.iter().min().unwrap_or(&0);
                 let days_until = (7 + *first_day as i64 - current_weekday as i64) % 7;
-                let next = from_date + chrono::Duration::days(if days_until == 0 { 7 } else { days_until });
+                let next = from_date
+                    + chrono::Duration::days(if days_until == 0 { 7 } else { days_until });
                 Some(next.format("%Y-%m-%d").to_string())
             }
             RepeatType::Monthly => {
@@ -88,7 +89,9 @@ impl RepeatService {
                 // Try to find a day in the current month after today
                 for &day in &days {
                     if day > current_day {
-                        if let Some(next) = NaiveDate::from_ymd_opt(current_year, current_month, day) {
+                        if let Some(next) =
+                            NaiveDate::from_ymd_opt(current_year, current_month, day)
+                        {
                             return Some(next.format("%Y-%m-%d").to_string());
                         }
                     }
@@ -121,7 +124,10 @@ impl RepeatService {
 
     /// Toggle an item and handle repeat logic
     /// Returns the updated item
-    pub fn toggle_with_repeat(conn: &Connection, id: i64) -> Result<Option<TodoItem>, rusqlite::Error> {
+    pub fn toggle_with_repeat(
+        conn: &Connection,
+        id: i64,
+    ) -> Result<Option<TodoItem>, rusqlite::Error> {
         let item = TodoRepository::get_by_id(conn, id)?;
 
         let Some(mut item) = item else {
@@ -172,8 +178,8 @@ impl RepeatService {
     /// Returns the number of items reactivated
     pub fn process_repeats(conn: &Connection) -> Result<i32, rusqlite::Error> {
         // Get reset time from settings (default: "00:00")
-        let reset_time = SettingsRepository::get(conn, "reset_time")?
-            .unwrap_or_else(|| "00:00".to_string());
+        let reset_time =
+            SettingsRepository::get(conn, "reset_time")?.unwrap_or_else(|| "00:00".to_string());
 
         let logical_date = get_logical_date(&reset_time);
         let today = logical_date.format("%Y-%m-%d").to_string();

@@ -173,7 +173,10 @@ impl SupabaseClient {
     }
 
     // Sign in with Google ID token
-    pub async fn sign_in_with_google(&self, id_token: &str) -> Result<SupabaseAuthResponse, String> {
+    pub async fn sign_in_with_google(
+        &self,
+        id_token: &str,
+    ) -> Result<SupabaseAuthResponse, String> {
         let url = format!("{}/token?grant_type=id_token", self.auth_url());
 
         let body = serde_json::json!({
@@ -203,10 +206,7 @@ impl SupabaseClient {
     }
 
     // Refresh access token
-    pub async fn refresh_token(
-        &self,
-        refresh_token: &str,
-    ) -> Result<SupabaseAuthResponse, String> {
+    pub async fn refresh_token(&self, refresh_token: &str) -> Result<SupabaseAuthResponse, String> {
         let url = format!("{}/token?grant_type=refresh_token", self.auth_url());
 
         let body = RefreshTokenRequest {
@@ -300,7 +300,10 @@ impl SupabaseClient {
             return Err(format!("Fetch categories failed: {}", error_text));
         }
 
-        let text = response.text().await.map_err(|e| format!("Failed to read response: {}", e))?;
+        let text = response
+            .text()
+            .await
+            .map_err(|e| format!("Failed to read response: {}", e))?;
 
         // Debug: return error with response content if empty
         if text == "[]" {
@@ -329,7 +332,10 @@ impl SupabaseClient {
             return Err(format!("Fetch todos failed: {}", error_text));
         }
 
-        let text = response.text().await.map_err(|e| format!("Failed to read response: {}", e))?;
+        let text = response
+            .text()
+            .await
+            .map_err(|e| format!("Failed to read response: {}", e))?;
 
         // Debug: return error with response content if empty
         if text == "[]" {
@@ -354,7 +360,10 @@ impl SupabaseClient {
             .header("apikey", &self.config.anon_key)
             .header("Authorization", format!("Bearer {}", access_token))
             .header("Content-Type", "application/json")
-            .header("Prefer", "resolution=merge-duplicates,return=representation")
+            .header(
+                "Prefer",
+                "resolution=merge-duplicates,return=representation",
+            )
             .json(category)
             .send()
             .await
@@ -389,7 +398,10 @@ impl SupabaseClient {
             .header("apikey", &self.config.anon_key)
             .header("Authorization", format!("Bearer {}", access_token))
             .header("Content-Type", "application/json")
-            .header("Prefer", "resolution=merge-duplicates,return=representation")
+            .header(
+                "Prefer",
+                "resolution=merge-duplicates,return=representation",
+            )
             .json(todo)
             .send()
             .await
@@ -409,11 +421,7 @@ impl SupabaseClient {
     }
 
     // Delete a category
-    pub async fn delete_category(
-        &self,
-        access_token: &str,
-        sync_id: &str,
-    ) -> Result<(), String> {
+    pub async fn delete_category(&self, access_token: &str, sync_id: &str) -> Result<(), String> {
         let url = format!("{}/categories?id=eq.{}", self.rest_url(), sync_id);
 
         let response = self
@@ -591,11 +599,7 @@ impl SupabaseClient {
             .map_err(|e| format!("Failed to parse tags: {}", e))
     }
 
-    pub async fn upsert_tag(
-        &self,
-        access_token: &str,
-        tag: &RemoteTag,
-    ) -> Result<(), String> {
+    pub async fn upsert_tag(&self, access_token: &str, tag: &RemoteTag) -> Result<(), String> {
         let url = format!("{}/tags", self.rest_url());
 
         let response = self

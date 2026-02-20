@@ -8,15 +8,12 @@ pub struct ResetService;
 impl ResetService {
     /// Reset all items in a category (or all items if category_id is None)
     /// and update the last reset date
-    pub fn reset_items(
-        conn: &Connection,
-        category_id: Option<i64>,
-    ) -> Result<(), rusqlite::Error> {
+    pub fn reset_items(conn: &Connection, category_id: Option<i64>) -> Result<(), rusqlite::Error> {
         TodoRepository::reset_all(conn, category_id)?;
 
         // Get reset time from settings and use logical date
-        let reset_time = SettingsRepository::get(conn, "reset_time")?
-            .unwrap_or_else(|| "00:00".to_string());
+        let reset_time =
+            SettingsRepository::get(conn, "reset_time")?.unwrap_or_else(|| "00:00".to_string());
         let logical_date = get_logical_date(&reset_time);
         let today = logical_date.format("%Y-%m-%d").to_string();
 
@@ -29,8 +26,8 @@ impl ResetService {
     /// Returns true if reset was performed, false otherwise
     pub fn check_and_auto_reset(conn: &Connection) -> Result<bool, rusqlite::Error> {
         // Get reset time from settings and use logical date
-        let reset_time = SettingsRepository::get(conn, "reset_time")?
-            .unwrap_or_else(|| "00:00".to_string());
+        let reset_time =
+            SettingsRepository::get(conn, "reset_time")?.unwrap_or_else(|| "00:00".to_string());
         let logical_date = get_logical_date(&reset_time);
         let today = logical_date.format("%Y-%m-%d").to_string();
 

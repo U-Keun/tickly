@@ -72,6 +72,14 @@ pub fn run() {
             process_repeats,
             update_item_reminder,
             update_item_linked_app,
+            // Widget commands
+            get_widget_snapshot,
+            refresh_widget_cache,
+            toggle_item_from_widget,
+            set_widget_cache_path,
+            get_widget_cache_path,
+            set_widget_app_group_id,
+            get_widget_app_group_id,
             // Category commands
             get_categories,
             add_category,

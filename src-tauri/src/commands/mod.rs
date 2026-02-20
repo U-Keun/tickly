@@ -7,6 +7,7 @@ mod streak_commands;
 mod sync_commands;
 mod tag_commands;
 mod todo_commands;
+mod widget_commands;
 
 pub use auth_commands::*;
 pub use category_commands::*;
@@ -17,3 +18,4 @@ pub use streak_commands::*;
 pub use sync_commands::*;
 pub use tag_commands::*;
 pub use todo_commands::*;
+pub use widget_commands::*;

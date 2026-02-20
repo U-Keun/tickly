@@ -295,7 +295,6 @@ fn migrate_add_sync_fields(conn: &Connection) -> Result<(), rusqlite::Error> {
             "UPDATE categories SET updated_at = datetime('now') WHERE updated_at IS NULL",
             [],
         )?;
-
     }
 
     let cat_sync_status_exists: Result<i64, _> = conn.query_row(

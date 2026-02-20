@@ -15,5 +15,7 @@
   </array>
   <key>ITSAppUsesNonExemptEncryption</key>
   <false/>
+  <key>TICKLY_APP_GROUP_ID</key>
+  <string>group.com.u-keunsong.tickly</string>
 </dict>
 </plist>

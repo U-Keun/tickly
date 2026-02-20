@@ -56,9 +56,7 @@ pub async fn connect_realtime(
 
 /// Disconnect from Supabase Realtime
 #[tauri::command]
-pub async fn disconnect_realtime(
-    realtime_state: State<'_, RealtimeState>,
-) -> Result<(), String> {
+pub async fn disconnect_realtime(realtime_state: State<'_, RealtimeState>) -> Result<(), String> {
     let service_guard = realtime_state.service.read().await;
 
     if let Some(service) = service_guard.as_ref() {

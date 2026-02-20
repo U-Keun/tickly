@@ -6,10 +6,7 @@ use crate::AppState;
 
 #[tauri::command]
 pub fn trigger_sync(state: State<'_, AppState>) -> Result<SyncResult, String> {
-    let client = state
-        .supabase
-        .as_ref()
-        .ok_or("Supabase not configured")?;
+    let client = state.supabase.as_ref().ok_or("Supabase not configured")?;
 
     let conn = state.db.lock().map_err(|e| e.to_string())?;
 
@@ -73,9 +70,12 @@ pub fn force_pull(state: State<'_, AppState>) -> Result<(), String> {
 
     // Delete all local data to force re-pull from server
     // Order matters due to foreign key constraints
-    conn.execute("DELETE FROM completion_logs", []).map_err(|e| e.to_string())?;
-    conn.execute("DELETE FROM todos", []).map_err(|e| e.to_string())?;
-    conn.execute("DELETE FROM categories", []).map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM completion_logs", [])
+        .map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM todos", [])
+        .map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM categories", [])
+        .map_err(|e| e.to_string())?;
 
     Ok(())
 }

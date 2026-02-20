@@ -8,4 +8,5 @@ export * from './streakApi';
 export * from './syncApi';
 export * from './tagApi';
 export * from './todoApi';
+export * from './widgetApi';
 export { invoke } from './client';

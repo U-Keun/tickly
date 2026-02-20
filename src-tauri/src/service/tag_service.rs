@@ -66,10 +66,7 @@ impl TagService {
         Ok(())
     }
 
-    pub fn get_tags_for_item(
-        conn: &Connection,
-        item_id: i64,
-    ) -> Result<Vec<Tag>, rusqlite::Error> {
+    pub fn get_tags_for_item(conn: &Connection, item_id: i64) -> Result<Vec<Tag>, rusqlite::Error> {
         TodoTagRepository::get_tags_for_item(conn, item_id)
     }
 

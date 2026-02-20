@@ -1,8 +1,9 @@
 import type { TodoItem, Category, RepeatType, Tag } from '../../types';
 import * as categoryApi from '../api/categoryApi';
-import * as todoApi from '../api/todoApi';
 import * as streakApi from '../api/streakApi';
 import * as tagApi from '../api/tagApi';
+import * as todoApi from '../api/todoApi';
+import * as widgetApi from '../api/widgetApi';
 import { syncStore } from './syncStore.svelte';
 
 // Core app state
@@ -17,6 +18,14 @@ let filteredItems = $state<TodoItem[]>([]);
 let itemTagsMap = $state<Record<number, Tag[]>>({});
 
 // Actions
+async function refreshWidgetCache(): Promise<void> {
+  try {
+    await widgetApi.refreshWidgetCache();
+  } catch (error) {
+    console.error('Failed to refresh widget cache:', error);
+  }
+}
+
 async function loadCategories(): Promise<void> {
   try {
     categories = await categoryApi.getCategories();
@@ -33,6 +42,7 @@ async function loadItems(): Promise<void> {
     // Check and perform auto-reset if needed before loading items
     const didReset = await todoApi.checkAndAutoReset();
     items = await todoApi.getItems(selectedCategoryId);
+    await refreshWidgetCache();
   } catch (error) {
     console.error('Failed to load items:', error);
   }
@@ -49,6 +59,7 @@ async function addCategory(name: string): Promise<void> {
     const newCategory = await categoryApi.addCategory(name);
     categories = [...categories, newCategory];
     await selectCategory(newCategory.id);
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to add category:', error);
@@ -61,6 +72,7 @@ async function editCategory(id: number, name: string): Promise<void> {
     categories = categories.map(cat =>
       cat.id === id ? { ...cat, name } : cat
     );
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to edit category:', error);
@@ -79,6 +91,7 @@ async function deleteCategory(id: number): Promise<boolean> {
     if (selectedCategoryId === id) {
       await selectCategory(categories[0].id);
     }
+    await refreshWidgetCache();
     syncStore.scheduleSync();
     return true;
   } catch (error) {
@@ -119,6 +132,7 @@ async function addItem(
       itemTagsMap = { ...itemTagsMap, [newItem.id]: tags };
       await loadAllTags();
     }
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to add item:', error);
@@ -137,6 +151,7 @@ async function toggleItem(id: number): Promise<void> {
         if (a.done !== b.done) return a.done ? 1 : -1;
         return a.display_order - b.display_order;
       });
+      await refreshWidgetCache();
       syncStore.scheduleSync();
     }
   } catch (error) {
@@ -144,10 +159,21 @@ async function toggleItem(id: number): Promise<void> {
   }
 }
 
+async function toggleItemFromWidget(id: number): Promise<void> {
+  try {
+    await widgetApi.toggleItemFromWidget(id);
+    await refreshAll();
+    syncStore.scheduleSync();
+  } catch (error) {
+    console.error('Failed to toggle item from widget:', error);
+  }
+}
+
 async function deleteItem(id: number): Promise<void> {
   try {
     await todoApi.deleteItem(id);
     items = items.filter(item => item.id !== id);
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to delete item:', error);
@@ -160,6 +186,7 @@ async function editItem(id: number, text: string): Promise<void> {
     items = items.map(item =>
       item.id === id ? { ...item, text } : item
     );
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to edit item:', error);
@@ -172,6 +199,7 @@ async function updateMemo(id: number, memo: string | null): Promise<void> {
     items = items.map(item =>
       item.id === id ? { ...item, memo } : item
     );
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to update memo:', error);
@@ -188,6 +216,7 @@ async function updateRepeat(
     items = items.map(item =>
       item.id === id ? { ...item, repeat_type: repeatType, repeat_detail: repeatDetail } : item
     );
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to update repeat:', error);
@@ -200,6 +229,7 @@ async function updateTrackStreak(id: number, trackStreak: boolean): Promise<void
     items = items.map(item =>
       item.id === id ? { ...item, track_streak: trackStreak } : item
     );
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to update track_streak:', error);
@@ -212,6 +242,7 @@ async function updateLinkedApp(id: number, linkedApp: string | null): Promise<vo
     items = items.map(item =>
       item.id === id ? { ...item, linked_app: linkedApp } : item
     );
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to update linked app:', error);
@@ -224,6 +255,7 @@ async function updateReminder(id: number, reminderAt: string | null): Promise<vo
     items = items.map(item =>
       item.id === id ? { ...item, reminder_at: reminderAt } : item
     );
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to update reminder:', error);
@@ -234,6 +266,7 @@ async function resetAllItems(): Promise<void> {
   try {
     await todoApi.resetAllItems(selectedCategoryId);
     items = items.map(item => ({ ...item, done: false }));
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to reset items:', error);
@@ -382,6 +415,7 @@ export const appStore = {
   // Item actions
   addItem,
   toggleItem,
+  toggleItemFromWidget,
   deleteItem,
   editItem,
   updateMemo,

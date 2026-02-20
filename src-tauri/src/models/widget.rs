@@ -1,0 +1,21 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WidgetTodoItem {
+    pub id: i64,
+    pub text: String,
+    pub done: bool,
+    pub category_id: Option<i64>,
+    pub category_name: Option<String>,
+    pub display_order: i64,
+    pub reminder_at: Option<String>,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WidgetSnapshot {
+    pub generated_at: String,
+    pub total_count: usize,
+    pub pending_count: usize,
+    pub items: Vec<WidgetTodoItem>,
+}

@@ -34,6 +34,24 @@ export interface TodoItem {
   sync_status?: SyncStatus;
 }
 
+export interface WidgetTodoItem {
+  id: number;
+  text: string;
+  done: boolean;
+  category_id: number | null;
+  category_name: string | null;
+  display_order: number;
+  reminder_at: string | null;
+  updated_at: string | null;
+}
+
+export interface WidgetSnapshot {
+  generated_at: string;
+  total_count: number;
+  pending_count: number;
+  items: WidgetTodoItem[];
+}
+
 export interface Tag {
   id: number;
   name: string;

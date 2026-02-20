@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "ios:widget:setup": "bash src-tauri/scripts/setup-ios-widget.sh",
     "tauri": "tauri"
   },
   "license": "MIT",

@@ -2,10 +2,11 @@
   import '../app.css';
   import { page } from '$app/stores';
   import { fly, fade } from 'svelte/transition';
-  import { beforeNavigate } from '$app/navigation';
+  import { beforeNavigate, goto } from '$app/navigation';
   import { cubicOut } from 'svelte/easing';
   import { onMount, onDestroy } from 'svelte';
   import type { Snippet } from 'svelte';
+  import { appStore } from '$lib/stores';
   import { authStore, handleOAuthCallback } from '$lib/stores/authStore.svelte';
   import { syncStore } from '$lib/stores/syncStore.svelte';
   import { ensurePermission } from '$lib/notification';
@@ -21,6 +22,24 @@
       const { access_token, user_id } = authStore.session;
       await syncStore.connectRealtime(access_token, user_id);
     }
+  }
+
+  async function handleWidgetDeepLink(parsedUrl: URL): Promise<boolean> {
+    if (parsedUrl.host !== 'widget' || parsedUrl.pathname !== '/toggle') {
+      return false;
+    }
+
+    const itemIdParam = parsedUrl.searchParams.get('itemId') ?? parsedUrl.searchParams.get('id');
+    const itemId = Number(itemIdParam);
+
+    if (!Number.isInteger(itemId) || itemId <= 0) {
+      console.error('Invalid widget item id:', itemIdParam);
+      return true;
+    }
+
+    await appStore.toggleItemFromWidget(itemId);
+    await goto('/');
+    return true;
   }
 
   // Check session and set up deep link listener
@@ -44,6 +63,10 @@
           // Parse the URL to extract OAuth callback parameters
           try {
             const parsedUrl = new URL(url);
+
+            if (await handleWidgetDeepLink(parsedUrl)) {
+              continue;
+            }
 
             // Check if this is an OAuth callback
             if (parsedUrl.host === 'auth' && parsedUrl.pathname === '/callback') {
