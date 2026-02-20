@@ -1,7 +1,7 @@
 import type { TodoItem, Category, RepeatType, Tag } from '../../types';
+import { createCategoryActions } from './appStoreCategoryActions';
 import { createTagActions } from './appStoreTagActions';
 import { syncStore } from './syncStore.svelte';
-import * as categoryApi from '../api/categoryApi';
 import * as streakApi from '../api/streakApi';
 import * as tagApi from '../api/tagApi';
 import * as todoApi from '../api/todoApi';
@@ -77,17 +77,6 @@ async function processWidgetActions(): Promise<number> {
   }
 }
 
-async function loadCategories(): Promise<void> {
-  try {
-    categories = await categoryApi.getCategories();
-    if (categories.length > 0 && selectedCategoryId === null) {
-      selectedCategoryId = categories[0].id;
-    }
-  } catch (error) {
-    console.error('Failed to load categories:', error);
-  }
-}
-
 async function loadItems(): Promise<void> {
   try {
     // Check and perform auto-reset if needed before loading items
@@ -99,55 +88,20 @@ async function loadItems(): Promise<void> {
   }
 }
 
-async function selectCategory(categoryId: number): Promise<void> {
-  selectedCategoryId = categoryId;
-  await loadItems();
-  await tagActions.loadTagsForItems(items);
-}
-
-async function addCategory(name: string): Promise<void> {
-  try {
-    const newCategory = await categoryApi.addCategory(name);
-    categories = [...categories, newCategory];
-    await selectCategory(newCategory.id);
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to add category:', error);
-  }
-}
-
-async function editCategory(id: number, name: string): Promise<void> {
-  try {
-    await categoryApi.editCategory(id, name);
-    categories = categories.map(cat =>
-      cat.id === id ? { ...cat, name } : cat
-    );
-    await finalizeMutation();
-  } catch (error) {
-    console.error('Failed to edit category:', error);
-  }
-}
-
-async function deleteCategory(id: number): Promise<boolean> {
-  if (categories.length <= 1) {
-    alert('최소 1개의 카테고리는 유지해야 합니다.');
-    return false;
-  }
-
-  try {
-    await categoryApi.deleteCategory(id);
-    categories = categories.filter(cat => cat.id !== id);
-    if (selectedCategoryId === id) {
-      await selectCategory(categories[0].id);
-    }
-    await finalizeMutation();
-    return true;
-  } catch (error) {
-    console.error('Failed to delete category:', error);
-    alert('카테고리 삭제 실패: ' + error);
-    return false;
-  }
-}
+const categoryActions = createCategoryActions({
+  getCategories: () => categories,
+  setCategories: (nextCategories) => {
+    categories = nextCategories;
+  },
+  getSelectedCategoryId: () => selectedCategoryId,
+  setSelectedCategoryId: (nextCategoryId) => {
+    selectedCategoryId = nextCategoryId;
+  },
+  getItems: () => items,
+  loadItems,
+  loadTagsForItems: tagActions.loadTagsForItems,
+  finalizeMutation
+});
 
 async function addItem(
   text: string,
@@ -297,18 +251,8 @@ function setItems(newItems: TodoItem[]): void {
   items = newItems;
 }
 
-function setCategories(newCategories: Category[]): void {
-  categories = newCategories;
-}
-
-function goToFirstCategory(): void {
-  if (categories.length > 0) {
-    selectCategory(categories[0].id);
-  }
-}
-
 async function refreshAll(): Promise<void> {
-  await loadCategories();
+  await categoryActions.loadCategories();
 
   // If no category selected or selected category doesn't exist, select the first one
   if (categories.length > 0) {
@@ -336,18 +280,18 @@ export const appStore = {
   get itemTagsMap() { return itemTagsMap; },
 
   // Data loading
-  loadCategories,
+  loadCategories: categoryActions.loadCategories,
   loadItems,
   refreshAll,
   processWidgetActions,
 
   // Category actions
-  selectCategory,
-  addCategory,
-  editCategory,
-  deleteCategory,
-  setCategories,
-  goToFirstCategory,
+  selectCategory: categoryActions.selectCategory,
+  addCategory: categoryActions.addCategory,
+  editCategory: categoryActions.editCategory,
+  deleteCategory: categoryActions.deleteCategory,
+  setCategories: categoryActions.setCategories,
+  goToFirstCategory: categoryActions.goToFirstCategory,
 
   // Item actions
   addItem,
