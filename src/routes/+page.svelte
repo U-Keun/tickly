@@ -10,6 +10,7 @@
   import HomeModals from '../components/HomeModals.svelte';
   import HomeTodoList from '../components/HomeTodoList.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
+  import { createHomeBootstrap } from '../lib/home/homeBootstrap';
   import { createHomeCategoryActions } from '../lib/home/homeCategoryActions';
   import { createHomeEditModalActions } from '../lib/home/homeEditModalActions';
   import { initializeFonts } from '../lib/fonts';
@@ -106,25 +107,22 @@
     cancelReminder,
   });
 
+  const { run: runHomeBootstrap } = createHomeBootstrap({
+    initializeTheme,
+    initializeFonts,
+    loadLocale: i18n.loadLocale,
+    processRepeatsAndReload,
+    loadCategories: appStore.loadCategories,
+    loadItems: appStore.loadItems,
+    loadAllTags: appStore.loadAllTags,
+    loadTagsForItems: appStore.loadTagsForItems,
+    getItems: () => appStore.items,
+    scheduleResetTimer,
+    rescheduleAll
+  });
+
   onMount(async () => {
-    // Initialize theme, fonts, and locale from saved settings
-    await initializeTheme();
-    await initializeFonts();
-    await i18n.loadLocale();
-
-    // Process repeating items that are due
-    await processRepeatsAndReload();
-
-    await appStore.loadCategories();
-    await appStore.loadItems();
-    await appStore.loadAllTags();
-    await appStore.loadTagsForItems(appStore.items);
-
-    // Schedule auto-reset timer
-    await scheduleResetTimer();
-
-    // Reschedule all notifications
-    await rescheduleAll(appStore.items);
+    await runHomeBootstrap();
 
     showFab = true;
 
