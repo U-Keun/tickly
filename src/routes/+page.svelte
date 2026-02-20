@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
   import { onDestroy, onMount } from 'svelte';
 
-  import type { Category, RepeatType, TodoItem } from '../types';
+  import type { RepeatType, TodoItem } from '../types';
 
   import ActiveTagFilterBanner from '../components/ActiveTagFilterBanner.svelte';
   import CategoryTabs from '../components/CategoryTabs.svelte';
@@ -10,6 +10,7 @@
   import HomeModals from '../components/HomeModals.svelte';
   import HomeTodoList from '../components/HomeTodoList.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
+  import { createHomeCategoryActions } from '../lib/home/homeCategoryActions';
   import { initializeFonts } from '../lib/fonts';
   import { createHomeItemActions } from '../lib/home/homeItemActions';
   import { createHomeLifecycle } from '../lib/home/homeLifecycle';
@@ -62,33 +63,21 @@
 
   // Reference to CategoryTabs component
   let categoryTabsComponent: any;
-
-  // Category handlers
-  function handleCategoryLongPress(category: Category) {
-    modalStore.openCategoryMenu(category);
-  }
-
-  function handleEditFromMenu() {
-    if (modalStore.selectedCategoryForMenu && categoryTabsComponent) {
-      categoryTabsComponent.triggerEdit(modalStore.selectedCategoryForMenu);
-      modalStore.closeCategoryMenu();
-    }
-  }
-
-  async function confirmDeleteCategory() {
-    const categoryToDelete = modalStore.selectedCategoryForMenu;
-    if (!categoryToDelete) return;
-
-    const success = await appStore.deleteCategory(categoryToDelete.id);
-    if (success) {
-      modalStore.closeDeleteCategoryConfirm();
-    }
-  }
-
-  async function confirmReset() {
-    await appStore.resetAllItems();
-    modalStore.closeResetConfirm();
-  }
+  const {
+    handleCategoryLongPress,
+    handleEditFromMenu,
+    confirmDeleteCategory,
+    confirmReset
+  } = createHomeCategoryActions({
+    openCategoryMenu: modalStore.openCategoryMenu,
+    closeCategoryMenu: modalStore.closeCategoryMenu,
+    closeDeleteCategoryConfirm: modalStore.closeDeleteCategoryConfirm,
+    closeResetConfirm: modalStore.closeResetConfirm,
+    getSelectedCategoryForMenu: () => modalStore.selectedCategoryForMenu,
+    getCategoryTabsComponent: () => categoryTabsComponent,
+    deleteCategory: appStore.deleteCategory,
+    resetAllItems: appStore.resetAllItems
+  });
 
   const homeLifecycle = createHomeLifecycle({
     loadItems: appStore.loadItems,
