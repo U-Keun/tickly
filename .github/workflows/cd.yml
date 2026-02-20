@@ -408,17 +408,21 @@ jobs:
 
       - name: Set iOS bundle version values
         run: |
-          INFO_PLIST="src-tauri/gen/apple/tickly_iOS/Info.plist"
+          APP_INFO_PLIST="src-tauri/gen/apple/tickly_iOS/Info.plist"
+          WIDGET_INFO_PLIST="src-tauri/gen/apple/TicklyWidgetExtension/Info.plist"
 
           set_or_add_plist() {
-            key="$1"
-            value="$2"
-            /usr/libexec/PlistBuddy -c "Set :$key $value" "$INFO_PLIST" 2>/dev/null || \
-              /usr/libexec/PlistBuddy -c "Add :$key string $value" "$INFO_PLIST"
+            plist="$1"
+            key="$2"
+            value="$3"
+            /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist" 2>/dev/null || \
+              /usr/libexec/PlistBuddy -c "Add :$key string $value" "$plist"
           }
 
-          set_or_add_plist "CFBundleShortVersionString" "$APP_VERSION"
-          set_or_add_plist "CFBundleVersion" "$IOS_BUILD_NUMBER"
+          set_or_add_plist "$APP_INFO_PLIST" "CFBundleShortVersionString" "$APP_VERSION"
+          set_or_add_plist "$APP_INFO_PLIST" "CFBundleVersion" "$IOS_BUILD_NUMBER"
+          set_or_add_plist "$WIDGET_INFO_PLIST" "CFBundleShortVersionString" "$APP_VERSION"
+          set_or_add_plist "$WIDGET_INFO_PLIST" "CFBundleVersion" "$IOS_BUILD_NUMBER"
 
       - name: Ensure iOS URL scheme for OAuth callback
         run: |
