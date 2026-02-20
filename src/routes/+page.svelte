@@ -1,40 +1,44 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { flip } from 'svelte/animate';
   import { goto } from '$app/navigation';
-  import type { Category } from '../types';
-  import LeafTodoItem from '../components/LeafTodoItem.svelte';
-  import MemoDrawer from '../components/MemoDrawer.svelte';
+  import { flip } from 'svelte/animate';
+  import { onDestroy, onMount } from 'svelte';
+
+  import type { Category, RepeatType, TodoItem } from '../types';
+
   import AddItemModal from '../components/AddItemModal.svelte';
-  import SwipeableItem from '../components/SwipeableItem.svelte';
+  import CategoryMenuModal from '../components/CategoryMenuModal.svelte';
   import CategoryTabs from '../components/CategoryTabs.svelte';
   import ConfirmModal from '../components/ConfirmModal.svelte';
-  import CategoryMenuModal from '../components/CategoryMenuModal.svelte';
-  import ReorderItemsModal from '../components/ReorderItemsModal.svelte';
-  import ReorderCategoriesModal from '../components/ReorderCategoriesModal.svelte';
-  import IntroAnimation from '../components/IntroAnimation.svelte';
-  import FloatingActions from '../components/FloatingActions.svelte';
-  import StreakModal from '../components/StreakModal.svelte';
-  import TagFilterModal from '../components/TagFilterModal.svelte';
   import EditItemModal from '../components/EditItemModal.svelte';
-  import { initializeTheme } from '../lib/themes';
+  import FloatingActions from '../components/FloatingActions.svelte';
+  import IntroAnimation from '../components/IntroAnimation.svelte';
+  import LeafTodoItem from '../components/LeafTodoItem.svelte';
+  import MemoDrawer from '../components/MemoDrawer.svelte';
+  import ReorderCategoriesModal from '../components/ReorderCategoriesModal.svelte';
+  import ReorderItemsModal from '../components/ReorderItemsModal.svelte';
+  import StreakModal from '../components/StreakModal.svelte';
+  import SwipeableItem from '../components/SwipeableItem.svelte';
+  import TagFilterModal from '../components/TagFilterModal.svelte';
   import { initializeFonts } from '../lib/fonts';
+  import { createHomeItemActions } from '../lib/home/homeItemActions';
+  import { createHomeLifecycle } from '../lib/home/homeLifecycle';
+  import { i18n } from '../lib/i18n';
+  import { cancelReminder, rescheduleAll, scheduleReminder } from '../lib/notification';
   import { appStore, modalStore } from '../lib/stores';
-  import * as todoApi from '../lib/api/todoApi';
+  import { initializeTheme } from '../lib/themes';
   import * as settingsApi from '../lib/api/settingsApi';
-  import { i18n } from '$lib/i18n';
-  import { scheduleReminder, cancelReminder, rescheduleAll } from '$lib/notification';
+  import * as todoApi from '../lib/api/todoApi';
 
   // Local UI state only
   let isEditingItem = $state(false);
   let showFab = $state(false);
 
   // Edit item modal state (rendered at root to avoid CSS transform clipping)
-  let editingItem = $state<import('../types').TodoItem | null>(null);
+  let editingItem = $state<TodoItem | null>(null);
   let showEditModal = $state(false);
   let capturedCloseDrawer = $state<(() => void) | null>(null);
 
-  function openEditModal(item: import('../types').TodoItem, closeDrawer: () => void) {
+  function openEditModal(item: TodoItem, closeDrawer: () => void) {
     editingItem = item;
     capturedCloseDrawer = closeDrawer;
     showEditModal = true;
@@ -59,12 +63,6 @@
   let displayItems = $derived(
     appStore.activeTagFilter !== null ? appStore.filteredItems : appStore.items
   );
-
-  // Track last processed date to avoid duplicate processing
-  let lastProcessedDate = '';
-
-  // Timer for auto-reset
-  let resetTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Reference to CategoryTabs component
   let categoryTabsComponent: any;
@@ -91,144 +89,42 @@
     }
   }
 
-  // Reset handler
   async function confirmReset() {
     await appStore.resetAllItems();
     modalStore.closeResetConfirm();
   }
 
-  // Process repeating items and reload if any were reactivated
-  async function processRepeatsAndReload() {
-    const today = new Date().toISOString().split('T')[0];
+  const homeLifecycle = createHomeLifecycle({
+    loadItems: appStore.loadItems,
+    loadTagsForItems: appStore.loadTagsForItems,
+    getItems: () => appStore.items,
+    processRepeats: todoApi.processRepeats,
+    checkAndAutoReset: todoApi.checkAndAutoReset,
+    getResetTime: () => settingsApi.getSetting('reset_time'),
+    rescheduleAll,
+  });
 
-    // Skip if already processed today
-    if (lastProcessedDate === today) {
-      return;
-    }
+  const {
+    processRepeatsAndReload,
+    scheduleResetTimer,
+    clearResetTimer,
+    handleVisibilityChange,
+  } = homeLifecycle;
 
-    try {
-      const reactivatedCount = await todoApi.processRepeats();
-      lastProcessedDate = today;
-
-      if (reactivatedCount > 0) {
-        // Reload items to reflect changes
-        await appStore.loadItems();
-      }
-    } catch (error) {
-      console.error('Failed to process repeats:', error);
-    }
-  }
-
-  // Handle visibility change (app coming to foreground)
-  async function handleVisibilityChange() {
-    if (document.visibilityState === 'visible') {
-      await appStore.loadItems();
-      await appStore.loadTagsForItems(appStore.items);
-      await processRepeatsAndReload();
-      await rescheduleAll(appStore.items);
-    }
-  }
-
-  // Check and perform auto-reset, then reload items if reset occurred
-  async function checkAndPerformAutoReset() {
-    try {
-      const didReset = await todoApi.checkAndAutoReset();
-      if (didReset) {
-        await appStore.loadItems();
-      }
-    } catch (error) {
-      console.error('Failed to check auto-reset:', error);
-    }
-  }
-
-  // Calculate milliseconds until next reset time
-  function getMsUntilResetTime(resetTime: string): number {
-    const [hours, minutes] = resetTime.split(':').map(Number);
-    const now = new Date();
-    const resetDate = new Date();
-    resetDate.setHours(hours, minutes, 0, 0);
-
-    // If reset time has passed today, schedule for tomorrow
-    if (resetDate <= now) {
-      resetDate.setDate(resetDate.getDate() + 1);
-    }
-
-    return resetDate.getTime() - now.getTime();
-  }
-
-  // Schedule timer for next reset time
-  async function scheduleResetTimer() {
-    // Clear existing timer
-    if (resetTimer) {
-      clearTimeout(resetTimer);
-      resetTimer = null;
-    }
-
-    try {
-      const resetTime = await settingsApi.getSetting('reset_time');
-      if (!resetTime) return;
-
-      const msUntilReset = getMsUntilResetTime(resetTime);
-
-      resetTimer = setTimeout(async () => {
-        await checkAndPerformAutoReset();
-        // Schedule next reset (for tomorrow)
-        await scheduleResetTimer();
-      }, msUntilReset);
-    } catch (error) {
-      console.error('Failed to schedule reset timer:', error);
-    }
-  }
-
-  // Notification-aware wrappers
-  async function handleAddItem(
-    text: string,
-    memo: string | null,
-    repeatType: import('../types').RepeatType,
-    repeatDetail: string | null,
-    trackStreak: boolean,
-    tagNames?: string[],
-    reminderAt?: string | null,
-    linkedApp?: string | null
-  ) {
-    await appStore.addItem(text, memo, repeatType, repeatDetail, trackStreak, tagNames ?? [], reminderAt ?? null, linkedApp ?? null);
-    // Schedule notification if reminder was set
-    if (reminderAt) {
-      // Find the newly added item (last in list)
-      const lastItem = appStore.items[appStore.items.length - 1];
-      if (lastItem) {
-        await scheduleReminder(lastItem.id, lastItem.text, reminderAt);
-      }
-    }
-  }
-
-  async function handleUpdateReminder(id: number, reminderAt: string | null) {
-    await appStore.updateReminder(id, reminderAt);
-    if (reminderAt) {
-      const item = appStore.items.find(i => i.id === id);
-      await scheduleReminder(id, item?.text ?? '', reminderAt);
-    } else {
-      await cancelReminder(id);
-    }
-  }
-
-  async function handleToggleItem(id: number) {
-    const item = appStore.items.find(i => i.id === id);
-    const wasDone = item?.done;
-    await appStore.toggleItem(id);
-    if (!wasDone && item?.reminder_at) {
-      // Item was completed → cancel reminder
-      await cancelReminder(id);
-    } else if (wasDone && item?.reminder_at) {
-      // Item was re-activated → reschedule reminder
-      await scheduleReminder(id, item.text, item.reminder_at);
-    }
-  }
-
-  async function handleDeleteItem(id: number) {
-    await cancelReminder(id);
-    await appStore.deleteItem(id);
-  }
+  const {
+    handleAddItem,
+    handleUpdateReminder,
+    handleToggleItem,
+    handleDeleteItem,
+  } = createHomeItemActions({
+    addItem: appStore.addItem,
+    updateReminder: appStore.updateReminder,
+    toggleItem: appStore.toggleItem,
+    deleteItem: appStore.deleteItem,
+    getItems: () => appStore.items,
+    scheduleReminder,
+    cancelReminder,
+  });
 
   onMount(async () => {
     // Initialize theme, fonts, and locale from saved settings
@@ -258,11 +154,7 @@
 
   onDestroy(() => {
     document.removeEventListener('visibilitychange', handleVisibilityChange);
-    // Clear reset timer
-    if (resetTimer) {
-      clearTimeout(resetTimer);
-      resetTimer = null;
-    }
+    clearResetTimer();
   });
 </script>
 
