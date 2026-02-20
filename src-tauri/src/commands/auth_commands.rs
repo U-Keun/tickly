@@ -34,6 +34,27 @@ fn basic_user_profile(session: &AuthSession) -> UserProfile {
     }
 }
 
+fn take_code_verifier(oauth_state: &State<'_, OAuthStateStore>) -> Result<String, String> {
+    oauth_state
+        .code_verifier
+        .lock()
+        .map_err(|e| e.to_string())?
+        .take()
+        .ok_or("No OAuth flow in progress".to_string())
+}
+
+async fn complete_google_oauth_session(
+    state: &State<'_, AppState>,
+    client: &crate::service::SupabaseClient,
+    code: &str,
+    code_verifier: &str,
+) -> Result<AuthSession, String> {
+    let response = OAuthService::complete_oauth(client, code, code_verifier).await?;
+    let session = AuthService::create_session_from_response(response, AuthProvider::Google);
+    save_session(state, &session)?;
+    Ok(session)
+}
+
 #[tauri::command]
 pub async fn sign_in_with_apple(
     state: State<'_, AppState>,
@@ -248,23 +269,9 @@ pub async fn complete_mobile_google_oauth(
     let client = require_supabase_client(&state)?;
 
     // Get the stored code verifier
-    let code_verifier = oauth_state
-        .code_verifier
-        .lock()
-        .map_err(|e| e.to_string())?
-        .take()
-        .ok_or("No OAuth flow in progress")?;
+    let code_verifier = take_code_verifier(&oauth_state)?;
 
-    // Exchange the code for tokens
-    let response = OAuthService::complete_oauth(client, &code, &code_verifier).await?;
-
-    // Convert to session
-    let session = AuthService::create_session_from_response(response, AuthProvider::Google);
-
-    // Save to database
-    save_session(&state, &session)?;
-
-    Ok(session)
+    complete_google_oauth_session(&state, client, &code, &code_verifier).await
 }
 
 // ===== Desktop OAuth Commands =====
@@ -299,12 +306,7 @@ pub async fn complete_google_oauth(
     let client = require_supabase_client(&state)?;
 
     // Get the stored code verifier and port
-    let code_verifier = oauth_state
-        .code_verifier
-        .lock()
-        .map_err(|e| e.to_string())?
-        .take()
-        .ok_or("No OAuth flow in progress")?;
+    let code_verifier = take_code_verifier(&oauth_state)?;
 
     let port = oauth_state
         .port
@@ -316,14 +318,5 @@ pub async fn complete_google_oauth(
     // Wait for the callback (timeout: 5 minutes)
     let code = OAuthService::wait_for_callback(port, 300).await?;
 
-    // Exchange the code for tokens
-    let response = OAuthService::complete_oauth(client, &code, &code_verifier).await?;
-
-    // Convert to session
-    let session = AuthService::create_session_from_response(response, AuthProvider::Google);
-
-    // Save to database
-    save_session(&state, &session)?;
-
-    Ok(session)
+    complete_google_oauth_session(&state, client, &code, &code_verifier).await
 }
