@@ -1,6 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
+
+  import { getErrorMessage, detectDesktopFromUserAgent, runSignInFlow } from '$lib/account/signInFlow';
   import { i18n } from '$lib/i18n';
   import { authStore, syncStore } from '$lib/stores';
   import SettingsLayout from '../../../components/SettingsLayout.svelte';
@@ -12,55 +14,40 @@
   let isDesktop = $state(false);
 
   onMount(async () => {
-    // Check if we're on Desktop by checking user agent
-    // iOS will have 'iPhone' or 'iPad' in the user agent
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isIOS = /iphone|ipad|ipod/.test(userAgent);
-    isDesktop = !isIOS;
+    isDesktop = detectDesktopFromUserAgent(navigator.userAgent);
 
     await authStore.checkSession();
     await syncStore.loadStatus();
   });
 
-  async function handleAppleSignIn() {
+  async function handleSignIn(signInAction: () => Promise<void>, providerName: string) {
     isSigningIn = true;
     loginError = null;
+
     try {
-      await authStore.signInWithApple();
-      await syncStore.loadStatus();
-      // Connect to realtime after successful login
-      if (authStore.session) {
-        await syncStore.connectRealtime(authStore.session.access_token, authStore.session.user_id);
-      }
+      await runSignInFlow({
+        signIn: signInAction,
+        loadSyncStatus: syncStore.loadStatus,
+        connectRealtime: syncStore.connectRealtime,
+        getSession: () => authStore.session,
+      });
     } catch (error) {
-      console.error('Apple Sign In failed:', error);
-      loginError = error instanceof Error ? error.message : String(error);
+      console.error(`${providerName} failed:`, error);
+      loginError = getErrorMessage(error);
     } finally {
       isSigningIn = false;
     }
   }
 
+  async function handleAppleSignIn() {
+    await handleSignIn(() => authStore.signInWithApple(), 'Apple Sign In');
+  }
+
   async function handleGoogleSignIn() {
-    isSigningIn = true;
-    loginError = null;
-    try {
-      // Use appropriate method based on platform
-      if (isDesktop) {
-        await authStore.signInWithGoogleDesktop();
-      } else {
-        await authStore.signInWithGoogleMobile();
-      }
-      await syncStore.loadStatus();
-      // Connect to realtime after successful login
-      if (authStore.session) {
-        await syncStore.connectRealtime(authStore.session.access_token, authStore.session.user_id);
-      }
-    } catch (error) {
-      console.error('Google Sign In failed:', error);
-      loginError = error instanceof Error ? error.message : String(error);
-    } finally {
-      isSigningIn = false;
-    }
+    const signInAction = isDesktop
+      ? () => authStore.signInWithGoogleDesktop()
+      : () => authStore.signInWithGoogleMobile();
+    await handleSignIn(signInAction, 'Google Sign In');
   }
 
   async function handleSync() {
