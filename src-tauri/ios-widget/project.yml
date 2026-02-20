@@ -110,6 +110,7 @@ targets:
     info:
       path: TicklyWidgetExtension/Info.plist
       properties:
+        CFBundleDisplayName: Tickly
         CFBundleShortVersionString: 0.1.0
         CFBundleVersion: "0.1.0"
         NSExtension:

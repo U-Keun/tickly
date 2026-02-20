@@ -421,6 +421,7 @@ jobs:
 
           set_or_add_plist "$APP_INFO_PLIST" "CFBundleShortVersionString" "$APP_VERSION"
           set_or_add_plist "$APP_INFO_PLIST" "CFBundleVersion" "$IOS_BUILD_NUMBER"
+          set_or_add_plist "$WIDGET_INFO_PLIST" "CFBundleDisplayName" "Tickly"
           set_or_add_plist "$WIDGET_INFO_PLIST" "CFBundleShortVersionString" "$APP_VERSION"
           set_or_add_plist "$WIDGET_INFO_PLIST" "CFBundleVersion" "$IOS_BUILD_NUMBER"
 
