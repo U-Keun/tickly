@@ -12,10 +12,12 @@ settingGroups:
     base:
       PRODUCT_NAME: Tickly
       PRODUCT_BUNDLE_IDENTIFIER: com.u-keunsong.tickly
+      DEVELOPMENT_TEAM: "3689L65YPY"
   widget:
     base:
       PRODUCT_NAME: TicklyWidgetExtension
       PRODUCT_BUNDLE_IDENTIFIER: com.u-keunsong.tickly.widget
+      DEVELOPMENT_TEAM: "3689L65YPY"
       SWIFT_VERSION: 5.0
 targetTemplates:
   app:
@@ -36,6 +38,8 @@ targets:
       - path: Sources
       - path: Assets.xcassets
       - path: Externals
+        excludes:
+          - "**/*.a"
       - path: tickly_iOS
       - path: assets
         buildPhase: resources
