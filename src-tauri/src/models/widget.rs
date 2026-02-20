@@ -17,6 +17,7 @@ pub struct WidgetCategoryPendingItem {
     pub id: i64,
     pub text: String,
     pub display_order: i64,
+    pub tags: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -31,10 +32,22 @@ pub struct WidgetCategorySummary {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WidgetTheme {
+    pub paper: String,
+    pub canvas: String,
+    pub stroke: String,
+    pub ink: String,
+    pub ink_muted: String,
+    pub accent_sky: String,
+    pub accent_sky_strong: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WidgetSnapshot {
     pub generated_at: String,
     pub total_count: usize,
     pub pending_count: usize,
     pub items: Vec<WidgetTodoItem>,
     pub categories: Vec<WidgetCategorySummary>,
+    pub theme: WidgetTheme,
 }

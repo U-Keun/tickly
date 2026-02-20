@@ -20,6 +20,7 @@ cp "$TEMPLATE_DIR/TicklyWidgetExtension/TicklyWidgetExtension.entitlements" "$AP
 cp "$TEMPLATE_DIR/TicklyWidgetExtension/TicklyWidgetBundle.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/TicklyWidgetBundle.swift"
 cp "$TEMPLATE_DIR/TicklyWidgetExtension/TicklyWidget.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/TicklyWidget.swift"
 cp "$TEMPLATE_DIR/TicklyWidgetExtension/CategoryWidgetConfigurationIntent.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/CategoryWidgetConfigurationIntent.swift"
+cp "$TEMPLATE_DIR/TicklyWidgetExtension/RefreshWidgetIntent.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/RefreshWidgetIntent.swift"
 cp "$TEMPLATE_DIR/TicklyWidgetExtension/ToggleTodoIntent.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/ToggleTodoIntent.swift"
 cp "$TEMPLATE_DIR/TicklyWidgetExtension/WidgetModels.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/WidgetModels.swift"
 cp "$TEMPLATE_DIR/TicklyWidgetExtension/WidgetActionStore.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/WidgetActionStore.swift"

@@ -321,6 +321,7 @@ async function addTagToItem(itemId: number, tagName: string): Promise<Tag | null
     }
     // Refresh allTags in case a new tag was created
     await loadAllTags();
+    await refreshWidgetCache();
     syncStore.scheduleSync();
     return tag;
   } catch (error) {
@@ -334,6 +335,7 @@ async function removeTagFromItem(itemId: number, tagId: number): Promise<void> {
     await tagApi.removeTagFromItem(itemId, tagId);
     const currentTags = itemTagsMap[itemId] || [];
     itemTagsMap = { ...itemTagsMap, [itemId]: currentTags.filter(t => t.id !== tagId) };
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to remove tag from item:', error);
@@ -354,6 +356,7 @@ async function deleteTagGlobal(tagId: number): Promise<void> {
       activeTagFilter = null;
       filteredItems = [];
     }
+    await refreshWidgetCache();
     syncStore.scheduleSync();
   } catch (error) {
     console.error('Failed to delete tag:', error);

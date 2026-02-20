@@ -59,6 +59,17 @@ export interface WidgetCategoryPendingItem {
   id: number;
   text: string;
   display_order: number;
+  tags: string[];
+}
+
+export interface WidgetTheme {
+  paper: string;
+  canvas: string;
+  stroke: string;
+  ink: string;
+  ink_muted: string;
+  accent_sky: string;
+  accent_sky_strong: string;
 }
 
 export interface WidgetSnapshot {
@@ -67,6 +78,7 @@ export interface WidgetSnapshot {
   pending_count: number;
   items: WidgetTodoItem[];
   categories: WidgetCategorySummary[];
+  theme: WidgetTheme;
 }
 
 export interface Tag {
