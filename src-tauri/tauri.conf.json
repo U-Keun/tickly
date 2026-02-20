@@ -24,6 +24,7 @@
     "targets": "all",
     "iOS": {
       "developmentTeam": "3689L65YPY",
+      "minimumSystemVersion": "15.0",
       "infoPlist": "Info.ios.plist"
     },
     "icon": [
