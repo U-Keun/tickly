@@ -318,8 +318,10 @@ jobs:
               set_or_add ":objects:$id:buildSettings:TOOLCHAINS" "com.apple.dt.toolchain.XcodeDefault"
               set_or_add ":objects:$id:buildSettings:ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES" "YES"
               set_or_add ":objects:$id:buildSettings:IPHONEOS_DEPLOYMENT_TARGET" "15.0"
-              set_or_add ":objects:$id:buildSettings:LIBRARY_SEARCH_PATHS" '$(inherited) /Applications/Xcode_26.2.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) /Applications/Xcode_26.2.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)'
-              set_or_add ":objects:$id:buildSettings:OTHER_LDFLAGS" '$(inherited) -lswiftCore -lswift_Concurrency -lswift_StringProcessing -lswift_RegexParser -lswiftCompatibility56 -lswiftCompatibilityConcurrency -lswiftCompatibilityPacks'
+              # Keep compatibility libraries discoverable, but avoid forcing Swift core
+              # runtime selection via manual OTHER_LDFLAGS.
+              set_or_add ":objects:$id:buildSettings:LIBRARY_SEARCH_PATHS" '$(inherited) /Applications/Xcode_26.2.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME)'
+              /usr/libexec/PlistBuddy -c "Delete :objects:$id:buildSettings:OTHER_LDFLAGS" "$PBXPROJ" 2>/dev/null || true
               set_or_add ":objects:$id:buildSettings:PROVISIONING_PROFILE" "$IOS_PROFILE_UUID"
               set_or_add ":objects:$id:buildSettings:PROVISIONING_PROFILE_SPECIFIER" "$IOS_PROFILE_NAME"
               set_or_add ":objects:$id:buildSettings:MARKETING_VERSION" "$APP_VERSION"
