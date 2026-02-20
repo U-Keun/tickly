@@ -2,12 +2,11 @@ import type {
   SyncResult,
   SyncStatusInfo,
   RealtimeConnectionState,
-  RealtimeEvent,
-  DataChangedEvent,
+  RealtimeEvent
 } from '../../types';
 import { i18n } from '$lib/i18n';
+import { RealtimeBridge } from './syncStoreRealtime';
 import { appStore } from './appStore.svelte';
-import * as realtimeApi from '$lib/api/realtimeApi';
 import * as syncApi from '$lib/api/syncApi';
 
 // Supabase config - loaded from environment at build time
@@ -34,11 +33,19 @@ class SyncStore {
   // Realtime state
   realtimeState = $state<RealtimeConnectionState>('disconnected');
   realtimeError = $state<string | null>(null);
-  private realtimeUnlisten: (() => void) | null = null;
-  private dataChangedUnlisten: (() => void) | null = null;
 
   // Debounced sync timer
   private syncDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly realtimeBridge = new RealtimeBridge({
+    supabaseUrl: SUPABASE_URL,
+    supabaseAnonKey: SUPABASE_ANON_KEY,
+    setRealtimeState: (state) => this.setRealtimeState(state),
+    setRealtimeError: (error) => this.setRealtimeError(error),
+    sync: async () => {
+      await this.sync();
+    },
+    getErrorMessage
+  });
 
   get isRealtimeConnected(): boolean {
     return this.realtimeState === 'connected';
@@ -68,7 +75,7 @@ class SyncStore {
       this.error = null;
 
       // Also load realtime status
-      const realtimeStatus = await realtimeApi.getRealtimeStatus();
+      const realtimeStatus = await this.realtimeBridge.getStatus();
       this.setRealtimeState(realtimeStatus.state);
       this.setRealtimeError(realtimeStatus.last_error ?? null);
     } catch (error) {
@@ -150,105 +157,14 @@ class SyncStore {
    * Connect to Supabase Realtime
    */
   async connectRealtime(accessToken: string, userId: string): Promise<void> {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      return;
-    }
-
-    try {
-      // Set up event listeners first
-      await this.setupRealtimeListeners();
-
-      // Connect
-      this.setRealtimeState('connecting');
-      await realtimeApi.connectRealtime(SUPABASE_URL, SUPABASE_ANON_KEY, accessToken, userId);
-    } catch (error) {
-      console.error('Failed to connect realtime:', error);
-      this.setRealtimeError(getErrorMessage(error));
-      this.setRealtimeState('disconnected');
-    }
+    await this.realtimeBridge.connect(accessToken, userId);
   }
 
   /**
    * Disconnect from Supabase Realtime
    */
   async disconnectRealtime(): Promise<void> {
-    try {
-      await realtimeApi.disconnectRealtime();
-      this.setRealtimeState('disconnected');
-      this.setRealtimeError(null);
-
-      // Clean up listeners
-      this.cleanupRealtimeListeners();
-    } catch (error) {
-      console.error('Failed to disconnect realtime:', error);
-    }
-  }
-
-  /**
-   * Set up Tauri event listeners for realtime events
-   */
-  private async setupRealtimeListeners(): Promise<void> {
-    // Clean up existing listeners
-    this.cleanupRealtimeListeners();
-
-    try {
-      const { listen } = await import('@tauri-apps/api/event');
-
-      // Listen for realtime connection events
-      this.realtimeUnlisten = await listen<RealtimeEvent>('realtime-event', (event) => {
-        const { event_type, message } = event.payload;
-
-        switch (event_type) {
-          case 'connected':
-            this.setRealtimeState('connected');
-            this.setRealtimeError(null);
-            break;
-          case 'disconnected':
-            this.setRealtimeState('disconnected');
-            break;
-          case 'reconnecting':
-            this.setRealtimeState('reconnecting');
-            break;
-          case 'error':
-            this.setRealtimeError(message ?? null);
-            break;
-        }
-      });
-
-      // Listen for data change events
-      this.dataChangedUnlisten = await listen<DataChangedEvent>('data-changed', async (_event) => {
-        await this.handleDataChange();
-      });
-    } catch (error) {
-      console.error('Failed to set up realtime listeners:', error);
-    }
-  }
-
-  /**
-   * Handle data change from realtime subscription
-   */
-  private async handleDataChange(): Promise<void> {
-    try {
-      // Trigger sync to pull latest data from server
-      // This updates the local DB, then refreshes the UI
-      await this.sync();
-    } catch (error) {
-      console.error('Failed to handle data change:', error);
-    }
-  }
-
-  /**
-   * Clean up realtime event listeners
-   */
-  private cleanupRealtimeListeners(): void {
-    if (this.realtimeUnlisten) {
-      this.realtimeUnlisten();
-      this.realtimeUnlisten = null;
-    }
-    if (this.dataChangedUnlisten) {
-      this.dataChangedUnlisten();
-      this.dataChangedUnlisten = null;
-    }
+    await this.realtimeBridge.disconnect();
   }
 
   formatLastSyncedAt(): string {
