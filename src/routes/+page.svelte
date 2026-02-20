@@ -6,20 +6,13 @@
   import type { Category, RepeatType, TodoItem } from '../types';
 
   import ActiveTagFilterBanner from '../components/ActiveTagFilterBanner.svelte';
-  import AddItemModal from '../components/AddItemModal.svelte';
-  import CategoryMenuModal from '../components/CategoryMenuModal.svelte';
   import CategoryTabs from '../components/CategoryTabs.svelte';
-  import ConfirmModal from '../components/ConfirmModal.svelte';
-  import EditItemModal from '../components/EditItemModal.svelte';
   import FloatingActions from '../components/FloatingActions.svelte';
+  import HomeModals from '../components/HomeModals.svelte';
   import IntroAnimation from '../components/IntroAnimation.svelte';
   import LeafTodoItem from '../components/LeafTodoItem.svelte';
   import MemoDrawer from '../components/MemoDrawer.svelte';
-  import ReorderCategoriesModal from '../components/ReorderCategoriesModal.svelte';
-  import ReorderItemsModal from '../components/ReorderItemsModal.svelte';
-  import StreakModal from '../components/StreakModal.svelte';
   import SwipeableItem from '../components/SwipeableItem.svelte';
-  import TagFilterModal from '../components/TagFilterModal.svelte';
   import { initializeFonts } from '../lib/fonts';
   import { createHomeItemActions } from '../lib/home/homeItemActions';
   import { createHomeLifecycle } from '../lib/home/homeLifecycle';
@@ -236,98 +229,17 @@
     onSettings={() => goto('/settings')}
   />
 
-  <!-- Add Item Modal -->
-  <AddItemModal
-    show={modalStore.showAddItemModal}
-    allTags={appStore.allTags}
-    onAdd={handleAddItem}
-    onCancel={modalStore.closeAddItemModal}
+  <HomeModals
+    {handleAddItem}
+    {handleEditFromMenu}
+    {confirmReset}
+    {confirmDeleteCategory}
+    {editingItem}
+    {showEditModal}
+    {handleUpdateReminder}
+    {handleEditSave}
+    {handleEditCancel}
   />
-
-  <ReorderItemsModal
-    show={modalStore.showReorderModal}
-    items={appStore.items}
-    onItemsReorder={appStore.setItems}
-    onClose={modalStore.closeReorderModal}
-  />
-
-  <ReorderCategoriesModal
-    show={modalStore.showReorderCategoriesModal}
-    categories={appStore.categories}
-    onCategoriesReorder={appStore.setCategories}
-    onClose={modalStore.closeReorderCategoriesModal}
-  />
-
-  <!-- Reset Confirmation Modal -->
-  <ConfirmModal
-    show={modalStore.showResetConfirm}
-    title={i18n.t('resetConfirmTitle')}
-    message={i18n.t('resetConfirmMessage')}
-    confirmLabel={i18n.t('reset')}
-    cancelLabel={i18n.t('cancel')}
-    confirmStyle="warning"
-    onConfirm={confirmReset}
-    onCancel={modalStore.closeResetConfirm}
-  />
-
-  <!-- Category Menu Modal -->
-  <CategoryMenuModal
-    show={modalStore.showCategoryMenu}
-    category={modalStore.selectedCategoryForMenu}
-    onEdit={handleEditFromMenu}
-    onDelete={modalStore.openDeleteCategoryConfirm}
-    onClose={modalStore.closeCategoryMenu}
-  />
-
-  <!-- Delete Category Confirmation Modal -->
-  <ConfirmModal
-    show={modalStore.showDeleteCategoryConfirm}
-    title={i18n.t('categoryDelete')}
-    message={modalStore.selectedCategoryForMenu
-      ? i18n.t('categoryDeleteConfirmTemplate')(modalStore.selectedCategoryForMenu.name)
-      : ''}
-    confirmLabel={i18n.t('delete')}
-    cancelLabel={i18n.t('cancel')}
-    confirmStyle="danger"
-    onConfirm={confirmDeleteCategory}
-    onCancel={modalStore.closeDeleteCategoryConfirm}
-  />
-
-  <!-- Streak Heatmap Modal -->
-  <StreakModal
-    show={modalStore.showStreakModal}
-    onClose={modalStore.closeStreakModal}
-  />
-
-  <!-- Tag Filter Modal -->
-  <TagFilterModal
-    show={modalStore.showTagFilterModal}
-    tags={appStore.allTags}
-    activeTagId={appStore.activeTagFilter}
-    onSelect={appStore.setTagFilter}
-    onClear={appStore.clearTagFilter}
-    onClose={modalStore.closeTagFilterModal}
-  />
-
-  <!-- Edit Item Modal (rendered at root to avoid CSS transform clipping) -->
-  {#if editingItem}
-    <EditItemModal
-      show={showEditModal}
-      item={editingItem}
-      itemTags={appStore.itemTagsMap[editingItem.id] ?? []}
-      allTags={appStore.allTags}
-      onSaveMemo={appStore.updateMemo}
-      onEditText={appStore.editItem}
-      onUpdateRepeat={appStore.updateRepeat}
-      onUpdateTrackStreak={appStore.updateTrackStreak}
-      onUpdateReminder={handleUpdateReminder}
-      onUpdateLinkedApp={appStore.updateLinkedApp}
-      onAddTag={appStore.addTagToItem}
-      onRemoveTag={appStore.removeTagFromItem}
-      onSave={handleEditSave}
-      onCancel={handleEditCancel}
-    />
-  {/if}
 
   <!-- Intro Animation Component -->
   <IntroAnimation />
