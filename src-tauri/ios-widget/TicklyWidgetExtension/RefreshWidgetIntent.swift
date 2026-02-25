@@ -8,7 +8,7 @@ struct RefreshWidgetIntent: AppIntent {
     static var openAppWhenRun = false
 
     func perform() async throws -> some IntentResult {
-        WidgetCenter.shared.reloadTimelines(ofKind: "TicklyWidget")
+        WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
 }

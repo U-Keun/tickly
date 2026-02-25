@@ -23,7 +23,7 @@ struct ToggleTodoIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         let normalizedCategoryId = categoryId.map { Int64($0) }
         WidgetActionStore.toggleItemAndQueue(itemId: Int64(itemId), categoryId: normalizedCategoryId)
-        WidgetCenter.shared.reloadTimelines(ofKind: "TicklyWidget")
+        WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
 }

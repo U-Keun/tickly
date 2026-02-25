@@ -19,6 +19,7 @@ cp "$TEMPLATE_DIR/TicklyWidgetExtension/Info.plist" "$APPLE_GEN_DIR/TicklyWidget
 cp "$TEMPLATE_DIR/TicklyWidgetExtension/TicklyWidgetExtension.entitlements" "$APPLE_GEN_DIR/TicklyWidgetExtension/TicklyWidgetExtension.entitlements"
 cp "$TEMPLATE_DIR/TicklyWidgetExtension/TicklyWidgetBundle.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/TicklyWidgetBundle.swift"
 cp "$TEMPLATE_DIR/TicklyWidgetExtension/TicklyWidget.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/TicklyWidget.swift"
+cp "$TEMPLATE_DIR/TicklyWidgetExtension/TicklyLockScreenWidget.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/TicklyLockScreenWidget.swift"
 cp "$TEMPLATE_DIR/TicklyWidgetExtension/CategoryWidgetConfigurationIntent.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/CategoryWidgetConfigurationIntent.swift"
 cp "$TEMPLATE_DIR/TicklyWidgetExtension/RefreshWidgetIntent.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/RefreshWidgetIntent.swift"
 cp "$TEMPLATE_DIR/TicklyWidgetExtension/ToggleTodoIntent.swift" "$APPLE_GEN_DIR/TicklyWidgetExtension/ToggleTodoIntent.swift"
