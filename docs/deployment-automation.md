@@ -48,6 +48,8 @@ Tickly 배포 자동화는 GitHub Actions의 CI/CD 워크플로우로 구성됩�
 1. 앱 버전 동기화
    - `package.json`의 `version`
    - `src-tauri/tauri.conf.json`의 `version`
+   - `src-tauri/Cargo.toml`의 `version`
+   - `src-tauri/ios-widget/project.yml`의 `CFBundleShortVersionString` / `CFBundleVersion`
 2. 로컬 검증
    - `yarn run check`
    - `cargo test --manifest-path src-tauri/Cargo.toml`

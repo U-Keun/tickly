@@ -1,6 +1,6 @@
 [package]
 name = "tickly"
-version = "0.8.3"
+version = "0.8.4"
 description = "Simple checklist app for items to remember when going out"
 authors = ["u-keunsong"]
 edition = "2021"
