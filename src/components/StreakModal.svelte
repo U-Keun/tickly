@@ -1,9 +1,11 @@
 <script lang="ts">
+  import type { TrackedItem, HeatmapData } from '../types';
   import ModalWrapper from './ModalWrapper.svelte';
   import StreakHeatmap from './StreakHeatmap.svelte';
-  import type { TrackedItem, HeatmapData } from '../types';
-  import * as streakApi from '$lib/api/streakApi';
   import { i18n } from '$lib/i18n';
+  import * as streakApi from '$lib/api/streakApi';
+
+  type SelectedHeatmapDay = { date: string; count: number; level: number };
 
   let {
     show,
@@ -18,6 +20,36 @@
   let heatmapData = $state<HeatmapData | null>(null);
   let loading = $state(true);
   let loadingHeatmap = $state(false);
+  let selectedHeatmapDay = $state<SelectedHeatmapDay | null>(null);
+
+  function getTodayDateString(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  function buildSelectedHeatmapDay(data: HeatmapData, date: string): SelectedHeatmapDay {
+    const log = data.logs.find((entry) => entry.completed_on === date);
+    const intensity = data.combo_intensity.find((entry) => entry.completed_on === date);
+    const count = log?.completed_count ?? 0;
+
+    return {
+      date,
+      count,
+      level: intensity?.level ?? (count > 0 ? 1 : 0)
+    };
+  }
+
+  function formatCompletedDate(dateStr: string): string {
+    const date = new Date(`${dateStr}T00:00:00`);
+    if (Number.isNaN(date.getTime())) {
+      return dateStr;
+    }
+
+    return date.toLocaleDateString(i18n.locale, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
 
   async function loadTrackedItems() {
     loading = true;
@@ -37,10 +69,15 @@
     selectedItemId = itemId;
     loadingHeatmap = true;
     try {
-      heatmapData = await streakApi.getItemHeatmapData(itemId);
+      const data = await streakApi.getItemHeatmapData(itemId);
+      heatmapData = data;
+      selectedHeatmapDay = data
+        ? buildSelectedHeatmapDay(data, getTodayDateString())
+        : null;
     } catch (error) {
       console.error('Failed to load heatmap data:', error);
       heatmapData = null;
+      selectedHeatmapDay = null;
     }
     loadingHeatmap = false;
   }
@@ -49,6 +86,7 @@
   $effect(() => {
     if (show) {
       selectedItemId = null;
+      selectedHeatmapDay = null;
       heatmapData = null;
       loadTrackedItems();
     }
@@ -126,7 +164,21 @@
         </div>
 
         <!-- Heatmap -->
-        <StreakHeatmap logs={heatmapData.logs} />
+        <StreakHeatmap
+          logs={heatmapData.logs}
+          comboIntensity={heatmapData.combo_intensity}
+          onDaySelect={(day) => selectedHeatmapDay = day}
+        />
+
+        <div class="date-panel mt-3">
+          {#if selectedHeatmapDay}
+            <p class="date-empty">
+              {formatCompletedDate(selectedHeatmapDay.date)} · {selectedHeatmapDay.count > 0 ? i18n.t('completed') : i18n.t('notCompleted')}
+            </p>
+          {:else}
+            <p class="date-empty">{i18n.t('loading')}</p>
+          {/if}
+        </div>
       {/if}
     {/if}
   </div>
@@ -216,4 +268,18 @@
     color: var(--color-ink-muted);
     margin-top: 4px;
   }
+
+  .date-panel {
+    background: var(--color-canvas);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 12px;
+  }
+
+  .date-empty {
+    margin: 0;
+    font-size: 13px;
+    color: var(--color-ink-muted);
+  }
+
 </style>

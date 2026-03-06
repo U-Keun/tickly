@@ -12,9 +12,18 @@ pub struct HeatmapData {
     pub item_id: i64,
     pub item_text: String,
     pub logs: Vec<CompletionLog>,
+    pub combo_intensity: Vec<HeatmapIntensity>,
     pub total_days: i32,
     pub current_streak: i32,
     pub longest_streak: i32,
+    pub current_streak_dates: Vec<String>,
+    pub longest_streak_dates: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HeatmapIntensity {
+    pub completed_on: String,
+    pub level: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

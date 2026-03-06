@@ -8,7 +8,7 @@ mod todo_item;
 mod widget;
 
 pub use category::Category;
-pub use completion_log::{CompletionLog, HeatmapData, TrackedItem};
+pub use completion_log::{CompletionLog, HeatmapData, HeatmapIntensity, TrackedItem};
 pub use realtime::{
     DataChangeType, DataChangedEvent, RealtimeConnectionState, RealtimeEvent, RealtimeEventType,
     RealtimeStatus,

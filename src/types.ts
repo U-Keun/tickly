@@ -132,13 +132,21 @@ export interface CompletionLog {
   completed_count: number;
 }
 
+export interface HeatmapIntensity {
+  completed_on: string;
+  level: number;
+}
+
 export interface HeatmapData {
   item_id: number;
   item_text: string;
   logs: CompletionLog[];
+  combo_intensity: HeatmapIntensity[];
   total_days: number;
   current_streak: number;
   longest_streak: number;
+  current_streak_dates: string[];
+  longest_streak_dates: string[];
 }
 
 export interface TrackedItem {
